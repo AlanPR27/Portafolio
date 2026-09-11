@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SVD — teoría y método general — Álgebra Lineal Avanzada</title>
+<meta name="description" content="La descomposición A = UΣVᵀ, el algoritmo de ocho pasos por diagonalización de AᵀA, sus dos límites numéricos y lo que hacen en realidad las bibliotecas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+<link rel="stylesheet" href="../css/algebra.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<!-- barra:inicio -->
+<header class="barra">
+  <div class="barra-int">
+    <a href="../../index.html">Apuntes</a>
+    <span class="sep">/</span>
+    <a href="../index.html">Álgebra Lineal Avanzada</a>
+    <span class="sep">/</span>
+    <span class="aqui">06 SVD — teoría y método general</span>
+    <details class="menu">
+      <summary>Temario 06/09</summary>
+      <div class="menu-panel">
+        <ol class="menu-lista">
+        <li><a href="01-campos-finitos.html"><span class="mn">01</span><span class="mt">Campos finitos</span></a></li>
+        <li><a href="02-cuatro-subespacios.html"><span class="mn">02</span><span class="mt">Los cuatro subespacios fundamentales</span></a></li>
+        <li><a href="03-valores-vectores-propios.html"><span class="mn">03</span><span class="mt">Valores y vectores propios</span></a></li>
+        <li><a href="04-qr-gram-schmidt.html"><span class="mn">04</span><span class="mt">Descomposición QR y Gram–Schmidt</span></a></li>
+        <li><a href="05-cholesky.html"><span class="mn">05</span><span class="mt">Descomposición de Cholesky</span></a></li>
+        <li><a href="06-svd-metodo-general.html" aria-current="page"><span class="mn">06</span><span class="mt">SVD — teoría y método general</span></a></li>
+        <li><a href="07-svd-valores-enteros.html"><span class="mn">07</span><span class="mt">SVD con valores singulares enteros</span></a></li>
+        <li><a href="08-pseudoinversa.html"><span class="mn">08</span><span class="mt">Pseudoinversa de Moore–Penrose</span></a></li>
+        <li><a href="09-aplicaciones-svd.html"><span class="mn">09</span><span class="mt">Aplicaciones de la SVD y compresión de imágenes</span></a></li>
+        </ol>
+      </div>
+    </details>
+  </div>
+</header>
+<!-- barra:fin -->
+
+<main class="hoja">
+
+  <header class="cabecera" id="contenido">
+    <p class="indice">06</p>
+    <div class="texto">
+      <h1>SVD — teoría y método general</h1>
+      <p class="entradilla">Toda matriz real, sin excepciones de forma ni de rango, se escribe como una rotación, un estiramiento a lo largo de ejes perpendiculares, y otra rotación.</p>
+    </div>
+  </header>
+
+  <h2><span class="n">1</span><span class="t">De dónde viene la pregunta</span></h2>
+
+
+  <p>En agosto de 1997 Netflix nació como una empresa de renta de DVD por correo postal. Lo que la
+  posicionó no fue el catálogo sino su sistema de recomendaciones, basado en las calificaciones que
+  los propios usuarios dejaban. En 2006 lanzó el <em>Netflix Prize</em>, una convocatoria pública
+  para mejorar ese sistema, y el equipo ganador combinó dos técnicas: SVD y máquinas de Boltzmann
+  restringidas.</p>
+
+  <p>El objeto sobre el que trabajaban era una matriz de unos 500 000 usuarios por 17 000 películas
+  —del orden de 8 500 millones de entradas— de las que apenas alrededor del uno por ciento estaba
+  llena, porque nadie califica todas las películas. La pregunta es qué se puede hacer con una
+  matriz así de grande y así de vacía.</p>
+
+  <p>La respuesta es el <strong>filtrado colaborativo por factorización</strong>. Se asocia a cada
+  película un vector \(q_i\in\mathbb{R}^{k}\) cuyas entradas miden características —actuación,
+  producción, locación, sonido, premios, historia, taquilla— y a cada usuario un vector
+  \(p_u\in\mathbb{R}^{k}\) que mide cuánto le importa cada una de esas características. La
+  calificación se predice con un producto punto:</p>
+
+  <p>$$r_{ui}\approx q_i^{T}p_u$$</p>
+
+  <p>Factorizar la matriz de preferencias es, exactamente, separar lo que describe a las películas
+  de lo que describe a los usuarios. La SVD es la manera canónica de hacer esa separación, y el
+  resto del tema es cómo se calcula.</p>
+
+  <hr class="sigma" style="--i:1">
+
+  <h2><span class="n">2</span><span class="t">La definición</span></h2>
+
+
+  <p>Sea \(A\in\mathbb{R}^{m\times n}\). La descomposición en valores singulares es una
+  factorización</p>
+
+  <p>$$A=U\Sigma V^{T}$$</p>
+
+  <p>donde \(U\in\mathbb{R}^{m\times m}\) es ortogonal, \(V\in\mathbb{R}^{n\times n}\) es
+  ortogonal, y \(\Sigma\in\mathbb{R}^{m\times n}\) es diagonal rectangular con</p>
+
+  <p>$$\sigma_1\ge\sigma_2\ge\cdots\ge\sigma_{\min(m,n)}\ge 0$$</p>
+
+  <p>Los \(\sigma_i\) son los <strong>valores singulares</strong>; las columnas de \(V\) son los
+  vectores singulares derechos y las de \(U\), los izquierdos. Geométricamente: \(V^{T}\) gira,
+  \(\Sigma\) estira cada eje por su \(\sigma_i\), y \(U\) vuelve a girar.</p>
+
+  <div class="nota">
+    <span class="titulo">Lo que la separa de la diagonalización</span>
+    <p><strong>Toda</strong> matriz real admite SVD: rectangular, singular, defectuosa, de rango
+    cero. No hace falta que sea cuadrada ni que tenga vectores propios suficientes. Además los
+    \(\sigma_i\) son únicos, aunque \(U\) y \(V\) no lo sean cuando hay valores singulares
+    repetidos. Compárese con el tema 03, donde \(A=PDP^{-1}\) sólo existe a veces.</p>
+  </div>
+
+  <hr class="sigma" style="--i:2">
+
+  <h2><span class="n">3</span><span class="t">El teorema que la hace calculable</span></h2>
+
+
+  <p>Todo el método sale de una observación de una línea. Si \(A=U\Sigma V^{T}\), entonces</p>
+
+  <p>$$A^{T}A=V\Sigma^{T}\Sigma V^{T},\qquad AA^{T}=U\Sigma\Sigma^{T}U^{T}$$</p>
+
+  <p>Ambas son diagonalizaciones ortogonales de matrices simétricas, que es un problema que ya
+  sabemos resolver. De ahí salen seis reglas de cálculo.</p>
+
+  <div class="nota">
+    <span class="titulo">Las seis reglas</span>
+    <p><strong>1.</strong> \(M=A^{T}A\) es simétrica y semidefinida positiva, porque
+    \(x^{T}Mx=\lVert Ax\rVert^{2}\ge 0\); sus valores propios son reales y no negativos.
+    <strong>2.</strong> Si \(\lambda_1\ge\cdots\ge\lambda_n\ge 0\) son esos valores propios,
+    entonces \(\sigma_i=\sqrt{\lambda_i}\). <strong>3.</strong> Las columnas de \(V\) son una
+    base ortonormal de vectores propios de \(M\), en el mismo orden. <strong>4.</strong> Vectores
+    propios de valores propios distintos de una matriz simétrica ya son ortogonales; sólo hay que
+    ortonormalizar dentro de un espacio propio de dimensión mayor que uno. <strong>5.</strong> Si
+    \(\sigma_i&gt;0\), entonces \(u_i=\tfrac{1}{\sigma_i}Av_i\), y estos \(u_i\) salen ya
+    ortonormales. <strong>6.</strong> \(r=\operatorname{rango}(A)=\#\{i:\sigma_i&gt;0\}\); los
+    \(u_{r+1},\dots,u_m\) no salen de la fórmula y hay que completarlos.</p>
+  </div>
+
+  <p>La regla 5 es la que muchos textos oscurecen, y conviene ver por qué funciona. Si \(v_i\) es
+  vector propio unitario de \(A^{T}A\) con valor propio \(\sigma_i^{2}\), entonces</p>
+
+  <p>$$u_i^{T}u_j=\frac{v_i^{T}A^{T}Av_j}{\sigma_i\sigma_j}
+  =\frac{\sigma_j^{2}}{\sigma_i\sigma_j}\,v_i^{T}v_j=\delta_{ij}$$</p>
+
+  <p>La ortonormalidad de los \(u_i\) es <em>heredada</em>, no impuesta: no hay que aplicarles
+  Gram–Schmidt.</p>
+
+  <hr class="sigma" style="--i:3">
+
+  <h2><span class="n">4</span><span class="t">El algoritmo en ocho pasos</span></h2>
+
+
+  <p>Válido para cualquier \(A\in\mathbb{R}^{m\times n}\). Se supone \(m\ge n\); si no, se
+  trabaja con \(AA^{T}\) y se intercambian los papeles de \(U\) y \(V\).</p>
+
+  <div class="nota">
+    <span class="titulo">El guion</span>
+    <p><strong>1.</strong> Elegir el lado barato: si \(n\le m\), trabajar con \(M=A^{T}A\), que
+    es \(n\times n\). <strong>2.</strong> Formar la matriz de Gram \(M=A^{T}A\); su entrada
+    \((i,j)\) es el producto punto de las columnas \(i\) y \(j\) de \(A\).
+    <strong>3.</strong> Calcular \(p(\lambda)=\det(M-\lambda I)\) y sus raíces ordenadas;
+    definir \(\sigma_i=\sqrt{\lambda_i}\) y \(r\). <strong>4.</strong> Para cada valor propio
+    distinto, resolver \((M-\lambda I)v=0\) por eliminación gaussiana. <strong>5.</strong>
+    Normalizar, y si un valor propio se repite, aplicar Gram–Schmidt dentro de su espacio propio;
+    ensamblar \(V\) y \(\Sigma\). <strong>6.</strong> Calcular
+    \(u_i=\tfrac{1}{\sigma_i}Av_i\) para \(i\le r\). <strong>7.</strong> Si \(r&lt;m\),
+    completar \(U\) aplicando Gram–Schmidt a la lista \(u_1,\dots,u_r,e_1,\dots,e_m\) y
+    descartando los vectores que salgan nulos. <strong>8.</strong> Verificar \(U^{T}U=I\),
+    \(V^{T}V=I\) y \(U\Sigma V^{T}=A\).</p>
+  </div>
+
+  <p>Los pasos 4 y 7 son las dos subrutinas del curso: la base del núcleo por eliminación gaussiana
+  —tema 02— y Gram–Schmidt —tema 04—. La SVD no introduce técnicas nuevas; sólo las ordena.</p>
+
+  <p>Para el control aritmético conviene tener a mano dos identidades que no cuestan nada:</p>
+
+  <p>$$\sum_i\sigma_i^{2}=\lVert A\rVert_F^{2},\qquad
+  \prod_i\sigma_i=|\det A|\ \ (\text{si } m=n)$$</p>
+
+  <hr class="sigma" style="--i:4">
+
+  <h2><span class="n">5</span><span class="t">Un ejemplo donde no salen enteros</span></h2>
+
+
+  <p>Sea \(A=\begin{pmatrix}1&amp;1\\0&amp;1\end{pmatrix}\), la matriz defectuosa del tema 03
+  —la que no se podía diagonalizar—. La SVD sí existe.</p>
+
+  <p><strong>Pasos 2 y 3.</strong> La matriz de Gram y su polinomio característico:</p>
+
+  <p>$$M=A^{T}A=\begin{pmatrix}1&amp;1\\1&amp;2\end{pmatrix},\qquad
+  p(\lambda)=\lambda^{2}-3\lambda+1$$</p>
+
+  <p>$$\lambda=\frac{3\pm\sqrt5}{2}
+  \;\Longrightarrow\;\sigma_1=\varphi=\frac{1+\sqrt5}{2},\quad
+  \sigma_2=\frac{1}{\varphi}=\frac{\sqrt5-1}{2}$$</p>
+
+  <p>Los valores singulares de esta matriz son la razón áurea y su inverso, porque
+  \(\varphi^{2}=\tfrac{3+\sqrt5}{2}\). El rango es 2.</p>
+
+  <p><strong>Pasos 4 y 5.</strong> De \((1-\lambda)x+y=0\) sale \(y=(\lambda-1)x\), y como
+  \(\lambda_1-1=\varphi\) y \(\lambda_2-1=-1/\varphi\):</p>
+
+  <p>$$v_1\parallel(1,\varphi),\qquad v_2\parallel(\varphi,-1)$$</p>
+
+  <p>que son ortogonales, como garantiza la regla 4. Sólo falta normalizarlos.</p>
+
+  <p><strong>Paso 8.</strong> Las dos comprobaciones baratas cierran el cálculo:</p>
+
+  <p>$$\sigma_1\sigma_2=\varphi\cdot\tfrac{1}{\varphi}=1=|\det A|,\qquad
+  \sigma_1^{2}+\sigma_2^{2}=\tfrac{3+\sqrt5}{2}+\tfrac{3-\sqrt5}{2}=3=\lVert A\rVert_F^{2}$$</p>
+
+  <p>Y el número de condición resulta \(\kappa_2(A)=\sigma_1/\sigma_2=\varphi^{2}\approx 2.618\):
+  una matriz perfectamente sana, pese a no ser diagonalizable. El ejemplo deja claro que el caso
+  general produce irracionales, y ésa es justamente la razón de ser del tema siguiente.</p>
+
+  <hr class="sigma" style="--i:5">
+
+  <h2><span class="n">6</span><span class="t">Lo que se lee directamente de la descomposición</span></h2>
+
+
+  <p>Una vez calculada, la SVD contesta de golpe casi todas las preguntas del curso. Con
+  \(r=\operatorname{rango}(A)\):</p>
+
+  <p>$$A=\sum_{i=1}^{r}\sigma_i\,u_iv_i^{T}\qquad\text{(expansión diádica)}$$</p>
+
+  <p>$$\lVert A\rVert_F^{2}=\sum_{i=1}^{r}\sigma_i^{2},\qquad
+  \lVert A\rVert_2=\sigma_1,\qquad \kappa_2(A)=\frac{\sigma_1}{\sigma_r}$$</p>
+
+  <p>Y los cuatro subespacios del tema 02 aparecen como bloques de columnas, sin ninguna cuenta
+  adicional:</p>
+
+  <p>$$\mathcal{C}(A)=\operatorname{gen}\{u_1,\dots,u_r\},\qquad
+  \mathcal{N}(A^{T})=\operatorname{gen}\{u_{r+1},\dots,u_m\}$$</p>
+
+  <p>$$\mathcal{C}(A^{T})=\operatorname{gen}\{v_1,\dots,v_r\},\qquad
+  \mathcal{N}(A)=\operatorname{gen}\{v_{r+1},\dots,v_n\}$$</p>
+
+  <p>La <strong>forma completa</strong> usa \(U\) de \(m\times m\) y \(\Sigma\) de
+  \(m\times n\). La <strong>forma reducida</strong> conserva sólo las primeras \(r\) columnas,
+  \(A=U_r\Sigma_rV_r^{T}\), y evita el paso 7 por completo: es la que se usa en la práctica,
+  mientras que la completa es la que exige la definición.</p>
+
+  <hr class="sigma" style="--i:6">
+
+  <h2><span class="n">7</span><span class="t">Dos límites y lo que hacen las bibliotecas</span></h2>
+
+
+  <p>El algoritmo de la sección 4 es matemáticamente correcto y es el que hay que dominar para
+  entender la SVD. Como método numérico tiene dos defectos graves, y conviene enunciarlos porque
+  son la razón exacta de que ninguna biblioteca lo implemente así.</p>
+
+  <div class="nota">
+    <span class="titulo">Límite 1: el polinomio característico</span>
+    <p>Hallar raíces en forma cerrada sólo es viable hasta grado 4, y numéricamente el método es
+    inestable ya desde \(n=5\): errores minúsculos en los coeficientes desplazan muchísimo las
+    raíces. Para \(n\) grande los valores propios se obtienen con iteración QR —tema 04—, no con
+    \(p(\lambda)\).</p>
+  </div>
+
+  <div class="nota">
+    <span class="titulo">Límite 2: formar AᵀA eleva al cuadrado el número de condición</span>
+    <p>Se cumple \(\kappa_2(A^{T}A)=\kappa_2(A)^{2}\). Si \(A\) tiene
+    \(\kappa_2\approx 10^{8}\), entonces \(A^{T}A\) tiene \(\kappa_2\approx 10^{16}\) y en
+    doble precisión los valores singulares pequeños se pierden por completo. Por eso ningún paquete
+    serio calcula la SVD formando \(A^{T}A\) —es el mismo argumento que desaconseja las ecuaciones
+    normales en mínimos cuadrados.</p>
+  </div>
+
+  <div class="tabla-env">
+  <table>
+    <thead>
+      <tr><th>Situación</th><th>Método</th><th>Observación</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>\(n\le 3\), a mano o simbólico</td><td>Este algoritmo</td><td>Exacto en aritmética racional</td></tr>
+      <tr><td>Densa, tamaño moderado</td><td>Bidiagonalización de Golub–Kahan por Householder, más QR implícito</td><td>Es lo que hace <code>dgesvd</code> de LAPACK</td></tr>
+      <tr><td>Alta precisión en los \(\sigma\) pequeños</td><td>Jacobi unilateral</td><td>Más lento, precisión relativa alta</td></tr>
+      <tr><td>Grande y dispersa, sólo unos pocos \(\sigma\)</td><td>Lanczos / Golub–Kahan iterativo</td><td>Sólo requiere productos \(Ax\) y \(A^{T}y\)</td></tr>
+      <tr><td>Enorme, de rango efectivo bajo</td><td>SVD aleatorizada</td><td>Base del uso en compresión y en IA</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>La lectura pedagógica es que el algoritmo general es el contenido conceptual —dice qué es la
+  SVD y por qué existe— y los métodos de la tabla son implementaciones del mismo objeto. Quien
+  domina los ocho pasos puede leer la documentación de <code>numpy.linalg.svd</code> y saber
+  exactamente qué le está devolviendo, incluido el detalle de que devuelve \(V^{T}\) y no
+  \(V\), y que los signos de las columnas pueden diferir de los obtenidos a mano sin que eso sea
+  un error.</p>
+
+  <hr class="sigma" style="--i:7">
+
+  <section class="recursos">
+    <h2><span class="n">material</span><span class="t">Recursos del tema</span></h2>
+
+    <ul class="adjuntos">
+      <li>
+        <a href="../assets/pdf/svd-metodo-general.pdf">
+          <span>
+            <span class="archivo">svd-metodo-general.pdf</span>
+            <span class="que">Método general para matrices m × n, las dos subrutinas, los límites numéricos, quince problemas 2 × 2 resueltos con el mismo guion y un apéndice con código de sympy y numpy.</span>
+          </span>
+          <span class="ext">27 páginas</span>
+          <span class="peso">157 KB</span>
+        </a>
+      </li>
+      <li>
+        <a href="../assets/pdf/svd-motivacion-netflix.pdf">
+          <span>
+            <span class="archivo">svd-motivacion-netflix.pdf</span>
+            <span class="que">Presentación introductoria: el Netflix Prize, el filtrado colaborativo y la factorización de la matriz de preferencias.</span>
+          </span>
+          <span class="ext">5 páginas</span>
+          <span class="peso">187 KB</span>
+        </a>
+      </li>
+      <li>
+        <a href="../assets/wolfram/svd-por-eigenvectores.nb">
+          <span>
+            <span class="archivo">svd-por-eigenvectores.nb</span>
+            <span class="que">La SVD calculada por el camino largo, con Eigenvalues, Eigenvectors y Orthogonalize, comparada contra SingularValueDecomposition.</span>
+          </span>
+          <span class="ext">cuaderno</span>
+          <span class="peso">65 KB</span>
+        </a>
+      </li>
+      <li>
+        <a href="../assets/wolfram/svd-caso-2x2.nb">
+          <span>
+            <span class="archivo">svd-caso-2x2.nb</span>
+            <span class="que">El caso 2 × 2 paso a paso: matriz de Gram, valores propios, normalización y ensamblado de U, Σ y V.</span>
+          </span>
+          <span class="ext">cuaderno</span>
+          <span class="peso">64 KB</span>
+        </a>
+      </li>
+    </ul>
+
+    <p class="atribucion">Material del Dr. José de Jesús Ángel Ángel, Facultad de Ingeniería, Universidad Anáhuac México.</p>
+  </section>
+
+</main>
+
+<nav class="nav-temas" aria-label="Navegación entre temas">
+  <div class="nav-temas-int">
+    <a href="05-cholesky.html">
+      <span class="dir">Tema anterior</span>
+      <span class="cual">05 Descomposición de Cholesky</span>
+    </a>
+    <a class="sig" href="07-svd-valores-enteros.html">
+      <span class="dir">Tema siguiente</span>
+      <span class="cual">07 SVD con valores singulares enteros</span>
+    </a>
+  </div>
+</nav>
+
+<footer class="pie">
+  <div class="pie-int">
+    <p>Apuntes de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería.</p>
+    <p>Material original del Dr. José de Jesús Ángel Ángel.</p>
+  </div>
+</footer>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],macros:{'\\gr':'\\operatorname{gr}'},throwOnError:false})"></script>
+
+<script>
+/* Único script del sitio: cierra el temario con Escape o al pulsar fuera. */
+(function () {
+  var menu = document.querySelector('.menu');
+  if (!menu) return;
+  document.addEventListener('click', function (e) {
+    if (menu.open && !menu.contains(e.target)) menu.open = false;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

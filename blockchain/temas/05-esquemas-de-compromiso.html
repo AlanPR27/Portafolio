@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Esquemas de compromiso — Blockchain</title>
+<meta name="description" content="Ocultamiento y vinculación, el teorema que impide tenerlas perfectas a la vez, y el catálogo completo: Blum, Naor, hash, Pedersen, ElGamal, reticulares, Merkle, Verkle, KZG, Bulletproofs y FRI.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../css/blockchain.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<!-- barra:inicio -->
+<header class="barra">
+  <div class="barra-int">
+    <a href="../../index.html">Apuntes</a>
+    <span class="sep">/</span>
+    <a href="../index.html">Blockchain</a>
+    <span class="sep">/</span>
+    <span class="aqui">05 Esquemas de compromiso</span>
+    <div class="barra-der">
+      <nav class="cadena-nav" aria-label="Cadena de temas">
+        <a class="bloque" href="01-funciones-hash.html" title="Funciones hash: fundamentos">01</a><span class="union"></span><a class="bloque" href="02-hash-aplicaciones.html" title="Aplicaciones de las funciones hash">02</a><span class="union"></span><a class="bloque" href="03-tarea-hash-artesanal.html" title="Tarea 1: construir y atacar una función hash">03</a><span class="union"></span><a class="bloque" href="04-sellado-de-tiempo.html" title="Sellado de tiempo">04</a><span class="union"></span><a class="bloque" href="05-esquemas-de-compromiso.html" aria-current="page" title="Esquemas de compromiso">05</a><span class="union"></span><a class="bloque" href="06-blockchain-artesanal.html" title="Blockchain artesanal: el pipeline completo">06</a><span class="union"></span><a class="bloque" href="07-blockchain-aplicaciones.html" title="Aplicaciones de blockchain por sector">07</a>
+      </nav>
+      <details class="menu">
+        <summary>temario</summary>
+        <div class="menu-panel">
+          <ol class="menu-lista">
+        <li><a href="01-funciones-hash.html"><span class="mn">01</span><span class="mt">Funciones hash: fundamentos</span></a></li>
+        <li><a href="02-hash-aplicaciones.html"><span class="mn">02</span><span class="mt">Aplicaciones de las funciones hash</span></a></li>
+        <li><a href="03-tarea-hash-artesanal.html"><span class="mn">03</span><span class="mt">Tarea 1: construir y atacar una función hash</span></a></li>
+        <li><a href="04-sellado-de-tiempo.html"><span class="mn">04</span><span class="mt">Sellado de tiempo</span></a></li>
+        <li><a href="05-esquemas-de-compromiso.html" aria-current="page"><span class="mn">05</span><span class="mt">Esquemas de compromiso</span></a></li>
+        <li><a href="06-blockchain-artesanal.html"><span class="mn">06</span><span class="mt">Blockchain artesanal: el pipeline completo</span></a></li>
+        <li><a href="07-blockchain-aplicaciones.html"><span class="mn">07</span><span class="mt">Aplicaciones de blockchain por sector</span></a></li>
+          </ol>
+        </div>
+      </details>
+    </div>
+  </div>
+</header>
+<!-- barra:fin -->
+
+<main class="hoja">
+
+  <header class="cabecera" id="contenido">
+    <p class="indice">05</p>
+    <div class="texto">
+      <h1>Esquemas de compromiso</h1>
+      <p class="entradilla">Un sobre cerrado: pones dentro tu decisión, entregas el sobre, y más tarde lo abres. Quien lo tiene no puede leerlo, y tú ya no puedes cambiar lo que hay dentro. Las dos cosas a la vez, y perfectas, son imposibles.</p>
+    </div>
+  </header>
+
+  <h2><span class="hash">35eb65</span><span class="t">Qué es un compromiso</span></h2>
+
+
+  <p>Un esquema de compromiso permite a un emisor fijar un valor ante un receptor sin revelarlo, de
+  modo que más tarde no pueda cambiarlo. Es el análogo digital del sobre sellado, y es la primitiva
+  sobre la que se construyen las pruebas de conocimiento cero, la compartición verificable de
+  secretos y las subastas de sobre cerrado.</p>
+
+  <p>Formalmente es una terna de algoritmos: <span class="hex">Setup</span> genera parámetros
+  públicos, <span class="hex">Com(m; r)</span> produce el compromiso <span class="v">c</span> a
+  partir del mensaje y de una aleatoriedad <span class="v">r</span>, y
+  <span class="hex">Ver(c, m, r)</span> verifica la apertura.</p>
+
+  <div class="nota">
+    <span class="titulo">Las dos propiedades</span>
+    <p><strong>Ocultamiento</strong> (<em>hiding</em>): los compromisos a dos mensajes distintos son
+    indistinguibles. Es <em>perfecto</em> si las distribuciones son idénticas, <em>estadístico</em>
+    si su distancia es despreciable, y <em>computacional</em> si ningún adversario en tiempo
+    polinomial las distingue.</p>
+    <p><strong>Vinculación</strong> (<em>binding</em>): ningún adversario puede exhibir dos
+    aperturas distintas del mismo compromiso. Se gradúa igual en perfecta, estadística y
+    computacional.</p>
+  </div>
+
+  <h2><span class="hash">ae0ad2</span><span class="t">El teorema de imposibilidad</span></h2>
+
+
+  <p><strong>No existe un esquema simultáneamente perfectamente ocultante y perfectamente
+  vinculante.</strong> La demostración cabe en un párrafo y conviene entenderla porque determina
+  todo el diseño posterior.</p>
+
+  <p>Si el esquema es perfectamente ocultante, entonces para todo compromiso
+  <span class="v">c</span> en el soporte y todo mensaje alternativo <span class="v">m₁</span>
+  existe una aleatoriedad <span class="v">r₁</span> con
+  <span class="hex">Com(m₁; r₁) = c</span>; de lo contrario la distribución de
+  <span class="v">c</span> dependería del mensaje y el ocultamiento no sería perfecto. Un
+  adversario sin límite de cómputo enumera el espacio de aleatoriedad, encuentra ese
+  <span class="v">r₁</span> y rompe la vinculación. El recíproco es simétrico.</p>
+
+  <div class="nota aviso">
+    <span class="titulo">La consecuencia de diseño: a quién proteges</span>
+    <p><strong>Ocultamiento perfecto</strong> (Pedersen) <strong>protege al emisor</strong>: un
+    verificador con poder futuro ilimitado —incluida una computadora cuántica— jamás recuperará el
+    mensaje. El riesgo es que el emisor, si rompe el supuesto, pueda reabrir el compromiso.</p>
+    <p><strong>Vinculación perfecta</strong> (ElGamal) <strong>protege al receptor</strong>: el
+    valor queda fijado de manera absoluta, pero un adversario futuro podría descifrar el
+    mensaje.</p>
+    <p>En transacciones confidenciales se prefiere lo primero, porque la privacidad debe durar
+    décadas. En pruebas de conocimiento cero con extractor, a menudo lo segundo.</p>
+  </div>
+
+  <h2><span class="hash">b726d0</span><span class="t">Compromisos escalares</span></h2>
+
+
+  <p><strong>Blum (1981).</strong> La construcción histórica que fundó el área, planteada como el
+  problema de «lanzar una moneda por teléfono»: dos partes que no se confían deben acordar un bit
+  aleatorio. La solución es un protocolo <em>commit–reveal</em>: uno se compromete a su bit, el
+  otro anuncia el suyo, el primero abre, y el resultado es el XOR. Es perfectamente vinculante y
+  computacionalmente ocultante.</p>
+
+  <p><strong>Naor (1991).</strong> Importa por lo que demuestra: los compromisos de bit existen bajo
+  el supuesto mínimo de que existen funciones de un solo sentido. Es interactivo, lo que limita su
+  uso práctico.</p>
+
+  <p><strong>Por función hash.</strong> La construcción más usada, por simplicidad:</p>
+
+  <figure class="codigo">
+  <pre><code>c = H(m ‖ r),    r aleatorio de al menos 128 bits</code></pre>
+  <figcaption>Vinculación computacional, reducida a la resistencia a colisiones. Ocultamiento
+  computacional; en el modelo del oráculo aleatorio es estadístico si <span class="v">r</span>
+  tiene suficiente entropía.</figcaption>
+  </figure>
+
+  <div class="nota aviso">
+    <span class="titulo">El nonce no es opcional</span>
+    <p>Si <span class="v">m</span> viene de un dominio pequeño —una apuesta, un voto, una oferta
+    redondeada— el compromiso <span class="hex">c = H(m)</span> se rompe por fuerza bruta en
+    milisegundos: basta hashear todas las opciones. Este error ha aparecido repetidamente en
+    contratos inteligentes de subastas y en esquemas de <em>commit–reveal</em> para aleatoriedad en
+    cadena. Hace falta <span class="v">r</span> de 128 bits o más.</p>
+  </div>
+
+  <p><strong>Pedersen (1991).</strong> Sobre un grupo cíclico de orden primo donde el logaritmo
+  discreto es difícil, con generadores <span class="v">g</span> y <span class="v">h</span>:</p>
+
+  <figure class="codigo">
+  <pre><code>Com(m; r) = g^m · h^r</code></pre>
+  <figcaption>Ocultamiento perfecto: si <span class="v">r</span> es uniforme, también lo es
+  <span class="hex">h^r</span>, y el compromiso es independiente del mensaje.</figcaption>
+  </figure>
+
+  <p>La vinculación es computacional y su reducción es exacta: quien exhiba dos aperturas distintas
+  del mismo compromiso ha resuelto el logaritmo discreto, porque de
+  <span class="hex">g^m h^r = g^m′ h^r′</span> se despeja
+  <span class="hex">log_g h = (m − m′)/(r′ − r)</span>.</p>
+
+  <p>Lo que lo hizo indispensable es que es <strong>aditivamente homomórfico</strong>: el producto
+  de dos compromisos es el compromiso de la suma. Eso permite verificar que una suma de valores
+  ocultos es cero —el corazón de las transacciones confidenciales— sin revelar ningún sumando.
+  Ningún compromiso por hash tiene estructura algebraica explotable de ese modo.</p>
+
+  <div class="nota aviso">
+    <span class="titulo">El requisito crítico sobre h</span>
+    <p>La vinculación colapsa si alguien conoce <span class="hex">log_g h</span>. Por eso
+    <span class="v">h</span> debe generarse por <em>hash-to-curve</em> desde una cadena pública sin
+    estructura —lo que se llama <em>nothing-up-my-sleeve</em>— y nunca eligiendo un exponente al
+    azar y publicando <span class="hex">h = g^s</span>. Monero, por ejemplo, deriva su
+    <span class="v">H</span> aplicando <span class="hex">hash_to_point</span> a la codificación del
+    generador estándar.</p>
+  </div>
+
+  <p><strong>ElGamal</strong> es el dual exacto de Pedersen —<span class="hex">Com(m; r) = (g^r,
+  g^m h^r)</span>— con vinculación perfecta y ocultamiento computacional. <strong>Fujisaki–Okamoto</strong>
+  trabaja en grupos de orden desconocido, lo que permite comprometerse a enteros sin reducción
+  modular y demostrar desigualdades y rangos sobre los enteros. Los <strong>reticulares</strong>
+  —Ajtai, y el esquema BDLOP— reducen su vinculación al problema SIS y son la respuesta
+  post-cuántica: Pedersen es vinculante sólo bajo logaritmo discreto, que cae ante Shor.</p>
+
+  <h2><span class="hash">429011</span><span class="t">Vectoriales y polinomiales</span></h2>
+
+
+  <p>La jerarquía escalar ⊂ vectorial ⊂ polinomial no es sólo conceptual: un compromiso polinomial
+  induce uno vectorial vía evaluaciones, y éste uno escalar. El Pedersen generalizado es
+  literalmente el caso vectorial de Pedersen, y los compromisos polinomiales de tipo IPA lo usan
+  como bloque base. Por eso Pedersen sigue siendo la construcción más citada treinta años
+  después.</p>
+
+  <p><strong>Árboles de Merkle.</strong> El compromiso vectorial más desplegado del mundo: la raíz
+  compromete <span class="v">n</span> valores, y la apertura de una posición es el camino de
+  ⌈log₂ <span class="v">n</span>⌉ hashes hermanos. Compromiso de 32 bytes, apertura y verificación
+  logarítmicas, supuesto post-cuántico —sólo colisiones—, setup transparente y ninguna
+  homomorfía.</p>
+
+  <p><strong>Verkle.</strong> Sustituye los nodos hash de Merkle por compromisos polinomiales KZG,
+  lo que permite un factor de ramificación mucho mayor con pruebas que no crecen con el ancho. El
+  resultado son testigos de estado de decenas de kilobytes donde un Merkle-Patricia requeriría
+  megabytes. Es la tecnología propuesta para la <em>statelessness</em> de Ethereum.</p>
+
+  <p>Un compromiso <strong>polinomial</strong> permite comprometerse a un polinomio y luego abrir su
+  evaluación en un punto arbitrario con una prueba sucinta. Es la primitiva que hace posibles los
+  SNARK modernos.</p>
+
+  <div class="tabla-env">
+  <table>
+    <thead><tr><th>esquema</th><th>setup</th><th>tamaño de prueba</th><th>verificación</th><th>post-cuántico</th></tr></thead>
+    <tbody>
+      <tr><td>KZG</td><td class="roto">confiable</td><td class="valido">O(1)</td><td class="valido">O(1)</td><td class="roto">no</td></tr>
+      <tr><td>IPA / Bulletproofs</td><td class="valido">transparente</td><td>O(log d)</td><td>O(d)</td><td class="roto">no</td></tr>
+      <tr><td>Dory</td><td class="valido">transparente</td><td>O(log d)</td><td>O(log d)</td><td class="roto">no</td></tr>
+      <tr><td>FRI</td><td class="valido">transparente</td><td>O(log² d)</td><td>O(log² d)</td><td class="valido">sí</td></tr>
+      <tr><td>Brakedown</td><td class="valido">transparente</td><td>O(√d)</td><td>O(√d)</td><td class="valido">sí</td></tr>
+      <tr><td>DARK</td><td class="valido">transparente</td><td>O(log d)</td><td>O(log d)</td><td class="roto">no</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p><strong>KZG</strong> da el compromiso y la prueba más pequeños posibles —un elemento de grupo
+  cada uno, 48 bytes— a cambio de exigir una ceremonia de configuración confiable y una curva con
+  emparejamientos. <strong>Bulletproofs</strong> construye un argumento de producto interno sobre
+  compromisos de Pedersen generalizados, sin setup de confianza; su aplicación estrella son las
+  pruebas de rango, que demuestran que un valor comprometido está en un intervalo ocupando unos
+  675 bytes. <strong>FRI</strong> se compromete a un polinomio mediante un árbol de Merkle sobre
+  sus evaluaciones, y como sólo usa funciones hash, es transparente y plausiblemente
+  post-cuántico: es la base de los STARK.</p>
+
+  <h2><span class="hash">0edfd8</span><span class="t">Hashing camaleónico</span></h2>
+
+
+  <p>Un <em>chameleon hash</em> es un compromiso donde el conocimiento de una trampa permite
+  encontrar colisiones a voluntad: es vinculante para quien no la tiene y equivocable para quien
+  sí.</p>
+
+  <p>Vale la pena notar que <strong>el compromiso de Pedersen es un hash camaleónico</strong> cuya
+  trampa es <span class="hex">log_g h</span> — de ahí el requisito de generación verificable de
+  <span class="v">h</span> de la sección anterior. No son dos construcciones distintas, es la misma
+  vista desde dos lados.</p>
+
+  <p>La aplicación moderna son las <strong>blockchains redactables</strong>: una autoridad con la
+  trampa puede reescribir el contenido de un bloque sin invalidar la cadena de hashes. Se propuso
+  para cumplir con el derecho al olvido del RGPD, y es uno de los pocos mecanismos que reconcilia
+  inmutabilidad con borrado obligatorio.</p>
+
+  <h2><span class="hash">9320be</span><span class="t">Qué se usa de verdad</span></h2>
+
+
+  <div class="tabla-env">
+  <table>
+    <thead><tr><th>sistema</th><th>esquema</th><th>para qué</th></tr></thead>
+    <tbody>
+      <tr><td>Monero (RingCT)</td><td>Pedersen + Bulletproofs</td><td>oculta montos y verifica que entradas = salidas</td></tr>
+      <tr><td>Mimblewimble / Grin</td><td>Pedersen</td><td>toda salida es un compromiso; la cadena se poda agregándolos</td></tr>
+      <tr><td>Zcash (Orchard)</td><td>Sinsemilla</td><td>hash de Pedersen optimizado para circuitos</td></tr>
+      <tr><td>Bitcoin</td><td>Merkle</td><td>raíz en la cabecera de bloque, pruebas SPV</td></tr>
+      <tr><td>Ethereum (EIP-4844)</td><td>KZG</td><td>compromisos a blobs de datos, disponibilidad verificable</td></tr>
+      <tr><td>Certificate Transparency</td><td>Merkle (RFC 6962)</td><td>registro sólo-anexable y auditable</td></tr>
+      <tr><td>Git</td><td>Merkle DAG</td><td>integridad e identidad de commits y árboles</td></tr>
+      <tr><td>OpenTimestamps</td><td>Merkle</td><td>sellado agregado anclado en Bitcoin</td></tr>
+      <tr><td>StarkNet</td><td>FRI</td><td>compromisos polinomiales transparentes</td></tr>
+      <tr><td>Helios (votación)</td><td>ElGamal</td><td>recuento verificable con secreto del voto</td></tr>
+      <tr><td>DKG y FROST</td><td>Pedersen VSS</td><td>generación distribuida de claves umbral</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="nota">
+    <span class="titulo">EIP-4844: KZG en producción a escala</span>
+    <p>La actualización <em>proto-danksharding</em> de Ethereum introdujo transacciones que
+    transportan <em>blobs</em> de unos 128 KB. En lugar de almacenar el blob en el estado, el bloque
+    guarda un compromiso KZG de <strong>48 bytes</strong> al polinomio que lo interpola. La cadena
+    de referencia estructurada se generó en una ceremonia con más de 140 000 participantes: basta
+    que uno solo haya destruido su contribución para que el secreto sea desconocido. Es
+    probablemente la ceremonia de configuración confiable más grande jamás realizada.</p>
+  </div>
+
+  <div class="nota">
+    <span class="titulo">Transacciones confidenciales, en una línea</span>
+    <p>Cada monto se representa como <span class="hex">C = g^v · h^r</span>. Una transacción es
+    válida si la diferencia entre la suma de los compromisos de salida y la de entrada es un
+    compromiso a cero. El verificador comprueba una identidad de grupo <em>sin conocer un solo
+    monto</em>. Se añade una prueba de rango por cada salida para impedir montos negativos que
+    crearían dinero de la nada.</p>
+  </div>
+
+  <h2><span class="hash">c010a8</span><span class="t">Cómo elegir, y qué sale mal</span></h2>
+
+
+  <p>Seis preguntas resuelven casi todos los casos:</p>
+
+  <ol>
+    <li><strong>¿Hay que operar con los valores ocultos?</strong> Sí ⇒ Pedersen, o ElGamal si se
+    requiere extractabilidad. No ⇒ hash con nonce: más simple, más rápido, post-cuántico.</li>
+    <li><strong>¿La privacidad debe durar décadas?</strong> Sí ⇒ ocultamiento perfecto o
+    estadístico.</li>
+    <li><strong>¿La vinculación debe resistir a un adversario cuántico?</strong> Sí ⇒ hash, Merkle,
+    FRI o reticulares. Nunca Pedersen ni KZG.</li>
+    <li><strong>¿Se puede hacer una ceremonia de configuración?</strong> No ⇒ Bulletproofs, FRI,
+    Dory, DARK. Sí ⇒ KZG, con pruebas mucho menores.</li>
+    <li><strong>¿Cuántos valores se comprometen?</strong> Uno ⇒ Pedersen. Un vector ⇒ Merkle si se
+    quiere transparencia, Pedersen generalizado si se quiere homomorfía. Un polinomio ⇒ KZG o
+    FRI.</li>
+    <li><strong>¿El mensaje es un entero sin acotar?</strong> Sí ⇒ grupos de orden oculto.</li>
+  </ol>
+
+  <div class="nota aviso">
+    <span class="titulo">Los errores frecuentes de implementación</span>
+    <p>Omitir el nonce cuando el espacio de mensajes es pequeño. Generar
+    <span class="hex">h = g^s</span> con <span class="v">s</span> conocido, lo que destruye la
+    vinculación de Pedersen. Reutilizar el mismo <span class="v">r</span> para dos mensajes: el
+    cociente de los dos compromisos revela la diferencia. Omitir la prueba de rango en transacciones
+    confidenciales, porque la aritmética modular permite «montos negativos». Confundir la vinculación
+    del compromiso con la del protocolo: un compromiso perfecto no impide un ataque de reproducción
+    si no se liga al contexto. Y en Merkle, no distinguir hojas de nodos internos.</p>
+  </div>
+
+  <section class="recursos">
+    <h2><span class="hash">08c727</span><span class="t">Recursos del tema</span></h2>
+
+    <ul class="adjuntos">
+      <li>
+        <a href="../assets/pdf/esquemas-de-compromiso.pdf">
+          <span>
+            <span class="archivo">esquemas-de-compromiso.pdf</span>
+            <span class="que">Catálogo comparativo completo: marco formal, teorema de imposibilidad, siete construcciones escalares, tres vectoriales, cinco polinomiales, tabla maestra, veinte sistemas desplegados y guía de selección.</span>
+          </span>
+          <span class="ext">18 páginas</span>
+          <span class="peso">135 KB</span>
+        </a>
+      </li>
+      <li>
+        <a href="../assets/pdf/laboratorio-funciones-hash.pdf">
+          <span>
+            <span class="archivo">laboratorio-funciones-hash.pdf</span>
+            <span class="que">El laboratorio completo del curso, fuente principal de la materia.</span>
+          </span>
+          <span class="ext">lab</span>
+          <span class="peso">3.2 MB</span>
+        </a>
+      </li>
+    </ul>
+
+    <p class="atribucion">Material del Dr. José de Jesús Ángel Ángel, Facultad de Ingeniería, Universidad Anáhuac México.</p>
+  </section>
+
+</main>
+
+<nav class="nav-temas" aria-label="Navegación entre temas">
+  <div class="nav-temas-int">
+    <a href="04-sellado-de-tiempo.html">
+      <span class="dir">tema anterior</span>
+      <span class="cual">04 Sellado de tiempo</span>
+    </a>
+    <a class="sig" href="06-blockchain-artesanal.html">
+      <span class="dir">tema siguiente</span>
+      <span class="cual">06 Blockchain artesanal: el pipeline completo</span>
+    </a>
+  </div>
+</nav>
+
+<footer class="pie">
+  <div class="pie-int">
+    <p>Apuntes de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería.</p>
+    <p>Material original del Dr. José de Jesús Ángel Ángel.</p>
+  </div>
+</footer>
+
+<script>
+/* Único script de la materia: cierra el temario con Escape o al pulsar fuera. */
+(function () {
+  var menu = document.querySelector('.menu');
+  if (!menu) return;
+  document.addEventListener('click', function (e) {
+    if (menu.open && !menu.contains(e.target)) menu.open = false;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

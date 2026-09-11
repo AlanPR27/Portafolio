@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campos finitos — Álgebra Lineal Avanzada</title>
+<meta name="description" content="Construcción de F_p^n como cociente de polinomios, notación por cadenas de bits, elemento primitivo y logaritmo discreto, y la galería completa de los campos con 2, 4, 8 y 16 elementos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+<link rel="stylesheet" href="../css/algebra.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<!-- barra:inicio -->
+<header class="barra">
+  <div class="barra-int">
+    <a href="../../index.html">Apuntes</a>
+    <span class="sep">/</span>
+    <a href="../index.html">Álgebra Lineal Avanzada</a>
+    <span class="sep">/</span>
+    <span class="aqui">01 Campos finitos</span>
+    <details class="menu">
+      <summary>Temario 01/09</summary>
+      <div class="menu-panel">
+        <ol class="menu-lista">
+        <li><a href="01-campos-finitos.html" aria-current="page"><span class="mn">01</span><span class="mt">Campos finitos</span></a></li>
+        <li><a href="02-cuatro-subespacios.html"><span class="mn">02</span><span class="mt">Los cuatro subespacios fundamentales</span></a></li>
+        <li><a href="03-valores-vectores-propios.html"><span class="mn">03</span><span class="mt">Valores y vectores propios</span></a></li>
+        <li><a href="04-qr-gram-schmidt.html"><span class="mn">04</span><span class="mt">Descomposición QR y Gram–Schmidt</span></a></li>
+        <li><a href="05-cholesky.html"><span class="mn">05</span><span class="mt">Descomposición de Cholesky</span></a></li>
+        <li><a href="06-svd-metodo-general.html"><span class="mn">06</span><span class="mt">SVD — teoría y método general</span></a></li>
+        <li><a href="07-svd-valores-enteros.html"><span class="mn">07</span><span class="mt">SVD con valores singulares enteros</span></a></li>
+        <li><a href="08-pseudoinversa.html"><span class="mn">08</span><span class="mt">Pseudoinversa de Moore–Penrose</span></a></li>
+        <li><a href="09-aplicaciones-svd.html"><span class="mn">09</span><span class="mt">Aplicaciones de la SVD y compresión de imágenes</span></a></li>
+        </ol>
+      </div>
+    </details>
+  </div>
+</header>
+<!-- barra:fin -->
+
+<main class="hoja">
+
+  <header class="cabecera" id="contenido">
+    <p class="indice">01</p>
+    <div class="texto">
+      <h1>Campos finitos</h1>
+      <p class="entradilla">Construir un campo con exactamente dieciséis elementos repitiendo
+      el truco con el que se construyen los números complejos, y descubrir que el resultado
+      es la aritmética con la que corre media infraestructura digital.</p>
+    </div>
+  </header>
+
+  <h2><span class="n">1</span><span class="t">Por qué F<sub>p</sub> no alcanza</span></h2>
+
+  <p>La historia de los sistemas numéricos es una sola maniobra repetida: se amplía el
+  conjunto hasta que cierta ecuación tenga solución. En \(\mathbb{N}\) no se resuelve
+  \(x+3=1\); en \(\mathbb{Z}\) no se resuelve \(2x=3\); en \(\mathbb{Q}\) no se resuelve
+  \(x^2=2\); en \(\mathbb{R}\) no se resuelve \(x^2=-1\). El último paso se hace declarando
+  que \(i\) es raíz de ese polinomio y trabajando en \(\mathbb{C}=\mathbb{R}[x]/(x^2+1)\).
+  Todo este tema es ese mismo paso, aplicado a campos finitos.</p>
+
+  <p>Los campos finitos que uno ya conoce son los \(\mathbb{F}_p=\mathbb{Z}/(p)\) con
+  \(p\) primo. Que \(p\) sea primo no es un adorno: en \(\mathbb{Z}/(6)\) se tiene
+  \(2\cdot 3=0\) sin que ninguno de los dos factores sea cero, así que hay divisores de
+  cero y no es campo. Esto da campos de tamaño 2, 3, 5, 7, 11, 13… y deja una pregunta
+  abierta: ¿existe un campo con exactamente 4 elementos? ¿Con 8? ¿Con 6?</p>
+
+  <div class="nota">
+    <span class="titulo">La respuesta, que ordena todo lo demás</span>
+    <p>Existe un campo finito de orden \(q\) si y sólo si \(q=p^n\) con \(p\) primo. No hay
+    campo de 6, 10, 12, 14 ni 15 elementos; sí de 4, 8, 9 y 16. Además, dos campos finitos
+    del mismo tamaño son isomorfos, y por eso se dice <em>el</em> campo \(\mathbb{F}_q\) y
+    no <em>un</em> campo con \(q\) elementos.</p>
+  </div>
+
+  <p>La razón de que el orden deba ser potencia de primo viene de la característica. Si
+  \(K\) es finito, el morfismo \(\varphi:\mathbb{Z}\to K\) con \(\varphi(m)=m\cdot 1\) no
+  puede ser inyectivo, así que su núcleo es \((m_0)\) para algún \(m_0>0\). Si \(m_0\)
+  fuera compuesto, \(m_0=ab\), entonces \((a\cdot 1)(b\cdot 1)=0\) con ambos factores no
+  nulos, y un campo no admite divisores de cero. Luego \(m_0=p\) es primo, y todo campo
+  finito contiene una copia de \(\mathbb{F}_p\) —su campo primo.</p>
+
+  <hr class="sigma" style="--i:1">
+
+  <h2><span class="n">2</span><span class="t">Irreducibilidad en F<sub>p</sub>[x]</span></h2>
+
+  <p>La pieza que falta es el análogo de \(x^2+1\): un polinomio sin raíces que sirva para
+  cocientar. Un polinomio \(P(x)\in\mathbb{F}_p[x]\) de grado \(m\ge 1\) es
+  <strong>irreducible</strong> si no se escribe como producto de dos polinomios de grado
+  estrictamente menor.</p>
+
+  <p>Para grados 2 y 3 hay un criterio cómodo: el polinomio es irreducible si y sólo si no
+  tiene raíces en \(\mathbb{F}_p\), porque cualquier factorización obligaría a un factor
+  lineal. El criterio se rompe en cuanto el grado llega a 4, y conviene tener a la mano el
+  contraejemplo: sobre \(\mathbb{F}_2\), \(x^4+x^2+1\) no tiene raíces y sin embargo
+  \(x^4+x^2+1=(x^2+x+1)^2\).</p>
+
+  <p>Sobre \(\mathbb{F}_2\) sólo hay dos valores que evaluar. Un polinomio tiene al 0 como
+  raíz cuando su término independiente es 0, y al 1 cuando tiene un número par de términos.
+  De ahí sale una regla de tamizado inmediata: un irreducible de grado \(\ge 2\) tiene
+  término independiente 1 y un número impar de términos.</p>
+
+  <figure class="tabla">
+  <div class="tabla-env">
+  <table>
+    <thead>
+      <tr><th>Grado</th><th>Polinomios irreducibles</th><th>Cuántos</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td><span class="bits">x</span>, <span class="bits">x + 1</span></td><td>2</td></tr>
+      <tr><td>2</td><td><span class="bits">x² + x + 1</span></td><td>1</td></tr>
+      <tr><td>3</td><td><span class="bits">x³ + x + 1</span>, <span class="bits">x³ + x² + 1</span></td><td>2</td></tr>
+      <tr><td>4</td><td><span class="bits">x⁴ + x + 1</span>, <span class="bits">x⁴ + x³ + 1</span>, <span class="bits">x⁴ + x³ + x² + x + 1</span></td><td>3</td></tr>
+      <tr><td>5</td><td><span class="bits">x⁵ + x² + 1</span>, <span class="bits">x⁵ + x³ + 1</span>, …</td><td>6</td></tr>
+      <tr><td>8</td><td><span class="bits">x⁸ + x⁴ + x³ + x + 1</span> (AES), <span class="bits">x⁸ + x⁴ + x³ + x² + 1</span> (QR), …</td><td>30</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <figcaption>Irreducibles pequeños sobre \(\mathbb{F}_2\). Los de grado 8 son los que
+  aparecen en AES y en los códigos QR.</figcaption>
+  </figure>
+
+  <p>No hay que salir a buscarlos a ciegas: el conteo de Gauss dice cuántos hay de cada
+  grado, y en particular garantiza que siempre hay alguno.</p>
+
+  <p>$$N_q(n)=\frac{1}{n}\sum_{d\mid n}\mu(d)\,q^{\,n/d}\approx \frac{q^n}{n}>0
+  \quad\text{para todo }n\ge 1$$</p>
+
+  <p>Verificado sobre \(\mathbb{F}_2\): \(N_2(4)=\tfrac14(2^4-2^2)=3\) y
+  \(N_2(8)=\tfrac18(2^8-2^4)=30\), que son exactamente las cuentas de la tabla.</p>
+
+  <hr class="sigma" style="--i:2">
+
+  <h2><span class="n">3</span><span class="t">La construcción, en tres pasos</span></h2>
+
+  <p>Si \(P(x)\in\mathbb{F}_p[x]\) es irreducible de grado \(n\), entonces
+  \(\mathbb{F}_p[x]/(P(x))\) es un campo con exactamente \(p^n\) elementos. Los elementos
+  del cociente son los residuos módulo \(P\), es decir los polinomios de grado \(&lt;n\):
+  hay \(p\) opciones para cada uno de los \(n\) coeficientes. Que todo elemento no nulo
+  sea invertible se sigue de Euclides extendido: si \(\gr(f)&lt;n\) y \(f\ne 0\), la
+  irreducibilidad de \(P\) fuerza \(\mathrm{mcd}(f,P)=1\), así que existen \(u,v\) con
+  \(uf+vP=1\), y entonces \(u=f^{-1}\).</p>
+
+  <div class="nota">
+    <span class="titulo">La receta</span>
+    <p><strong>1.</strong> Escoger \(P(x)\) irreducible de grado \(n\) sobre
+    \(\mathbb{F}_2\). <strong>2.</strong> Declarar \(\alpha\) raíz de \(P\), lo que da la
+    regla de reducción: si \(P(x)=x^4+x+1\), entonces \(\alpha^4=\alpha+1\).
+    <strong>3.</strong> Los \(2^n\) elementos son todas las combinaciones
+    \(a_{n-1}\alpha^{n-1}+\dots+a_1\alpha+a_0\) con \(a_i\in\{0,1\}\); se suman coeficiente
+    a coeficiente y se multiplican como polinomios, reduciendo con la regla del paso 2.</p>
+  </div>
+
+  <h3>Cadenas de bits</h3>
+
+  <p>Aquí está la razón por la que los campos de característica 2 son los favoritos de la
+  computación: <strong>un elemento de \(\mathbb{F}_{2^n}\) es exactamente una palabra de
+  \(n\) bits.</strong> La cadena \(a_{n-1}a_{n-2}\cdots a_1a_0\) representa al polinomio
+  \(a_{n-1}x^{n-1}+\dots+a_1x+a_0\), con el bit más a la izquierda como coeficiente de la
+  potencia más alta. Así <span class="bits">1011</span> es \(x^3+x+1\) y
+  <span class="bits">0110</span> es \(x^2+x\).</p>
+
+  <p>Con esa notación las operaciones se vuelven instrucciones de máquina: la suma es
+  <span class="bits">a XOR b</span>, multiplicar por \(x\) es desplazar un lugar a la
+  izquierda, y reducir es hacer XOR con \(P\) cuando el bit \(n\) queda encendido. El
+  negativo no cuesta nada, porque en característica 2 se cumple \(a+a=0\) y por tanto
+  \(-a=a\): sumar y restar son la misma operación. Ésa es también la razón de que el
+  cifrado XOR de Vernam sea involutivo —\(c=m\oplus k\) y \(m=c\oplus k\) con la misma
+  rutina.</p>
+
+  <hr class="sigma" style="--i:3">
+
+  <h2><span class="n">4</span><span class="t">Primitivo no es lo mismo que irreducible</span></h2>
+
+  <p>El grupo multiplicativo \(\mathbb{F}_q^{*}=\mathbb{F}_q-\{0\}\) es cíclico de orden
+  \(q-1\). Un generador \(\alpha\) se llama <strong>elemento primitivo</strong>, y hay
+  exactamente \(\varphi(q-1)\) de ellos. Un polinomio irreducible de grado \(n\) es
+  <strong>primitivo</strong> cuando su raíz genera todo \(\mathbb{F}_{2^n}^{*}\), esto es,
+  cuando \(\mathrm{ord}(\alpha)=2^n-1\); el número de primitivos de grado \(n\) sobre
+  \(\mathbb{F}_2\) es \(\varphi(2^n-1)/n\).</p>
+
+  <p>La distinción importa en la práctica y es fácil de pasar por alto. Todo primitivo es
+  irreducible, pero no al revés. El ejemplo mínimo es \(x^4+x^3+x^2+x+1\): es irreducible
+  sobre \(\mathbb{F}_2\), pero su raíz cumple \(\gamma^5=1\), así que sólo genera 5 de los
+  15 elementos no nulos. La razón profunda es que
+  \(x^4+x^3+x^2+x+1=\frac{x^5-1}{x-1}\), de modo que sus raíces son raíces quintas de la
+  unidad y \(5\mid 15\).</p>
+
+  <div class="nota">
+    <span class="titulo">El caso de AES</span>
+    <p>El polinomio de AES, \(x^8+x^4+x^3+x+1\), también es irreducible pero no primitivo:
+    allí \(\mathrm{ord}(\texttt{0x02})=51\), no 255. Por eso las implementaciones que
+    quieren tablas logarítmicas sobre \(\mathbb{F}_{256}\) usan
+    <code>0x03</code> como generador, no <code>0x02</code>.</p>
+  </div>
+
+  <p>Cuando \(\alpha\) sí es primitivo, todo elemento no nulo se escribe como
+  \(\alpha^k\), y ese exponente \(k\) es el <strong>logaritmo discreto</strong> de
+  \(\alpha^k\) en base \(\alpha\). Con una tabla de logaritmos, multiplicar cuesta una suma
+  de enteros:</p>
+
+  <p>$$a\cdot b=\alpha^{\,\log a+\log b \bmod (q-1)},\qquad
+  a^{-1}=\alpha^{\,(q-1)-\log a}$$</p>
+
+  <hr class="sigma" style="--i:4">
+
+  <h2><span class="n">5</span><span class="t">La galería: F<sub>4</sub>, F<sub>8</sub>, F<sub>16</sub></span></h2>
+
+  <h3>F<sub>4</sub>, y por qué no es Z<sub>4</sub></h3>
+
+  <p>El único irreducible de grado 2 es \(P(x)=x^2+x+1\), así que con \(\alpha^2=\alpha+1\)
+  se generan las potencias \(\alpha^0=1\), \(\alpha^1=\alpha\), \(\alpha^2=\alpha+1\) y
+  \(\alpha^3=1\). El ciclo se cierra en 3 = 4 − 1, luego el polinomio es primitivo, y
+  \(\mathbb{F}_4=\{00,01,10,11\}\).</p>
+
+  <p>La comparación con \(\mathbb{Z}_4\) vale la pena porque son dos estructuras distintas
+  con el mismo número de elementos. En \(\mathbb{Z}_4\) se tiene \(2\cdot 2=0\): el 2 es
+  divisor de cero y no hay campo. En \(\mathbb{F}_4\) todo elemento no nulo es invertible
+  —de hecho \(\alpha^{-1}=1+\alpha\)— y todo elemento cumple \(a+a=0\), mientras que en
+  \(\mathbb{Z}_4\) el 1 tiene orden aditivo 4.</p>
+
+  <h3>F<sub>8</sub></h3>
+
+  <p>Hay dos irreducibles de grado 3, \(x^3+x+1\) y \(x^3+x^2+1\), cada uno recíproco del
+  otro. Tomando el primero, con \(\alpha^3=\alpha+1\), las potencias recorren los 7
+  elementos no nulos antes de volver a 1, así que también es primitivo. Escribiendo cada
+  elemento por su valor entero en binario, la tabla de logaritmos e inversos queda:</p>
+
+  <figure class="tabla">
+  <div class="tabla-env">
+  <table class="campo">
+    <thead>
+      <tr><th>a</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>log<sub>α</sub> a</td><td>0</td><td>1</td><td>3</td><td>2</td><td>6</td><td>4</td><td>5</td></tr>
+      <tr><td>a⁻¹</td><td>1</td><td>5</td><td>6</td><td>7</td><td>2</td><td>3</td><td>4</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <figcaption>\(\mathbb{F}_8=\mathbb{F}_2[x]/(x^3+x+1)\). La suma no necesita tabla: es
+  XOR. El inverso cumple \(a^{-1}=\alpha^{\,7-\log a}\).</figcaption>
+  </figure>
+
+  <p>Un producto como \(3\cdot 5\) se puede hacer de dos maneras. En polinomios:
+  \((\alpha+1)(\alpha^2+1)=\alpha^3+\alpha^2+\alpha+1\), y reduciendo con
+  \(\alpha^3=\alpha+1\) queda \(\alpha^2=\) <span class="bits">100</span> \(=4\). Con
+  logaritmos es más rápido: \(\log 3=3\), \(\log 5=6\), \(3+6=9\equiv 2 \pmod 7\), y
+  \(\alpha^2=4\).</p>
+
+  <h3>F<sub>16</sub>, con el irreducible estándar</h3>
+
+  <p>De los tres irreducibles de grado 4, exactamente dos son primitivos, porque
+  \(\varphi(15)/4=2\). Con \(P(x)=x^4+x+1\) y \(\alpha^4=\alpha+1\) se recorren los 15
+  elementos no nulos y cada uno cabe en un nibble:</p>
+
+  <figure class="tabla">
+  <div class="tabla-env">
+  <table class="campo potencias">
+    <thead>
+      <tr><th>k</th><th>α<sup>k</sup></th><th>bits</th><th>hex</th><th>inverso</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0</td><td>1</td><td>0001</td><td>1</td><td>1</td></tr>
+      <tr><td>1</td><td>α</td><td>0010</td><td>2</td><td>9</td></tr>
+      <tr><td>2</td><td>α²</td><td>0100</td><td>4</td><td>D</td></tr>
+      <tr><td>3</td><td>α³</td><td>1000</td><td>8</td><td>F</td></tr>
+      <tr><td>4</td><td>α + 1</td><td>0011</td><td>3</td><td>E</td></tr>
+      <tr><td>5</td><td>α² + α</td><td>0110</td><td>6</td><td>7</td></tr>
+      <tr><td>6</td><td>α³ + α²</td><td>1100</td><td>C</td><td>A</td></tr>
+      <tr><td>7</td><td>α³ + α + 1</td><td>1011</td><td>B</td><td>5</td></tr>
+      <tr><td>8</td><td>α² + 1</td><td>0101</td><td>5</td><td>B</td></tr>
+      <tr><td>9</td><td>α³ + α</td><td>1010</td><td>A</td><td>C</td></tr>
+      <tr><td>10</td><td>α² + α + 1</td><td>0111</td><td>7</td><td>6</td></tr>
+      <tr><td>11</td><td>α³ + α² + α</td><td>1110</td><td>E</td><td>3</td></tr>
+      <tr><td>12</td><td>α³ + α² + α + 1</td><td>1111</td><td>F</td><td>8</td></tr>
+      <tr><td>13</td><td>α³ + α² + 1</td><td>1101</td><td>D</td><td>4</td></tr>
+      <tr><td>14</td><td>α³ + 1</td><td>1001</td><td>9</td><td>2</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <figcaption>Potencias de \(\alpha\) en \(\mathbb{F}_{16}=\mathbb{F}_2[x]/(x^4+x+1)\),
+  con su logaritmo discreto y su inverso en hexadecimal. Junto con
+  <span class="bits">0000</span> son los 16 elementos del campo. En \(k=15\) el ciclo
+  se cierra y vuelve a <span class="bits">0001</span>: el polinomio es primitivo.</figcaption>
+  </figure>
+
+  <p>Conviene hacer un renglón a mano para ver la mecánica. Para \(\alpha^7\):</p>
+
+  <p>$$\alpha^7=\alpha\cdot\alpha^6=\alpha(\alpha^3+\alpha^2)=\alpha^4+\alpha^3
+  \;\overset{\alpha^4=\alpha+1}{=}\;(\alpha+1)+\alpha^3=\alpha^3+\alpha+1$$</p>
+
+  <p>En bits es la misma cuenta con desplazamiento y XOR: <span class="bits">1100</span>
+  desplazado da <span class="bits">11000</span>, el bit 4 está encendido, así que se hace
+  XOR con \(P=\) <span class="bits">10011</span>, y
+  <span class="bits">11000 ⊕ 10011 = 01011</span> = <span class="bits">1011</span>.
+  Idéntico resultado.</p>
+
+  <h3>Subcampos</h3>
+
+  <p>\(\mathbb{F}_{p^m}\subseteq\mathbb{F}_{p^n}\) si y sólo si \(m\mid n\), y para cada
+  divisor hay exactamente un subcampo, el de los \(a\) con \(a^{p^m}=a\). Dentro de
+  \(\mathbb{F}_{16}\) vive entonces una copia de \(\mathbb{F}_4\) —porque \(2\mid 4\)—
+  formada por \(\{0000,0001,0110,0111\}=\{0,1,\alpha^5,\alpha^{10}\}\). Tiene sentido:
+  \(\alpha^5\) tiene orden \(15/\mathrm{mcd}(5,15)=3\). En cambio \(\mathbb{F}_8\) no está
+  dentro de \(\mathbb{F}_{16}\), porque \(3\nmid 4\).</p>
+
+  <p>Un último hecho que se usa mucho: el morfismo de Frobenius \(\phi(a)=a^p\) es un
+  automorfismo. En característica 2 eso significa que <strong>elevar al cuadrado es
+  lineal</strong>, \((a+b)^2=a^2+b^2\), y por eso el cuadrado se implementa intercalando
+  ceros entre los bits y reduciendo, sin una sola multiplicación.</p>
+
+  <hr class="sigma" style="--i:5">
+
+  <h2><span class="n">6</span><span class="t">Aritmética efectiva</span></h2>
+
+  <p>Ésta es la sección operativa. Sea \(n=\gr(P)\), con \(P\) representado por un entero
+  de \(n+1\) bits: \(x^4+x+1\to\) <code>0x13</code> y \(x^8+x^4+x^3+x+1\to\)
+  <code>0x11B</code>.</p>
+
+  <p>La suma es una sola instrucción XOR. Multiplicar por \(x\) es la rutina
+  <code>xtime</code>: desplazar, y si se desborda el grado \(n\), reducir con \(P\). El
+  producto general se arma con el algoritmo del campesino ruso, que cuesta \(O(n)\) y no
+  necesita tablas:</p>
+
+  <figure class="codigo">
+  <pre><code>/* Producto en GF(2^n). MOD es P(x) sin el bit x^n.
+   F_16 con x^4+x+1:         N = 4, MOD = 0x3
+   AES  con x^8+x^4+x^3+x+1: N = 8, MOD = 0x1B */
+unsigned mul(unsigned a, unsigned b) {
+    unsigned r = 0;
+    while (b) {
+        if (b &amp; 1) r ^= a;        /* acumula el bit */
+        b &gt;&gt;= 1;
+        if (a &amp; (1u &lt;&lt; (N - 1)))  /* va a desbordar */
+            a = ((a &lt;&lt; 1) ^ MOD) &amp; ((1u &lt;&lt; N) - 1);
+        else
+            a &lt;&lt;= 1;
+    }
+    return r;
+}</code></pre>
+  <figcaption>Multiplicación en \(\mathbb{F}_{2^n}\) en tiempo \(O(n)\) y sin tablas.
+  Fragmento de los apuntes del Dr. José de Jesús Ángel Ángel.</figcaption>
+  </figure>
+
+  <div class="nota">
+    <span class="titulo">Nota de seguridad</span>
+    <p>El <code>if (b &amp; 1)</code> produce un salto que depende del dato. En un contexto
+    criptográfico eso abre un canal lateral de temporización. Las implementaciones reales
+    usan versiones de tiempo constante con máscaras aritméticas
+    —<code>m = -(b &amp; 1); r ^= a &amp; m;</code>— o directamente la instrucción de hardware
+    <code>PCLMULQDQ</code>.</p>
+  </div>
+
+  <p>Si el polinomio es primitivo hay una opción todavía mejor. Se precalculan dos arreglos
+  de tamaño \(q\) y el producto pasa a costar \(O(1)\):</p>
+
+  <figure class="codigo">
+  <pre><code>N, POLY = 4, 0b10011          # x^4 + x + 1
+q = 1 &lt;&lt; N
+exp, log, x = [0] * (2 * q), [0] * q, 1
+for i in range(q - 1):
+    exp[i] = x
+    log[x] = i
+    x &lt;&lt;= 1
+    if x &amp; q: x ^= POLY       # reducción
+for i in range(q - 1, 2 * (q - 1)):
+    exp[i] = exp[i - (q - 1)]  # duplica, evita el módulo
+
+def prod(a, b):
+    if a == 0 or b == 0: return 0
+    return exp[log[a] + log[b]]
+
+def inv(a): return exp[(q - 1) - log[a]]</code></pre>
+  <figcaption>Tablas log/antilog y aritmética completa de \(\mathbb{F}_{16}\). Con
+  \(n=8\) las tablas ocupan menos de 1 KB, así que toda la aritmética de
+  \(\mathbb{F}_{256}\) cabe en caché: es la técnica clásica de las bibliotecas de
+  Reed–Solomon y de RAID-6.</figcaption>
+  </figure>
+
+  <p>Para el inverso multiplicativo hay tres caminos, y conviene saber cuál usar. Euclides
+  extendido sobre polinomios cuesta \(O(n^2)\) y siempre funciona. El pequeño teorema de
+  Fermat da \(a^{-1}=a^{\,q-2}\) por exponenciación binaria, o sea \(O(\log q)\) productos
+  —en \(\mathbb{F}_{16}\), \(a^{-1}=a^{14}\)—. Y con tabla logarítmica es
+  \(a^{-1}=\alpha^{\,(q-1)-\log a}\), en \(O(1)\).</p>
+
+  <hr class="sigma" style="--i:6">
+
+  <h2><span class="n">7</span><span class="t">Dónde aparece todo esto</span></h2>
+
+  <p><strong>AES</strong> opera sobre bytes vistos como elementos de
+  \(\mathbb{F}_{256}=\mathbb{F}_2[x]/(x^8+x^4+x^3+x+1)\). Su caja-S es la composición del
+  inverso multiplicativo \(a\mapsto a^{-1}\) —con \(0\mapsto 0\)— y una transformación
+  afín; el inverso es la parte no lineal, y es no lineal precisamente porque el grupo
+  multiplicativo del campo no es el aditivo. Un valor verificable:
+  \(\texttt{0x53}^{-1}=\texttt{0xCA}\). <code>MixColumns</code> multiplica cada columna
+  por una matriz circulante sobre el mismo campo, elegida para maximizar el número de
+  bytes activos (propiedad MDS): es álgebra lineal sobre un campo finito, punto por
+  punto.</p>
+
+  <p><strong>GCM</strong>, el modo autenticado que usa TLS 1.3, calcula su autenticador
+  como una evaluación polinomial en \(\mathbb{F}_{2^{128}}\), con cada bloque de 128 bits
+  como un elemento del campo. La seguridad descansa en que un polinomio de grado \(m\)
+  tiene a lo más \(m\) raíces, lo que acota la probabilidad de falsificación por
+  \(m/2^{128}\).</p>
+
+  <p><strong>Reed–Solomon</strong> codifica \(k\) símbolos evaluando un polinomio de grado
+  \(&lt;k\) en \(n\) puntos distintos del campo. Como dos polinomios distintos de grado
+  \(&lt;k\) coinciden en a lo más \(k-1\) puntos, la distancia mínima es \(d=n-k+1\) y se
+  corrigen \(\lfloor (n-k)/2\rfloor\) errores. De ahí que un código QR siga leyéndose con
+  hasta el 30 % del área dañada, y que RAID-6 reconstruya dos discos perdidos resolviendo
+  un sistema \(2\times 2\) sobre \(\mathbb{F}_{256}\).</p>
+
+  <p>Un <strong>LFSR</strong> de \(n\) celdas cuya realimentación corresponde a un
+  polinomio primitivo recorre los \(2^n-1\) estados no nulos antes de repetirse. Aquí la
+  distinción de la sección 4 se vuelve medible: con \(x^4+x+1\) el registro recorre los 15
+  estados —cada uno es exactamente una potencia \(\alpha^k\) de la tabla—, mientras que
+  con \(x^4+x^3+x^2+x+1\), irreducible pero no primitivo, el periodo se desploma a 5.</p>
+
+  <p>La lista sigue: <strong>compartición de secretos de Shamir</strong>, cuya prueba de
+  seguridad perfecta es la misma que la de Vernam; <strong>Diffie–Hellman</strong>, cuya
+  dificultad es el logaritmo discreto que aquí resolvimos con una tabla de 15 entradas y
+  que en \(\mathbb{F}_{2^{2048}}\) es intratable; curvas elípticas binarias;
+  <strong>McEliece</strong> post-cuántico con códigos de Goppa sobre
+  \(\mathbb{F}_{2^{13}}\); y el <strong>CRC</strong> de Ethernet, ZIP y PNG, que no es más
+  que el residuo de una división en \(\mathbb{F}_2[x]\).</p>
+
+  <div class="nota">
+    <span class="titulo">El puente con el resto del curso</span>
+    <p>Todo lo que sabemos de álgebra lineal —independencia, base, rango, determinante,
+    \(Ax=b\), eliminación gaussiana— vale palabra por palabra sobre \(\mathbb{F}_q\),
+    porque las demostraciones sólo usan los axiomas de campo. Lo que cambia es lo métrico:
+    no hay orden, no hay producto interno positivo definido, y un vector no nulo puede ser
+    ortogonal a sí mismo —sobre \(\mathbb{F}_2\), \(v=(1,1)\) cumple \(v\cdot v=0\)—. Los
+    códigos lineales son justamente subespacios de \(\mathbb{F}_q^n\), y su matriz
+    generadora y su matriz de paridad son la imagen y el núcleo de siempre.</p>
+  </div>
+
+  <hr class="sigma" style="--i:7">
+
+  <section class="recursos">
+    <h2><span class="n">material</span><span class="t">Recursos del tema</span></h2>
+
+    <ul class="adjuntos">
+      <li>
+        <a href="../assets/pdf/campos-finitos.pdf">
+          <span>
+            <span class="archivo">campos-finitos.pdf</span>
+            <span class="que">Tema 1 completo: construcción, galería F2/F4/F8/F16 con
+            todas las tablas, aritmética efectiva, aplicaciones, 12 ejercicios y
+            referencias.</span>
+          </span>
+          <span class="ext">17 páginas</span>
+          <span class="peso">209 KB</span>
+        </a>
+      </li>
+    </ul>
+
+    <p class="atribucion">Material del Dr. José de Jesús Ángel Ángel, Facultad de
+    Ingeniería, Universidad Anáhuac México.</p>
+  </section>
+
+</main>
+
+<nav class="nav-temas" aria-label="Navegación entre temas">
+  <div class="nav-temas-int">
+    <a href="../index.html">
+      <span class="dir">Índice de la materia</span>
+      <span class="cual">Álgebra Lineal Avanzada</span>
+    </a>
+    <a class="sig" href="02-cuatro-subespacios.html">
+      <span class="dir">Tema siguiente</span>
+      <span class="cual">02 Los cuatro subespacios fundamentales</span>
+    </a>
+  </div>
+</nav>
+
+<footer class="pie">
+  <div class="pie-int">
+    <p>Apuntes de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería.</p>
+    <p>Material original del Dr. José de Jesús Ángel Ángel.</p>
+  </div>
+</footer>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],macros:{'\\gr':'\\operatorname{gr}'},throwOnError:false})"></script>
+
+<script>
+/* Único script del sitio: cierra el temario con Escape o al pulsar fuera. */
+(function () {
+  var menu = document.querySelector('.menu');
+  if (!menu) return;
+  document.addEventListener('click', function (e) {
+    if (menu.open && !menu.contains(e.target)) menu.open = false;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

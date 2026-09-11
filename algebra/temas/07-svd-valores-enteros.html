@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SVD con valores singulares enteros — Álgebra Lineal Avanzada</title>
+<meta name="description" content="Cuatro recetas para construir matrices cuya SVD sale exacta a mano, y el catálogo de ejemplos 2 × 2, 2 × 3, 2 × 4, 2 × 5 y 3 × 5 que producen.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+<link rel="stylesheet" href="../css/algebra.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<!-- barra:inicio -->
+<header class="barra">
+  <div class="barra-int">
+    <a href="../../index.html">Apuntes</a>
+    <span class="sep">/</span>
+    <a href="../index.html">Álgebra Lineal Avanzada</a>
+    <span class="sep">/</span>
+    <span class="aqui">07 SVD con valores singulares enteros</span>
+    <details class="menu">
+      <summary>Temario 07/09</summary>
+      <div class="menu-panel">
+        <ol class="menu-lista">
+        <li><a href="01-campos-finitos.html"><span class="mn">01</span><span class="mt">Campos finitos</span></a></li>
+        <li><a href="02-cuatro-subespacios.html"><span class="mn">02</span><span class="mt">Los cuatro subespacios fundamentales</span></a></li>
+        <li><a href="03-valores-vectores-propios.html"><span class="mn">03</span><span class="mt">Valores y vectores propios</span></a></li>
+        <li><a href="04-qr-gram-schmidt.html"><span class="mn">04</span><span class="mt">Descomposición QR y Gram–Schmidt</span></a></li>
+        <li><a href="05-cholesky.html"><span class="mn">05</span><span class="mt">Descomposición de Cholesky</span></a></li>
+        <li><a href="06-svd-metodo-general.html"><span class="mn">06</span><span class="mt">SVD — teoría y método general</span></a></li>
+        <li><a href="07-svd-valores-enteros.html" aria-current="page"><span class="mn">07</span><span class="mt">SVD con valores singulares enteros</span></a></li>
+        <li><a href="08-pseudoinversa.html"><span class="mn">08</span><span class="mt">Pseudoinversa de Moore–Penrose</span></a></li>
+        <li><a href="09-aplicaciones-svd.html"><span class="mn">09</span><span class="mt">Aplicaciones de la SVD y compresión de imágenes</span></a></li>
+        </ol>
+      </div>
+    </details>
+  </div>
+</header>
+<!-- barra:fin -->
+
+<main class="hoja">
+
+  <header class="cabecera" id="contenido">
+    <p class="indice">07</p>
+    <div class="texto">
+      <h1>SVD con valores singulares enteros</h1>
+      <p class="entradilla">El método general produce irracionales. Estas cuatro recetas fabrican matrices enteras cuya descomposición se puede hacer entera, para practicar el procedimiento sin pelear con radicales.</p>
+    </div>
+  </header>
+
+  <h2><span class="n">1</span><span class="t">El método, con AAᵀ en lugar de AᵀA</span></h2>
+
+
+  <p>Para matrices anchas conviene invertir la elección del paso 1. Si \(A\in\mathbb{R}^{p\times n}\)
+  con \(p\le n\), la matriz \(A^{T}A\) es \(n\times n\) y singular, mientras que
+  \(AA^{T}\) es apenas \(p\times p\) y sus \(p\) valores propios son exactamente los que
+  interesan. El guion queda:</p>
+
+  <div class="nota">
+    <span class="titulo">Los siete pasos</span>
+    <p><strong>1.</strong> Formar \(M=AA^{T}\), de \(p\times p\); sus entradas son los productos
+    punto de los <em>renglones</em> de \(A\). <strong>2.</strong> Resolver
+    \(\det(M-\lambda I)=0\) y ordenar. <strong>3.</strong> \(\sigma_i=\sqrt{\lambda_i}\);
+    armar \(\Sigma\in\mathbb{R}^{p\times n}\). <strong>4.</strong> Para cada \(\lambda_i\),
+    resolver \((M-\lambda_i I)u=0\) y normalizar; eso da \(U\), ortogonal \(p\times p\).
+    <strong>5.</strong> Para \(i\le r\), \(v_i=\tfrac{1}{\sigma_i}A^{T}u_i\); salen
+    ortonormales solos. <strong>6.</strong> Completar \(V\) con una base ortonormal de
+    \(\ker A\). <strong>7.</strong> Verificar \(Av_i=\sigma_iu_i\) para \(i\le r\) y
+    \(Av_i=0\) para \(i&gt;r\); como control global,
+    \(\lVert A\rVert_F^{2}=\operatorname{tr}(AA^{T})=\sum\sigma_i^{2}\).</p>
+  </div>
+
+  <p>Nótese que ahora \(U\) sale del sistema homogéneo y \(V\) de la fórmula, al revés que en el
+  tema anterior. Es el mismo método con los papeles intercambiados.</p>
+
+  <hr class="sigma" style="--i:1">
+
+  <h2><span class="n">2</span><span class="t">La condición para que los σ sean enteros</span></h2>
+
+
+  <p>Sea \(A\in\mathbb{R}^{2\times n}\) con renglones \(r_1,r_2\). Entonces</p>
+
+  <p>$$AA^{T}=\begin{pmatrix}\lVert r_1\rVert^{2}&amp;r_1\cdot r_2\\
+  r_1\cdot r_2&amp;\lVert r_2\rVert^{2}\end{pmatrix}
+  =\begin{pmatrix}a&amp;b\\b&amp;c\end{pmatrix},\qquad
+  \lambda^{2}-(a+c)\lambda+(ac-b^{2})=0$$</p>
+
+  <p>Pedir que \(\sigma_1,\sigma_2\) sean enteros equivale a pedir dos condiciones sobre enteros:</p>
+
+  <p>$$a+c=\sigma_1^{2}+\sigma_2^{2},\qquad ac-b^{2}=\sigma_1^{2}\sigma_2^{2}$$</p>
+
+  <p>Fabricar ejemplos es, entonces, buscar vectores enteros con normas y producto punto
+  prefijados. De ahí salen las cuatro recetas.</p>
+
+  <hr class="sigma" style="--i:2">
+
+  <h2><span class="n">3</span><span class="t">Las cuatro recetas</span></h2>
+
+
+  <p><strong>Receta A — renglones ortogonales.</strong> Se eligen \(r_1,r_2\in\mathbb{Z}^{n}\)
+  con \(r_1\cdot r_2=0\), \(\lVert r_1\rVert^{2}=\sigma_1^{2}\) y
+  \(\lVert r_2\rVert^{2}=\sigma_2^{2}\). Entonces \(AA^{T}\) ya es diagonal y \(U=I\) —o una
+  permutación, si el renglón de mayor norma es el segundo—. Ventaja: aritmética mínima, y
+  \(\sigma_i\) es simplemente la norma del renglón \(i\). Desventaja: el paso de
+  diagonalización queda trivial.</p>
+
+  <p><strong>Receta B — renglones equinormales.</strong> Se eligen \(\sigma_1&gt;\sigma_2\) de la
+  misma paridad y se definen</p>
+
+  <p>$$s=\frac{\sigma_1^{2}+\sigma_2^{2}}{2},\qquad b=\frac{\sigma_1^{2}-\sigma_2^{2}}{2}$$</p>
+
+  <p>buscando \(r_1,r_2\) con \(\lVert r_1\rVert^{2}=\lVert r_2\rVert^{2}=s\) y
+  \(r_1\cdot r_2=b\). Entonces \(\lambda=s\pm b\) y, lo mejor, los vectores propios son
+  siempre los mismos:</p>
+
+  <p>$$u_1=\tfrac{1}{\sqrt2}(1,1)^{T},\qquad u_2=\tfrac{1}{\sqrt2}(1,-1)^{T}$$</p>
+
+  <p>independientemente de \(\sigma_1\) y \(\sigma_2\). La diagonalización es un ejercicio
+  genuino pero con vectores propios limpios. Pares útiles: \((5,3)\Rightarrow(s,b)=(17,8)\);
+  \((6,4)\Rightarrow(26,10)\); \((7,1)\Rightarrow(25,24)\); \((8,6)\Rightarrow(50,14)\).</p>
+
+  <p><strong>Receta C — una terna pitagórica.</strong> Las dos anteriores son los extremos de una
+  misma familia. Escribiendo \(a=s+t\) y \(c=s-t\), la condición
+  \(ac-b^{2}=\sigma_1^{2}\sigma_2^{2}\) se reduce a</p>
+
+  <p>$$b^{2}+t^{2}=s^{2}$$</p>
+
+  <p>es decir, \((b,t,s)\) debe ser una terna pitagórica de hipotenusa \(s\). El caso \(t=0\) es
+  la receta B; el caso \(b=0\) es la A. Cualquier otra terna produce renglones de normas distintas
+  y no ortogonales, y por tanto una \(U\) que no es la de siempre: es la receta que conviene usar
+  en un examen para que el estudiante no memorice \(u_1=\tfrac{1}{\sqrt2}(1,1)\).</p>
+
+  <p><strong>Receta D — dilatación por una matriz ortogonal entera.</strong> Sirve para cualquier
+  tamaño y es la única práctica cuando \(p=3\). Sea \(A_0\) entera con renglones mutuamente
+  ortogonales de normas enteras, y sea \(K\) entera con \(KK^{T}=k^{2}I\). Entonces
+  \(A=KA_0\) cumple</p>
+
+  <p>$$\sigma_i=k\,d_i,\qquad U=\tfrac{1}{k}K,\qquad v_i=\frac{(A_0)_{i*}}{d_i}$$</p>
+
+  <p>Lo notable es que \(V\) se lee directamente de \(A_0\) —sus primeras \(p\) columnas son
+  los renglones normalizados de \(A_0\)— sin resolver ningún sistema. Matrices \(K\) útiles:
+  \(\begin{pmatrix}3&amp;-4\\4&amp;3\end{pmatrix}\) con \(k=5\), y
+  \(\begin{pmatrix}1&amp;2&amp;2\\2&amp;1&amp;-2\\2&amp;-2&amp;1\end{pmatrix}\) con
+  \(k=3\).</p>
+
+  <hr class="sigma" style="--i:3">
+
+  <h2><span class="n">4</span><span class="t">El catálogo 2 × 2</span></h2>
+
+
+  <p>El caso cuadrado más pequeño es donde conviene empezar, porque el paso 6 desaparece: si
+  \(A\) es invertible, \(\ker A=\{0\}\) y \(V\) queda completa desde el paso 5.</p>
+
+  <figure class="tabla">
+  <div class="tabla-env">
+  <table class="campo">
+    <thead>
+      <tr><th>#</th><th>A</th><th>AAᵀ</th><th>(σ₁, σ₂)</th><th>qué ilustra</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0</td><td>[3 0; 0 2]</td><td>diag(9, 4)</td><td>3, 2</td><td>U = V = I: la SVD ya está hecha</td></tr>
+      <tr><td>1</td><td>[2 0; 0 3]</td><td>diag(4, 9)</td><td>3, 2</td><td>el orden decreciente obliga a permutar</td></tr>
+      <tr><td>2</td><td>[0 3; 2 0]</td><td>diag(9, 4)</td><td>3, 2</td><td>U = I pero V es una permutación</td></tr>
+      <tr><td>3</td><td>[3 −4; 4 3]</td><td>25 I</td><td>5, 5</td><td>múltiplo de una rotación; la SVD no es única</td></tr>
+      <tr><td>4</td><td>[6 −8; 4 3]</td><td>diag(100, 25)</td><td>10, 5</td><td>renglones ortogonales (receta A)</td></tr>
+      <tr><td>5</td><td>[3 1; 1 3]</td><td>[10 6; 6 10]</td><td>4, 2</td><td>simétrica definida positiva: U = V</td></tr>
+      <tr><td>6</td><td>[4 1; 1 4]</td><td>[17 8; 8 17]</td><td>5, 3</td><td>receta B; los siete pasos completos</td></tr>
+      <tr><td>7</td><td>[4 4; 4 −2]</td><td>[32 8; 8 20]</td><td>6, 4</td><td>simétrica indefinida: v₂ = −u₂</td></tr>
+      <tr><td>8</td><td>[2 1; 4 2]</td><td>[5 10; 10 20]</td><td>5, 0</td><td>rango 1: aparece el núcleo</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <figcaption>Nueve matrices 2 × 2 con valores singulares enteros. Los casos 0 a 2 muestran que
+  \(\Sigma\) no respeta el orden en que estaban las entradas de \(A\), y que \(U\) y \(V\)
+  se reordenan con ella.</figcaption>
+  </figure>
+
+  <hr class="sigma" style="--i:4">
+
+  <h2><span class="n">5</span><span class="t">Los siete pasos, completos</span></h2>
+
+
+  <p>Sea \(A=\begin{pmatrix}4&amp;1\\1&amp;4\end{pmatrix}\), el caso 6 de la tabla.</p>
+
+  <p><strong>Paso 1.</strong> \(AA^{T}=\begin{pmatrix}17&amp;8\\8&amp;17\end{pmatrix}\).</p>
+
+  <p><strong>Paso 2.</strong> \((17-\lambda)^{2}-64=0\), de donde \(\lambda_1=25\) y
+  \(\lambda_2=9\).</p>
+
+  <p><strong>Paso 3.</strong> \(\sigma_1=5\), \(\sigma_2=3\),
+  \(\Sigma=\operatorname{diag}(5,3)\); el rango es 2.</p>
+
+  <p><strong>Paso 4.</strong> De \(-8x_1+8x_2=0\) y \(8x_1+8x_2=0\):</p>
+
+  <p>$$u_1=\tfrac{1}{\sqrt2}\begin{pmatrix}1\\1\end{pmatrix},\qquad
+  u_2=\tfrac{1}{\sqrt2}\begin{pmatrix}1\\-1\end{pmatrix}$$</p>
+
+  <p><strong>Paso 5.</strong>
+  \(v_1=\tfrac{1}{5}A^{T}u_1=\tfrac{1}{5\sqrt2}(5,5)^{T}=u_1\) y
+  \(v_2=\tfrac{1}{3}A^{T}u_2=\tfrac{1}{3\sqrt2}(3,-3)^{T}=u_2\).</p>
+
+  <p><strong>Paso 6.</strong> No hay nada que completar: \(A\) es invertible.</p>
+
+  <p><strong>Paso 7.</strong> \(Av_1=\tfrac{1}{\sqrt2}(5,5)^{T}=5u_1\) y
+  \(Av_2=\tfrac{1}{\sqrt2}(3,-3)^{T}=3u_2\). Además
+  \(\lVert A\rVert_F^{2}=16+1+1+16=34=25+9\). ✓</p>
+
+  <p>Como \(A\) es simétrica y definida positiva, sale \(U=V\) y los valores singulares coinciden
+  con los valores propios \(4\pm 1=5,3\). Es el punto donde conviene enunciar el principio
+  general: para \(A\) simétrica, \(\sigma_i=|\lambda_i(A)|\).</p>
+
+  <hr class="sigma" style="--i:5">
+
+  <h2><span class="n">6</span><span class="t">Los dos casos que enseñan algo</span></h2>
+
+
+  <p><strong>El número 7 y el signo.</strong> \(A=\begin{pmatrix}4&amp;4\\4&amp;-2\end{pmatrix}\)
+  es simétrica pero indefinida: sus valores propios son \(6\) y \(-4\), mientras que sus valores
+  singulares son \(6\) y \(4\). Del paso 4 sale
+  \(u_2=\tfrac{1}{\sqrt5}(1,-2)^{T}\), y el paso 5 da</p>
+
+  <p>$$v_2=\tfrac14A^{T}u_2=\tfrac14(-4)u_2=-u_2$$</p>
+
+  <p>El valor propio negativo se absorbe como un cambio de signo entre \(u_2\) y \(v_2\). La SVD
+  no admite entradas negativas en \(\Sigma\), y ése es el precio.</p>
+
+  <p><strong>El número 8 y el núcleo.</strong>
+  \(A=\begin{pmatrix}2&amp;1\\4&amp;2\end{pmatrix}\) tiene rango 1, con \(\lambda=25,0\) y
+  \(\sigma=(5,0)\). El paso 5 sólo produce \(v_1=\tfrac{1}{\sqrt5}(2,1)^{T}\); el segundo
+  vector no puede obtenerse dividiendo entre \(\sigma_2=0\), y hay que ir al paso 6: de
+  \(2x_1+x_2=0\) resulta \(v_2=\tfrac{1}{\sqrt5}(1,-2)^{T}\). Es el ejemplo mínimo que
+  justifica la existencia del paso 6, y el que anticipa lo que ocurre en todos los casos
+  rectangulares.</p>
+
+  <hr class="sigma" style="--i:6">
+
+  <h2><span class="n">7</span><span class="t">Rectangulares</span></h2>
+
+
+  <p>Al pasar a \(2\times n\) el procedimiento no cambia en absoluto; lo único que crece es el
+  paso 6, porque hay que completar \(V\) con \(n-2\) vectores del núcleo mediante
+  Gram–Schmidt.</p>
+
+  <figure class="tabla">
+  <div class="tabla-env">
+  <table class="campo">
+    <thead>
+      <tr><th>forma</th><th>A</th><th>AAᵀ</th><th>σ</th><th>receta</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>2 × 3</td><td>[3 4 0; 0 0 3]</td><td>diag(25, 9)</td><td>5, 3</td><td>A</td></tr>
+      <tr><td>2 × 3</td><td>[1 2 2; 4 −4 2]</td><td>diag(9, 36)</td><td>6, 3</td><td>A</td></tr>
+      <tr><td>2 × 3</td><td>[1 2 2; 2 −2 1]</td><td>diag(9, 9)</td><td>3, 3</td><td>A</td></tr>
+      <tr><td>2 × 3</td><td>[6 3 2; 2 −6 3]</td><td>diag(49, 49)</td><td>7, 7</td><td>A</td></tr>
+      <tr><td>2 × 5</td><td>[0 4 4 4 4; 1 −2 2 0 0]</td><td>diag(64, 9)</td><td>8, 3</td><td>A</td></tr>
+      <tr><td>2 × 5</td><td>[0 2 5 4 2; 2 −2 0 2 −2]</td><td>diag(49, 16)</td><td>7, 4</td><td>A</td></tr>
+      <tr><td>2 × 5</td><td>[0 2 4 4 2; 1 −3 5 2 1]</td><td>[40 24; 24 40]</td><td>8, 4</td><td>B</td></tr>
+      <tr><td>2 × 5</td><td>[1 4 4 4 2; 2 4 2 −2 5]</td><td>[53 28; 28 53]</td><td>9, 5</td><td>B</td></tr>
+      <tr><td>2 × 5</td><td>[1 4 4 4 4; 4 4 4 −1 −4]</td><td>[65 16; 16 65]</td><td>9, 7</td><td>B</td></tr>
+      <tr><td>3 × 5</td><td>[2 2 2 2 0; 2 0 0 −2 1; 1 −1 −1 1 0]</td><td>diag(16, 9, 4)</td><td>4, 3, 2</td><td>A</td></tr>
+      <tr><td>3 × 5</td><td>[2 3 2 2 2; 2 0 2 −2 −2; 1 0 −1 1 −1]</td><td>diag(25, 16, 4)</td><td>5, 4, 2</td><td>A</td></tr>
+      <tr><td>3 × 5</td><td>[0 3 3 3 3; 0 2 2 −2 −2; 1 −2 2 0 0]</td><td>diag(36, 16, 9)</td><td>6, 4, 3</td><td>A</td></tr>
+      <tr><td>3 × 5</td><td>[2 4 4 3 2; 0 0 −4 4 2; 0 −2 1 0 2]</td><td>diag(49, 36, 9)</td><td>7, 6, 3</td><td>A</td></tr>
+      <tr><td>3 × 5</td><td>[2 4 1 2 2; −2 2 2 4 4; 1 −4 2 4 4]</td><td>densa</td><td>9, 6, 3</td><td>D</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <figcaption>Catálogo rectangular. Cuando los renglones son ortogonales, \(U=I\) y todo el
+  trabajo está en construir \(V\). El último caso es el único con \(AA^{T}\) densa, y es el que
+  exige la receta D.</figcaption>
+  </figure>
+
+  <p>Con cinco columnas el teorema de los cuatro cuadrados de Lagrange garantiza que todo entero es
+  norma cuadrada de algún vector entero, de modo que las recetas A y B tienen solución para
+  cualquier par \((\sigma_1,\sigma_2)\). Con tres columnas hay obstrucciones —el teorema de
+  Legendre— y por eso el salto de \(p=2\) a \(p=3\) es el que obliga a la receta D: pedir tres
+  cuadrados perfectos simultáneos no se consigue al azar.</p>
+
+  <hr class="sigma" style="--i:7">
+
+  <h2><span class="n">8</span><span class="t">Notas para estudiar</span></h2>
+
+
+  <p><strong>El orden manda.</strong> Siempre \(\sigma_1\ge\sigma_2\). Si al aplicar la receta A
+  el renglón de mayor norma es el segundo, \(U\) resulta una permutación. Conviene practicar con
+  un caso así para no memorizar \(U=I\).</p>
+
+  <p><strong>La unicidad falla con valores repetidos.</strong> Los ejemplos con
+  \(\sigma_1=\sigma_2\) —el número 3 del catálogo 2 × 2, y varios de los rectangulares— muestran
+  que \(U\) y \(V\) no son únicas: el espacio propio es de dimensión 2 y sirve cualquier base
+  ortonormal.</p>
+
+  <p><strong>Dos identidades para verificar sin calculadora.</strong></p>
+
+  <p>$$\sigma_1^{2}+\sigma_2^{2}=\lVert A\rVert_F^{2}=\operatorname{tr}(AA^{T}),\qquad
+  \sigma_1^{2}\sigma_2^{2}=\det(AA^{T})$$</p>
+
+  <p><strong>Completar V es lo único que se encarece.</strong> Con \(n=3\) basta el producto
+  cruz; con \(n=4\) o más hay que resolver el sistema homogéneo y ortogonalizar. Ése es el único
+  punto donde un caso 2 × 4 cuesta más que un 2 × 3.</p>
+
+  <hr class="sigma" style="--i:8">
+
+  <section class="recursos">
+    <h2><span class="n">material</span><span class="t">Recursos del tema</span></h2>
+
+    <ul class="adjuntos">
+      <li>
+        <a href="../assets/pdf/svd-valores-singulares-enteros.pdf">
+          <span>
+            <span class="archivo">svd-valores-singulares-enteros.pdf</span>
+            <span class="que">El método en siete pasos, las cuatro recetas de construcción, los catálogos 2 × 2, 2 × 3, 2 × 4, 2 × 5 y 3 × 5, cuatro ejemplos resueltos completos y notas de uso en clase.</span>
+          </span>
+          <span class="ext">15 páginas</span>
+          <span class="peso">96 KB</span>
+        </a>
+      </li>
+    </ul>
+
+    <p class="atribucion">Material del Dr. José de Jesús Ángel Ángel, Facultad de Ingeniería, Universidad Anáhuac México.</p>
+  </section>
+
+</main>
+
+<nav class="nav-temas" aria-label="Navegación entre temas">
+  <div class="nav-temas-int">
+    <a href="06-svd-metodo-general.html">
+      <span class="dir">Tema anterior</span>
+      <span class="cual">06 SVD — teoría y método general</span>
+    </a>
+    <a class="sig" href="08-pseudoinversa.html">
+      <span class="dir">Tema siguiente</span>
+      <span class="cual">08 Pseudoinversa de Moore–Penrose</span>
+    </a>
+  </div>
+</nav>
+
+<footer class="pie">
+  <div class="pie-int">
+    <p>Apuntes de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería.</p>
+    <p>Material original del Dr. José de Jesús Ángel Ángel.</p>
+  </div>
+</footer>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],macros:{'\\gr':'\\operatorname{gr}'},throwOnError:false})"></script>
+
+<script>
+/* Único script del sitio: cierra el temario con Escape o al pulsar fuera. */
+(function () {
+  var menu = document.querySelector('.menu');
+  if (!menu) return;
+  document.addEventListener('click', function (e) {
+    if (menu.open && !menu.contains(e.target)) menu.open = false;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

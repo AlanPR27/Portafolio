@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Los cuatro subespacios fundamentales — Álgebra Lineal Avanzada</title>
+<meta name="description" content="Espacio fila, espacio columna, núcleo y núcleo izquierdo: dimensiones, ortogonalidad, y la lectura de C(A) y N(A transpuesta) como señal y residuo de un modelo.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+<link rel="stylesheet" href="../css/algebra.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<!-- barra:inicio -->
+<header class="barra">
+  <div class="barra-int">
+    <a href="../../index.html">Apuntes</a>
+    <span class="sep">/</span>
+    <a href="../index.html">Álgebra Lineal Avanzada</a>
+    <span class="sep">/</span>
+    <span class="aqui">02 Los cuatro subespacios fundamentales</span>
+    <details class="menu">
+      <summary>Temario 02/09</summary>
+      <div class="menu-panel">
+        <ol class="menu-lista">
+        <li><a href="01-campos-finitos.html"><span class="mn">01</span><span class="mt">Campos finitos</span></a></li>
+        <li><a href="02-cuatro-subespacios.html" aria-current="page"><span class="mn">02</span><span class="mt">Los cuatro subespacios fundamentales</span></a></li>
+        <li><a href="03-valores-vectores-propios.html"><span class="mn">03</span><span class="mt">Valores y vectores propios</span></a></li>
+        <li><a href="04-qr-gram-schmidt.html"><span class="mn">04</span><span class="mt">Descomposición QR y Gram–Schmidt</span></a></li>
+        <li><a href="05-cholesky.html"><span class="mn">05</span><span class="mt">Descomposición de Cholesky</span></a></li>
+        <li><a href="06-svd-metodo-general.html"><span class="mn">06</span><span class="mt">SVD — teoría y método general</span></a></li>
+        <li><a href="07-svd-valores-enteros.html"><span class="mn">07</span><span class="mt">SVD con valores singulares enteros</span></a></li>
+        <li><a href="08-pseudoinversa.html"><span class="mn">08</span><span class="mt">Pseudoinversa de Moore–Penrose</span></a></li>
+        <li><a href="09-aplicaciones-svd.html"><span class="mn">09</span><span class="mt">Aplicaciones de la SVD y compresión de imágenes</span></a></li>
+        </ol>
+      </div>
+    </details>
+  </div>
+</header>
+<!-- barra:fin -->
+
+<main class="hoja">
+
+  <header class="cabecera" id="contenido">
+    <p class="indice">02</p>
+    <div class="texto">
+      <h1>Los cuatro subespacios fundamentales</h1>
+      <p class="entradilla">Cuatro subespacios, dos relaciones de dimensión y dos de ortogonalidad. Con eso queda descrito todo lo que una matriz hace y todo lo que no puede hacer.</p>
+    </div>
+  </header>
+
+  <h2><span class="n">1</span><span class="t">Una matriz es una transformación</span></h2>
+
+
+  <p>Una matriz \(A\in\mathbb{R}^{m\times n}\) define una transformación lineal
+  \(T:\mathbb{R}^n\to\mathbb{R}^m\) con \(T(x)=Ax\). Conviene fijar los tamaños desde el
+  principio porque casi todos los errores de este tema son errores de dimensión: \(x\) vive en
+  el dominio \(\mathbb{R}^n\), y \(Ax\) vive en el codominio \(\mathbb{R}^m\).</p>
+
+  <p>Por ejemplo, \(A=\begin{pmatrix}1&amp;2&amp;3\\6&amp;3&amp;7\end{pmatrix}\) manda
+  \(\mathbb{R}^3\) a \(\mathbb{R}^2\): toma tres números y devuelve dos. Al hacerlo, algo se
+  pierde por fuerza, y ese «algo» es uno de los cuatro subespacios.</p>
+
+  <p>En el caso cuadrado la situación se resume con el determinante. Si \(|A|\ne 0\), el sistema
+  \(Ax=0\) tiene solución única, el cero. Si \(|A|=0\), la eliminación de Gauss deja al menos una
+  variable libre y el conjunto solución es todo un subespacio: una recta, un plano o más. Ese
+  conjunto es el <strong>núcleo</strong>, y su dimensión es la <strong>nulidad</strong>.</p>
+
+  <hr class="sigma" style="--i:1">
+
+  <h2><span class="n">2</span><span class="t">Los cuatro subespacios</span></h2>
+
+
+  <p>Para \(A\in\mathbb{R}^{m\times n}\) se definen cuatro subespacios. Dos viven en el dominio
+  y dos en el codominio, y esa separación es la mitad del contenido del tema.</p>
+
+  <div class="nota">
+    <span class="titulo">Las cuatro definiciones</span>
+    <p>El <strong>espacio columna</strong> \(\mathcal{C}(A)\) es lo generado por las columnas de
+    \(A\); vive en \(\mathbb{R}^m\) y es exactamente el conjunto de los \(b\) para los que
+    \(Ax=b\) tiene solución. El <strong>espacio fila</strong> \(\mathcal{C}(A^{T})\) es lo
+    generado por las columnas de \(A^{T}\), o sea las filas de \(A\); vive en \(\mathbb{R}^n\).
+    El <strong>núcleo</strong> \(\mathcal{N}(A)\) son las soluciones de \(Ax=0\), en
+    \(\mathbb{R}^n\). El <strong>núcleo izquierdo</strong> \(\mathcal{N}(A^{T})\) son las
+    soluciones de \(A^{T}y=0\), en \(\mathbb{R}^m\).</p>
+  </div>
+
+  <p>El nombre «núcleo izquierdo» viene de que \(A^{T}y=0\) equivale a \(y^{T}A=0\): son los
+  vectores que anulan a \(A\) multiplicando por la izquierda.</p>
+
+  <hr class="sigma" style="--i:2">
+
+  <h2><span class="n">3</span><span class="t">El teorema</span></h2>
+
+
+  <p>Sea \(r=\operatorname{rango}(A)\). El teorema fundamental del álgebra lineal dice dos cosas
+  sobre dimensiones y dos sobre ángulos.</p>
+
+  <p>$$\dim\mathcal{C}(A^{T})=\dim\mathcal{C}(A)=r,\qquad
+  \dim\mathcal{N}(A)=n-r,\qquad \dim\mathcal{N}(A^{T})=m-r$$</p>
+
+  <p>$$\mathcal{C}(A^{T})\perp\mathcal{N}(A)\ \text{ en }\mathbb{R}^n,\qquad
+  \mathcal{C}(A)\perp\mathcal{N}(A^{T})\ \text{ en }\mathbb{R}^m$$</p>
+
+  <p>La primera línea contiene el hecho que más sorprende la primera vez: el espacio fila y el
+  espacio columna tienen <em>la misma</em> dimensión, aunque vivan en espacios distintos y estén
+  generados por objetos distintos. El rango es único y no depende de si se mira por filas o por
+  columnas.</p>
+
+  <p>La segunda línea es lo que convierte al teorema en una herramienta. Como los dos subespacios
+  de cada espacio son ortogonales y sus dimensiones suman la del total, cada espacio se parte en
+  dos mitades complementarias:</p>
+
+  <p>$$\mathbb{R}^{n}=\mathcal{C}(A^{T})\oplus\mathcal{N}(A),\qquad
+  \mathbb{R}^{m}=\mathcal{C}(A)\oplus\mathcal{N}(A^{T})$$</p>
+
+  <p>Todo vector del dominio se escribe de forma única como una parte que \(A\) transforma y una
+  parte que \(A\) aniquila. Todo vector del codominio se escribe como una parte alcanzable y una
+  parte inalcanzable.</p>
+
+  <hr class="sigma" style="--i:3">
+
+  <h2><span class="n">4</span><span class="t">Un ejemplo completo</span></h2>
+
+
+  <p>Tomemos la matriz del cuaderno, \(3\times 4\):</p>
+
+  <p>$$A=\begin{pmatrix}1&amp;2&amp;5&amp;-2\\2&amp;-1&amp;3&amp;2\\2&amp;4&amp;10&amp;-4\end{pmatrix}$$</p>
+
+  <p>El tercer renglón es el doble del primero, así que hay dependencia a la vista. La forma
+  escalonada reducida lo confirma:</p>
+
+  <p>$$\operatorname{rref}(A)=\begin{pmatrix}1&amp;0&amp;\tfrac{11}{5}&amp;\tfrac{2}{5}\\
+  0&amp;1&amp;\tfrac{7}{5}&amp;-\tfrac{6}{5}\\ 0&amp;0&amp;0&amp;0\end{pmatrix}$$</p>
+
+  <p>Hay dos pivotes, luego \(r=2\). Con \(m=3\) y \(n=4\), el teorema predice las cuatro
+  dimensiones sin más cuentas: el espacio fila y el espacio columna miden 2, el núcleo mide
+  \(4-2=2\) y el núcleo izquierdo mide \(3-2=1\).</p>
+
+  <p>Las columnas 3 y 4 no tienen pivote, así que \(x_3\) y \(x_4\) son libres y dan las dos
+  direcciones del núcleo. Despejando desde la rref y quitando denominadores:</p>
+
+  <p>$$\mathcal{N}(A)=\operatorname{gen}\{(-11,-7,5,0),\;(-2,6,0,5)\}$$</p>
+
+  <p>Para el núcleo izquierdo hay que resolver \(A^{T}y=0\), y como el renglón 3 es dos veces el
+  renglón 1, la combinación que los cancela salta a la vista:</p>
+
+  <p>$$\mathcal{N}(A^{T})=\operatorname{gen}\{(-2,0,1)\},\qquad
+  -2\,(1,2,5,-2)+(2,4,10,-4)=(0,0,0,0)$$</p>
+
+  <div class="nota">
+    <span class="titulo">La comprobación que cierra el tema</span>
+    <p>Multiplique cualquier renglón de \(A\) por cualquiera de los dos vectores del núcleo: da
+    cero. Eso <em>es</em> \(\mathcal{C}(A^{T})\perp\mathcal{N}(A)\), y no es una coincidencia
+    sino la definición de \(Ax=0\) leída al revés: decir que \(Ax=0\) es decir que \(x\) es
+    ortogonal a todos los renglones de \(A\). Ésa es la demostración entera de la mitad
+    «ortogonalidad» del teorema.</p>
+  </div>
+
+  <hr class="sigma" style="--i:4">
+
+  <h2><span class="n">5</span><span class="t">El caso simétrico</span></h2>
+
+
+  <p>Cuando \(A\) es real y simétrica, \(A=A^{T}\), los cuatro subespacios se reducen a dos y
+  todo se vuelve más nítido. El teorema espectral garantiza que existe una matriz diagonal \(D\) y
+  una ortogonal \(Q\) —con \(Q^{T}Q=I\), de modo que \(Q^{-1}=Q^{T}\)— tales que
+  \(A=QDQ^{T}\). Todos los valores propios son reales, y los vectores propios de valores propios
+  distintos son automáticamente ortogonales.</p>
+
+  <p>Si además \(A\) es singular, entonces el 0 es valor propio, la nulidad es exactamente su
+  multiplicidad, y la descomposición del teorema se convierte en</p>
+
+  <p>$$\mathbb{R}^{n}=\mathcal{N}(A)\oplus\operatorname{Im}(A),\qquad
+  \mathcal{N}(A)\perp\operatorname{Im}(A)$$</p>
+
+  <p>Si \(A\) es simétrica y no singular, el 0 no es valor propio, \(A^{-1}\) también es
+  simétrica, y sus valores propios son los \(1/\lambda_i\).</p>
+
+  <hr class="sigma" style="--i:5">
+
+  <h2><span class="n">6</span><span class="t">Señal y residuo</span></h2>
+
+
+  <p>La lectura que hace útil el teorema fuera del álgebra es ésta: en
+  \(\mathbb{R}^{m}=\mathcal{C}(A)\oplus\mathcal{N}(A^{T})\), la primera mitad es
+  <strong>lo que el modelo explica</strong> y la segunda es <strong>lo que le sobra</strong>.</p>
+
+  <p>Si \(A\) reúne años de escolaridad y de experiencia y \(b\) son los salarios observados, la
+  proyección de \(b\) sobre \(\mathcal{C}(A)\) es la parte del salario que educación y
+  experiencia sí explican, y el residuo en \(\mathcal{N}(A^{T})\) es el talento, las conexiones,
+  la suerte y la variabilidad individual. Si \(A\) tiene temperatura, número de autos, humedad y
+  NO₂ y \(b\) son mediciones de PM2.5, el residuo recoge incendios, tormentas y errores de
+  medición.</p>
+
+  <p>El patrón se repite en todos los ejemplos del curso, y siempre con la misma moraleja. Con
+  características de una imagen, el residuo son los detalles perdidos, el ruido y las texturas
+  finas. Con tiempo y gravedad frente a la altura medida de un objeto que cae, el residuo es la
+  resistencia del aire. Con historial médico frente a riesgo de hipertensión, es la genética y el
+  estilo de vida. Con datos de sensores, son las anomalías: una falla del sensor, un incendio
+  local, ruido de medición.</p>
+
+  <div class="nota">
+    <span class="titulo">Siempre habrá residuo</span>
+    <p>No importa cuántas variables se agreguen: mientras \(r&lt;m\), el subespacio
+    \(\mathcal{N}(A^{T})\) tiene dimensión \(m-r&gt;0\) y existe una parte de \(b\)
+    estructuralmente inexplicable por ese modelo. No es un defecto del ajuste; es geometría. La
+    única manera de eliminar el residuo es que \(b\) caiga dentro de \(\mathcal{C}(A)\), es
+    decir, que el sistema tenga solución exacta.</p>
+  </div>
+
+  <hr class="sigma" style="--i:6">
+
+  <section class="recursos">
+    <h2><span class="n">material</span><span class="t">Recursos del tema</span></h2>
+
+    <ul class="adjuntos">
+      <li>
+        <a href="../assets/pdf/cuatro-subespacios-fundamentales.pdf">
+          <span>
+            <span class="archivo">cuatro-subespacios-fundamentales.pdf</span>
+            <span class="que">Presentación del tema: las cuatro definiciones, el teorema y ocho ejemplos de interpretación como señal más residuo.</span>
+          </span>
+          <span class="ext">15 páginas</span>
+          <span class="peso">81 KB</span>
+        </a>
+      </li>
+      <li>
+        <a href="../assets/wolfram/cuatro-subespacios.nb">
+          <span>
+            <span class="archivo">cuatro-subespacios.nb</span>
+            <span class="que">La matriz 3 × 4 del ejemplo: forma escalonada, rango, bases de los dos núcleos y la comprobación numérica de las dos ortogonalidades.</span>
+          </span>
+          <span class="ext">cuaderno</span>
+          <span class="peso">17 KB</span>
+        </a>
+      </li>
+    </ul>
+
+    <p class="atribucion">Material del Dr. José de Jesús Ángel Ángel, Facultad de Ingeniería, Universidad Anáhuac México.</p>
+  </section>
+
+</main>
+
+<nav class="nav-temas" aria-label="Navegación entre temas">
+  <div class="nav-temas-int">
+    <a href="01-campos-finitos.html">
+      <span class="dir">Tema anterior</span>
+      <span class="cual">01 Campos finitos</span>
+    </a>
+    <a class="sig" href="03-valores-vectores-propios.html">
+      <span class="dir">Tema siguiente</span>
+      <span class="cual">03 Valores y vectores propios</span>
+    </a>
+  </div>
+</nav>
+
+<footer class="pie">
+  <div class="pie-int">
+    <p>Apuntes de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería.</p>
+    <p>Material original del Dr. José de Jesús Ángel Ángel.</p>
+  </div>
+</footer>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],macros:{'\\gr':'\\operatorname{gr}'},throwOnError:false})"></script>
+
+<script>
+/* Único script del sitio: cierra el temario con Escape o al pulsar fuera. */
+(function () {
+  var menu = document.querySelector('.menu');
+  if (!menu) return;
+  document.addEventListener('click', function (e) {
+    if (menu.open && !menu.contains(e.target)) menu.open = false;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blockchain artesanal: el pipeline completo — Blockchain</title>
+<meta name="description" content="Los cuatro ingredientes mínimos de una cadena de bloques: función hash, firma digital, encadenamiento y sellado de tiempo, con la estructura del bloque, el pseudocódigo de construcción y verificación, y la prueba de trabajo.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../css/blockchain.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<!-- barra:inicio -->
+<header class="barra">
+  <div class="barra-int">
+    <a href="../../index.html">Apuntes</a>
+    <span class="sep">/</span>
+    <a href="../index.html">Blockchain</a>
+    <span class="sep">/</span>
+    <span class="aqui">06 Blockchain artesanal: el pipeline completo</span>
+    <div class="barra-der">
+      <nav class="cadena-nav" aria-label="Cadena de temas">
+        <a class="bloque" href="01-funciones-hash.html" title="Funciones hash: fundamentos">01</a><span class="union"></span><a class="bloque" href="02-hash-aplicaciones.html" title="Aplicaciones de las funciones hash">02</a><span class="union"></span><a class="bloque" href="03-tarea-hash-artesanal.html" title="Tarea 1: construir y atacar una función hash">03</a><span class="union"></span><a class="bloque" href="04-sellado-de-tiempo.html" title="Sellado de tiempo">04</a><span class="union"></span><a class="bloque" href="05-esquemas-de-compromiso.html" title="Esquemas de compromiso">05</a><span class="union"></span><a class="bloque" href="06-blockchain-artesanal.html" aria-current="page" title="Blockchain artesanal: el pipeline completo">06</a><span class="union"></span><a class="bloque" href="07-blockchain-aplicaciones.html" title="Aplicaciones de blockchain por sector">07</a>
+      </nav>
+      <details class="menu">
+        <summary>temario</summary>
+        <div class="menu-panel">
+          <ol class="menu-lista">
+        <li><a href="01-funciones-hash.html"><span class="mn">01</span><span class="mt">Funciones hash: fundamentos</span></a></li>
+        <li><a href="02-hash-aplicaciones.html"><span class="mn">02</span><span class="mt">Aplicaciones de las funciones hash</span></a></li>
+        <li><a href="03-tarea-hash-artesanal.html"><span class="mn">03</span><span class="mt">Tarea 1: construir y atacar una función hash</span></a></li>
+        <li><a href="04-sellado-de-tiempo.html"><span class="mn">04</span><span class="mt">Sellado de tiempo</span></a></li>
+        <li><a href="05-esquemas-de-compromiso.html"><span class="mn">05</span><span class="mt">Esquemas de compromiso</span></a></li>
+        <li><a href="06-blockchain-artesanal.html" aria-current="page"><span class="mn">06</span><span class="mt">Blockchain artesanal: el pipeline completo</span></a></li>
+        <li><a href="07-blockchain-aplicaciones.html"><span class="mn">07</span><span class="mt">Aplicaciones de blockchain por sector</span></a></li>
+          </ol>
+        </div>
+      </details>
+    </div>
+  </div>
+</header>
+<!-- barra:fin -->
+
+<main class="hoja">
+
+  <header class="cabecera" id="contenido">
+    <p class="indice">06</p>
+    <div class="texto">
+      <h1>Blockchain artesanal: el pipeline completo</h1>
+      <p class="entradilla">Con cuatro primitivas y cincuenta líneas se construye una cadena capaz de registrar «Bob envía 50 a Alice, firmado por Bob». Sin minería, sin consenso, sin red: el esqueleto criptográfico desnudo.</p>
+    </div>
+  </header>
+
+  <h2><span class="hash">477f2a</span><span class="t">Alcance</span></h2>
+
+
+  <p>Se construye, con los ingredientes mínimos, una cadena de bloques artesanal capaz de registrar
+  transacciones. Sólo cuatro primitivas: una función hash, una firma digital, un encadenamiento de
+  bloques y un sellado de tiempo.</p>
+
+  <p><strong>Sin minería, sin consenso distribuido, sin red P2P.</strong> El objetivo es entender el
+  esqueleto criptográfico, y saber exactamente qué parte del sistema aporta cada pieza. Lo que falta
+  se enumera al final, y no es poco.</p>
+
+  <h2><span class="hash">b0f211</span><span class="t">Las cuatro piezas</span></h2>
+
+
+  <p><strong>1. Función hash <span class="v">H</span>.</strong> Comprime cualquier dato a una huella
+  fija, por ejemplo 256 bits con SHA-256. Cualquier cambio mínimo en la entrada altera por completo
+  la salida: el efecto avalancha del tema 01. Aporta la <em>detección de alteraciones</em>.</p>
+
+  <p><strong>2. Firma digital.</strong> Un par de claves. Bob firma con su clave privada; cualquiera
+  verifica con la pública. Aporta <em>autoría</em> y <em>no repudio</em>: Bob no puede negar después
+  que hizo la transacción.</p>
+
+  <p><strong>3. Encadenamiento.</strong> Cada bloque incluye el hash del bloque anterior, formando
+  una lista enlazada criptográficamente. Aporta el <em>orden</em> y la <em>inmutabilidad</em>.</p>
+
+  <p><strong>4. Sellado de tiempo.</strong> Se agrega una marca de tiempo a cada bloque, fijando su
+  orden temporal de forma verificable. Es el tema 04.</p>
+
+  <h2><span class="hash">9b205b</span><span class="t">La estructura de un bloque</span></h2>
+
+
+  <figure class="codigo">
+  <pre><code>B_n = ( idx_n , t_n , tx_n , h_(n−1) , σ_n )
+
+h_n = H( idx_n ‖ t_n ‖ tx_n ‖ h_(n−1) )
+σ_n = Sign_skBob( h_n )</code></pre>
+  <figcaption>El hash del bloque se calcula sobre todo su contenido <em>incluido el hash del
+  anterior</em>, y la firma se hace sobre ese hash.</figcaption>
+  </figure>
+
+  <div class="tabla-env">
+  <table>
+    <thead><tr><th>campo</th><th>qué es</th></tr></thead>
+    <tbody>
+      <tr><td><span class="hex">idx_n</span></td><td>número de bloque</td></tr>
+      <tr><td><span class="hex">t_n</span></td><td>sello de tiempo</td></tr>
+      <tr><td><span class="hex">tx_n</span></td><td>la transacción, por ejemplo «Bob envía 50 a Alice»</td></tr>
+      <tr><td><span class="hex">h_(n−1)</span></td><td>hash del bloque anterior: el encadenamiento</td></tr>
+      <tr><td><span class="hex">σ_n</span></td><td>firma de Bob sobre el hash del bloque</td></tr>
+      <tr><td><span class="hex">h_n</span></td><td>hash propio, que será el <span class="v">h</span> anterior del siguiente</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>El bloque génesis no tiene anterior, así que por convención
+  <span class="hex">h₋₁ = 000…0</span>, una cadena fija de ceros.</p>
+
+  <h2><span class="hash">bca663</span><span class="t">Qué pasa si alguien altera un bloque</span></h2>
+
+
+  <p>Ésta es la propiedad que justifica toda la construcción. Supongamos que alguien modifica la
+  transacción del bloque 1, cambiando «50» por «500». Ocurren tres cosas en cascada:</p>
+
+  <ol>
+    <li><span class="v">h₁</span> cambia por completo, por el efecto avalancha.</li>
+    <li>La firma <span class="hex">σ₁</span> deja de verificar contra el nuevo
+    <span class="v">h₁</span>.</li>
+    <li>El hash heredado en el bloque 2 ya no coincide, y a partir de ahí se rompe todo lo
+    posterior.</li>
+  </ol>
+
+  <p><span class="roto">La cadena queda visiblemente rota.</span> No hay forma de alterar un bloque
+  enterrado sin rehacer todos los siguientes, y ésa es exactamente la propiedad que la
+  <strong>resistencia a segunda preimagen</strong> garantiza: nadie puede reemplazar el contenido de
+  un bloque conservando su hash.</p>
+
+  <p>El efecto avalancha es lo que hace la detección inmediata. Un cambio de un solo carácter
+  produce un digest sin ninguna relación aparente con el anterior: en un hash bien diseñado se
+  espera que cambie cerca de la mitad de los bits de salida, unos 128 de 256, sin importar qué
+  carácter se modifique.</p>
+
+  <h2><span class="hash">635669</span><span class="t">El pipeline en código</span></h2>
+
+
+  <figure class="codigo">
+  <pre><code>import hashlib, time
+
+def hash_bloque(idx, t, tx, hash_anterior):
+    contenido = f"{idx}{t}{tx}{hash_anterior}".encode()
+    return hashlib.sha256(contenido).hexdigest()
+
+def crear_bloque(idx, tx, hash_anterior, clave_privada_bob):
+    t = time.time()                                  # time stamping
+    h = hash_bloque(idx, t, tx, hash_anterior)       # hash + encadenamiento
+    firma = firmar(clave_privada_bob, h)             # firma digital
+    return {"idx": idx, "t": t, "tx": tx,
+            "hash_anterior": hash_anterior,
+            "hash": h, "firma": firma}
+
+genesis = crear_bloque(0, "GENESIS", "0" * 64, clave_bob)
+b1 = crear_bloque(1, "Bob envia 50 a Alice", genesis["hash"], clave_bob)</code></pre>
+  <figcaption>Construcción de un bloque. Las cuatro primitivas aparecen en cuatro líneas
+  consecutivas.</figcaption>
+  </figure>
+
+  <figure class="codigo">
+  <pre><code>def verificar_cadena(bloques, clave_publica_bob):
+    for i, b in enumerate(bloques):
+        h_esperado = hash_bloque(b["idx"], b["t"], b["tx"],
+                                 b["hash_anterior"])
+        assert h_esperado == b["hash"], "Hash alterado"
+        assert verificar_firma(clave_publica_bob,
+                               b["hash"], b["firma"]), "Firma invalida"
+        if i &gt; 0:
+            assert b["hash_anterior"] == bloques[i-1]["hash"], "Cadena rota"
+    return True</code></pre>
+  <figcaption>Verificación. Las tres asersiones comprueban, en orden, integridad del bloque,
+  autoría y continuidad del enlace.</figcaption>
+  </figure>
+
+  <p>Conviene leer el verificador con atención, porque dice exactamente qué garantiza la cadena: que
+  cada bloque no fue alterado, que lo firmó quien dice, y que el enlace al anterior es correcto.
+  <strong>Nada más.</strong> No dice que la transacción sea legítima, ni que Bob tuviera los 50, ni
+  que ésta sea la única cadena existente.</p>
+
+  <h2><span class="hash">f8ada4</span><span class="t">Prueba de trabajo</span></h2>
+
+
+  <p>El pipeline anterior deja una pregunta abierta: si cualquiera puede recalcular toda la cadena
+  en milisegundos, ¿qué impide reescribirla? La respuesta de Bitcoin es hacer que producir un
+  bloque válido <em>cueste</em>.</p>
+
+  <figure class="codigo">
+  <pre><code>encontrar nonce tal que   H(bloque ‖ nonce) &lt; objetivo</code></pre>
+  <figcaption>Minar es resolver una <strong>preimagen parcial</strong>: el único problema difícil de
+  este curso que se resuelve por fuerza bruta a propósito.</figcaption>
+  </figure>
+
+  <p>La dificultad se expresa como el número de ceros hexadecimales iniciales que debe tener el
+  hash. Cada cero adicional multiplica por 16 el trabajo esperado, y como la salida del hash es
+  indistinguible de aleatoria, no hay atajo: hay que probar nonces.</p>
+
+  <p>Aquí se combinan las dos propiedades. La <strong>preimagen parcial</strong> hace que minar
+  cueste; la <strong>segunda preimagen</strong> hace que alterar un bloque enterrado obligue a
+  reminar ése y todos los posteriores. Reescribir la historia pasa de ser gratis a costar la energía
+  acumulada de toda la cadena.</p>
+
+  <div class="nota">
+    <span class="titulo">Por qué SHA-256 y no otra</span>
+    <p>La elección no es neutra. Como se vio en el tema 01, SHA-256 es ideal para hardware dedicado,
+    y por eso el minado de Bitcoin se concentró en ASIC con cinco órdenes de magnitud de ventaja
+    sobre una CPU. Las funciones duras en memoria —Argon2, RandomX— existen precisamente para evitar
+    esa concentración, con las tres reservas honestas que allí se discuten.</p>
+  </div>
+
+  <h2><span class="hash">c6c2c2</span><span class="t">Qué le falta para ser una blockchain de verdad</span></h2>
+
+
+  <p>Este pipeline registra una sola transacción por bloque y confía en que Bob controla su propia
+  cadena. Para pasar a un sistema real harían falta tres cosas que no son criptográficas sino
+  distribuidas:</p>
+
+  <p><strong>Un mecanismo de consenso</strong> —prueba de trabajo o de participación— para que
+  múltiples nodos acuerden cuál es la cadena válida. <strong>Una red P2P</strong> para propagar
+  bloques entre ellos. Y <strong>una regla de resolución de conflictos</strong> —la cadena más larga
+  o más pesada— para cuando dos nodos generan bloques distintos al mismo tiempo.</p>
+
+  <p>Merece la pena subrayar dónde está la dificultad real. Las cuatro primitivas criptográficas de
+  este tema son las fáciles: están estandarizadas, auditadas y caben en cincuenta líneas. Lo difícil
+  —y donde fallan los proyectos, como se ve en el tema siguiente— es el consenso, la gobernanza y
+  el problema de meter datos del mundo físico en la cadena.</p>
+
+  <section class="recursos">
+    <h2><span class="hash">08c727</span><span class="t">Recursos del tema</span></h2>
+
+    <ul class="adjuntos">
+      <li>
+        <a href="../assets/pdf/blockchain-artesanal.pdf">
+          <span>
+            <span class="archivo">blockchain-artesanal.pdf</span>
+            <span class="que">El pipeline completo: las cuatro piezas, la estructura del bloque, el diagrama de encadenamiento, el efecto avalancha, el pseudocódigo de construcción y verificación y el cuadro resumen etapa por etapa.</span>
+          </span>
+          <span class="ext">4 páginas</span>
+          <span class="peso">66 KB</span>
+        </a>
+      </li>
+      <li>
+        <a href="../assets/pdf/laboratorio-funciones-hash.pdf">
+          <span>
+            <span class="archivo">laboratorio-funciones-hash.pdf</span>
+            <span class="que">El laboratorio completo del curso, fuente principal de la materia.</span>
+          </span>
+          <span class="ext">lab</span>
+          <span class="peso">3.2 MB</span>
+        </a>
+      </li>
+    </ul>
+
+    <p class="atribucion">Material del Dr. José de Jesús Ángel Ángel, Facultad de Ingeniería, Universidad Anáhuac México.</p>
+  </section>
+
+</main>
+
+<nav class="nav-temas" aria-label="Navegación entre temas">
+  <div class="nav-temas-int">
+    <a href="05-esquemas-de-compromiso.html">
+      <span class="dir">tema anterior</span>
+      <span class="cual">05 Esquemas de compromiso</span>
+    </a>
+    <a class="sig" href="07-blockchain-aplicaciones.html">
+      <span class="dir">tema siguiente</span>
+      <span class="cual">07 Aplicaciones de blockchain por sector</span>
+    </a>
+  </div>
+</nav>
+
+<footer class="pie">
+  <div class="pie-int">
+    <p>Apuntes de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería.</p>
+    <p>Material original del Dr. José de Jesús Ángel Ángel.</p>
+  </div>
+</footer>
+
+<script>
+/* Único script de la materia: cierra el temario con Escape o al pulsar fuera. */
+(function () {
+  var menu = document.querySelector('.menu');
+  if (!menu) return;
+  document.addEventListener('click', function (e) {
+    if (menu.open && !menu.contains(e.target)) menu.open = false;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

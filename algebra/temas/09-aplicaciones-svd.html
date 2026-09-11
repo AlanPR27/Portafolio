@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aplicaciones de la SVD y compresión de imágenes — Álgebra Lineal Avanzada</title>
+<meta name="description" content="Eckart–Young–Mirsky, noventa aplicaciones vigentes de la SVD por área, las advertencias de rigor, y el ejercicio propio de compresión de imágenes por truncamiento de rango.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+<link rel="stylesheet" href="../css/algebra.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<!-- barra:inicio -->
+<header class="barra">
+  <div class="barra-int">
+    <a href="../../index.html">Apuntes</a>
+    <span class="sep">/</span>
+    <a href="../index.html">Álgebra Lineal Avanzada</a>
+    <span class="sep">/</span>
+    <span class="aqui">09 Aplicaciones de la SVD y compresión de imágenes</span>
+    <details class="menu">
+      <summary>Temario 09/09</summary>
+      <div class="menu-panel">
+        <ol class="menu-lista">
+        <li><a href="01-campos-finitos.html"><span class="mn">01</span><span class="mt">Campos finitos</span></a></li>
+        <li><a href="02-cuatro-subespacios.html"><span class="mn">02</span><span class="mt">Los cuatro subespacios fundamentales</span></a></li>
+        <li><a href="03-valores-vectores-propios.html"><span class="mn">03</span><span class="mt">Valores y vectores propios</span></a></li>
+        <li><a href="04-qr-gram-schmidt.html"><span class="mn">04</span><span class="mt">Descomposición QR y Gram–Schmidt</span></a></li>
+        <li><a href="05-cholesky.html"><span class="mn">05</span><span class="mt">Descomposición de Cholesky</span></a></li>
+        <li><a href="06-svd-metodo-general.html"><span class="mn">06</span><span class="mt">SVD — teoría y método general</span></a></li>
+        <li><a href="07-svd-valores-enteros.html"><span class="mn">07</span><span class="mt">SVD con valores singulares enteros</span></a></li>
+        <li><a href="08-pseudoinversa.html"><span class="mn">08</span><span class="mt">Pseudoinversa de Moore–Penrose</span></a></li>
+        <li><a href="09-aplicaciones-svd.html" aria-current="page"><span class="mn">09</span><span class="mt">Aplicaciones de la SVD y compresión de imágenes</span></a></li>
+        </ol>
+      </div>
+    </details>
+  </div>
+</header>
+<!-- barra:fin -->
+
+<main class="hoja">
+
+  <header class="cabecera" id="contenido">
+    <p class="indice">09</p>
+    <div class="texto">
+      <h1>Aplicaciones de la SVD y compresión de imágenes</h1>
+      <p class="entradilla">Un solo teorema —la mejor aproximación de rango bajo— explica la presencia de la SVD en casi toda la ingeniería. Al final, el ejercicio que lo vuelve visible en una imagen.</p>
+    </div>
+  </header>
+
+  <h2><span class="n">1</span><span class="t">El teorema del que cuelga todo</span></h2>
+
+
+  <p>Sea \(A=\sum_{i=1}^{r}\sigma_iu_iv_i^{T}\) la expansión diádica del tema 06, y sea
+  \(A_k\) la suma truncada en el término \(k\). El teorema de Eckart–Young–Mirsky dice que
+  \(A_k\) es la <strong>mejor</strong> aproximación de rango \(k\) que existe, y lo es
+  simultáneamente en dos normas:</p>
+
+  <p>$$\min_{\operatorname{rango}(B)\le k}\lVert A-B\rVert_F=\lVert A-A_k\rVert_F
+  =\sqrt{\sum_{i&gt;k}\sigma_i^{2}},\qquad
+  \min_{\operatorname{rango}(B)\le k}\lVert A-B\rVert_2=\sigma_{k+1}$$</p>
+
+  <p>Ese único enunciado explica la presencia de la SVD en prácticamente todas las ramas de la
+  ingeniería. Lo que cambia de una aplicación a otra no es la matemática, sino el significado de la
+  matriz.</p>
+
+  <div class="nota">
+    <span class="titulo">Por qué aparece, en tres frases</span>
+    <p><strong>Para contar cuántas cosas hay:</strong> el rango numérico cuenta especies químicas,
+    fuentes de contaminación, modos estructurales o el orden de un sistema dinámico.
+    <strong>Para separar lo que importa de lo que estorba:</strong> los subespacios generados por
+    \(U\) y \(V\) dividen señal de ruido, tejido de sangre, flujo de <em>clutter</em>.
+    <strong>Para domar un problema inverso mal planteado:</strong> el truncamiento del espectro
+    impide que el ajuste persiga el ruido.</p>
+  </div>
+
+  <hr class="sigma" style="--i:1">
+
+  <h2><span class="n">2</span><span class="t">Un recorrido por áreas</span></h2>
+
+
+  <p>El catálogo del curso reúne alrededor de noventa aplicaciones vigentes en dieciséis áreas.
+  Marca con estrella aquellas en las que la SVD es constitutiva —si se retira, el método
+  desaparece— frente a aquellas en las que es una herramienta entre varias. Estos son los casos que
+  más vale la pena conocer.</p>
+
+  <p><strong>Inteligencia artificial.</strong> La adaptación de bajo rango de modelos de lenguaje
+  —LoRA y sus variantes espectrales— inicializa o restringe los adaptadores usando las componentes
+  principales de la matriz de pesos, y el espectro decide qué direcciones se congelan. La
+  compresión de la caché de claves y valores en inferencia ataca directamente el cuello de botella
+  de ancho de banda de memoria. El análisis semántico latente es el antecedente histórico de todo
+  esto, y el blanqueo de <em>embeddings</em> antes de indexarlos en una base vectorial es hoy paso
+  estándar.</p>
+
+  <p><strong>Álgebra lineal numérica.</strong> La pseudoinversa del tema anterior, la regularización
+  de problemas inversos por truncamiento espectral y Tikhonov, la determinación robusta del rango en
+  presencia de ruido de redondeo, y los mínimos cuadrados totales, para cuando el error afecta
+  también a la matriz de diseño y no sólo al vector de observaciones.</p>
+
+  <p><strong>Visión y geometría.</strong> El problema de Procrustes ortogonal —el algoritmo de
+  Kabsch— alinea nubes de puntos y se usa igual en registro de piezas que en superposición de
+  estructuras proteicas. Las matrices esencial y fundamental de la geometría epipolar salen del
+  vector singular mínimo.</p>
+
+  <p><strong>Comunicaciones.</strong> La precodificación MIMO usa la SVD de la matriz de canal para
+  diagonalizarlo en subcanales independientes, sobre los que se reparte potencia. Es parte operativa
+  de 5G.</p>
+
+  <p><strong>Redes y logística.</strong> La matriz de tráfico origen–destino por tiempo es
+  empíricamente de rango bajo, lo que permite medir la red con menos sondas; y el modelo «rango bajo
+  más disperso» separa el tráfico nominal de las anomalías.</p>
+
+  <hr class="sigma" style="--i:2">
+
+  <h2><span class="n">3</span><span class="t">Las advertencias</span></h2>
+
+
+  <p>El catálogo termina con siete notas de rigor, y son la parte más instructiva porque distinguen
+  lo publicado de lo desplegado.</p>
+
+  <p><strong>Marcas de agua.</strong> Existe una literatura enorme sobre insertar marcas en los
+  valores singulares de una imagen, pero buena parte de esos esquemas es vulnerable al
+  <em>ataque de ambigüedad</em>: como los vectores singulares llevan la información estructural, un
+  atacante puede reclamar autoría presentando sus propias \(U\) y \(V\). La aplicación es real;
+  la seguridad reclamada, con frecuencia no.</p>
+
+  <p><strong>Los valores singulares no reconocen rostros.</strong> Un resultado clásico muestra que
+  los \(\sigma_i\) por sí solos contienen poca información útil para el reconocimiento facial, y
+  que lo relevante está en las dos matrices ortogonales. Sirve como recordatorio de que
+  \(\Sigma\) registra magnitudes, mientras que \(U\) y \(V\) registran la geometría.</p>
+
+  <p><strong>Lo que se implementa rara vez es la SVD exacta.</strong> En sistemas de recomendación a
+  escala no se calcula la descomposición completa de la matriz usuario–artículo, que además está
+  mayoritariamente vacía: se optimiza con mínimos cuadrados alternados o descenso estocástico sobre
+  las entradas observadas. El objetivo sigue siendo la aproximación de rango bajo; el método, no.</p>
+
+  <p><strong>El costo importa.</strong> La SVD densa cuesta \(O(\min(m^{2}n,mn^{2}))\),
+  prohibitivo para las matrices del aprendizaje profundo. Las versiones truncada, aleatorizada e
+  incremental no son refinamientos académicos: son la condición de posibilidad de casi todo lo
+  anterior.</p>
+
+  <hr class="sigma" style="--i:3">
+
+  <h2><span class="n">4</span><span class="t">Compresión de imágenes: el ejercicio</span></h2>
+
+
+  <p>La aplicación que vuelve visible el teorema es la compresión. Una imagen en escala de grises
+  <em>es</em> una matriz: cada entrada, la intensidad de un pixel. Truncar su SVD en el término
+  \(k\) da la mejor imagen de rango \(k\) que existe.</p>
+
+  <div class="imagen-par">
+    <figure class="imagen">
+      <img class="pixeles" src="../assets/img/compresion-imagen-original.png"
+           alt="Pictogramas de dos figuras humanas, imagen original de 49 por 42 pixeles."
+           width="49" height="42">
+      <figcaption>La imagen de partida, ampliada. Son 49 × 42 pixeles en escala de grises, es decir
+      una matriz \(B\) de 42 × 49.</figcaption>
+    </figure>
+  </div>
+
+  <p>Cargada y convertida a matriz, esta imagen resulta tener <strong>rango 35</strong>, no 42: ya
+  venía con estructura redundante antes de comprimir nada. Su espectro cae a plomo —
+  \(\sigma_1\approx 37{,}9\) mientras que \(\sigma_2\approx 8{,}7\)— y eso es exactamente lo
+  que hace que el truncamiento funcione.</p>
+
+  <figure class="tabla">
+  <div class="tabla-env">
+  <table class="campo">
+    <thead>
+      <tr><th>k</th><th>energía retenida</th><th>error relativo</th><th>números guardados</th><th>frente a 2058</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>3</td><td>97.62 %</td><td>15.43 %</td><td>276</td><td>13 %</td></tr>
+      <tr><td>6</td><td>99.29 %</td><td>8.44 %</td><td>552</td><td>27 %</td></tr>
+      <tr><td>8</td><td>99.74 %</td><td>5.09 %</td><td>736</td><td>36 %</td></tr>
+      <tr><td>10</td><td>99.92 %</td><td>2.79 %</td><td>920</td><td>45 %</td></tr>
+      <tr><td>12</td><td>99.98 %</td><td>1.43 %</td><td>1104</td><td>54 %</td></tr>
+      <tr><td>14</td><td>99.99 %</td><td>0.84 %</td><td>1288</td><td>63 %</td></tr>
+      <tr><td>24</td><td>100.00 %</td><td>0.04 %</td><td>2208</td><td>107 %</td></tr>
+      <tr><td>34</td><td>100.00 %</td><td>0.00 %</td><td>3128</td><td>152 %</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <figcaption>Energía es \(\sum_{i\le k}\sigma_i^{2}\big/\sum_i\sigma_i^{2}\); el error
+  relativo es \(\lVert B-B_k\rVert_F/\lVert B\rVert_F\). Guardar \(B_k\) cuesta
+  \(k(m+n+1)=92k\) números, frente a los \(42\times 49=2058\) de la imagen completa.</figcaption>
+  </figure>
+
+  <div class="nota">
+    <span class="titulo">Dónde deja de comprimir</span>
+    <p>El punto de equilibrio está en \(k=2058/92\approx 22\). A partir de ahí el truncamiento
+    ocupa <em>más</em> espacio que la imagen original, y los valores \(k=24\), \(34\) y \(42\)
+    del cuaderno ya no comprimen nada: sirven para ver converger la reconstrucción, no para ahorrar.
+    En una imagen grande el argumento se invierte por completo, porque \(mn\) crece como el
+    producto mientras que \(k(m+n+1)\) crece como la suma. La compresión por SVD es una idea que
+    sólo paga a escala.</p>
+  </div>
+
+  <hr class="sigma" style="--i:4">
+
+  <h2><span class="n">5</span><span class="t">El código</span></h2>
+
+
+  <p>El cálculo en Wolfram es directo. Se importa la imagen, se convierte a escala de grises y se
+  extrae la matriz de intensidades:</p>
+
+  <figure class="codigo">
+  <pre><code>A = Import[SystemDialogInput["FileOpen"]];
+A = ColorConvert[A, "Grayscale"];
+B = ImageData[A];
+Dimensions[B]
+MatrixRank[B]
+
+U = Part[SingularValueDecomposition[B], 1];
+S = Part[SingularValueDecomposition[B], 2];
+V = Part[SingularValueDecomposition[B], 3];</code></pre>
+  <figcaption>Carga de la imagen y descomposición. <code>ImageData</code> devuelve la matriz de
+  intensidades entre 0 y 1; <code>MatrixRank</code> es lo que revela que el rango real es 35.</figcaption>
+  </figure>
+
+  <p>La reconstrucción de rango \(k\) es la suma de los \(k\) primeros términos
+  \(\sigma_iu_iv_i^{T}\). En Wolfram, cada término se arma tomando la columna \(i\) de \(U\),
+  la entrada \(i\) de la diagonal de \(S\) y el renglón \(i\) de \(V^{T}\):</p>
+
+  <figure class="codigo">
+  <pre><code>(* un término de la expansión diádica: sigma_i * u_i * v_i^T *)
+termino[i_] :=
+  Transpose[Take[Transpose[U], {i, i}]] .
+  Partition[Take[Diagonal[S], {i, i}], 1] .
+  Take[Transpose[V], {i, i}]
+
+(* reconstrucción truncada de rango k *)
+Bk = Sum[termino[i], {i, 1, k}];
+Image[Bk]</code></pre>
+  <figcaption>El cuaderno original escribe la suma término a término, una línea por cada \(i\),
+  para los valores \(k=3,6,8,10,12,14,24,34,42\). Aquí está condensada con <code>Sum</code>;
+  el cálculo es idéntico.</figcaption>
+  </figure>
+
+  <div class="imagen-par">
+    <figure class="imagen">
+      <img src="../assets/img/compresion-imagen-reconstrucciones.jpg"
+           alt="Captura del cuaderno de Wolfram mostrando nueve reconstrucciones de la imagen a
+                rangos crecientes, desde borrosa hasta idéntica al original."
+           width="493" height="1148" loading="lazy">
+      <figcaption>Las reconstrucciones tal como salen del cuaderno, de \(k=3\) arriba hasta
+      \(k=42\) abajo. Las dos primeras están visiblemente borrosas; de \(k=8\) en adelante la
+      diferencia con el original deja de percibirse, mucho antes de llegar al rango 35.</figcaption>
+    </figure>
+  </div>
+
+  <p>Ese salto entre «el error numérico todavía es del 5 %» y «el ojo ya no nota la diferencia» es
+  el punto del ejercicio. La norma de Frobenius mide todos los pixeles por igual; la percepción, no.
+  Eckart–Young garantiza optimalidad en la norma, que no es lo mismo que optimalidad perceptual — y
+  ésa es exactamente la razón por la que JPEG no usa SVD sino la transformada del coseno, con
+  cuantización ajustada a la sensibilidad del ojo.</p>
+
+  <hr class="sigma" style="--i:5">
+
+  <section class="recursos">
+    <h2><span class="n">material</span><span class="t">Recursos del tema</span></h2>
+
+    <ul class="adjuntos">
+      <li>
+        <a href="../assets/pdf/svd-aplicaciones.pdf">
+          <span>
+            <span class="archivo">svd-aplicaciones.pdf</span>
+            <span class="que">Catálogo razonado de unas noventa aplicaciones vigentes en dieciséis áreas, con las constitutivas marcadas, más siete notas de advertencia.</span>
+          </span>
+          <span class="ext">8 páginas</span>
+          <span class="peso">86 KB</span>
+        </a>
+      </li>
+      <li>
+        <a href="../assets/wolfram/compresion-imagen-svd-comentado.wl">
+          <span>
+            <span class="archivo">compresion-imagen-svd-comentado.wl</span>
+            <span class="que">El ejercicio completo, comentado por secciones: carga de la imagen, descomposición, ejemplo 3 × 3 y las nueve reconstrucciones truncadas.</span>
+          </span>
+          <span class="ext">script</span>
+          <span class="peso">18 KB</span>
+        </a>
+      </li>
+      <li>
+        <a href="../assets/wolfram/compresion-imagen-svd.wl">
+          <span>
+            <span class="archivo">compresion-imagen-svd.wl</span>
+            <span class="que">El mismo código sin los comentarios de sección, tal como se entregó originalmente.</span>
+          </span>
+          <span class="ext">script</span>
+          <span class="peso">18 KB</span>
+        </a>
+      </li>
+      <li>
+        <a href="../assets/img/compresion-imagen-original.png">
+          <span>
+            <span class="archivo">compresion-imagen-original.png</span>
+            <span class="que">La imagen de partida, 49 × 42 en escala de grises.</span>
+          </span>
+          <span class="ext">imagen</span>
+          <span class="peso">6 KB</span>
+        </a>
+      </li>
+      <li>
+        <a href="../assets/img/compresion-imagen-reconstrucciones.jpg">
+          <span>
+            <span class="archivo">compresion-imagen-reconstrucciones.jpg</span>
+            <span class="que">Captura del cuaderno con las nueve reconstrucciones a rangos crecientes.</span>
+          </span>
+          <span class="ext">imagen</span>
+          <span class="peso">96 KB</span>
+        </a>
+      </li>
+    </ul>
+
+    <p class="atribucion">El catálogo de aplicaciones es material del Dr. José de Jesús Ángel Ángel, Facultad de Ingeniería, Universidad Anáhuac México. El ejercicio de compresión y su código son propios.</p>
+  </section>
+
+</main>
+
+<nav class="nav-temas" aria-label="Navegación entre temas">
+  <div class="nav-temas-int">
+    <a href="08-pseudoinversa.html">
+      <span class="dir">Tema anterior</span>
+      <span class="cual">08 Pseudoinversa de Moore–Penrose</span>
+    </a>
+    <a class="sig" href="../index.html">
+      <span class="dir">Fin del temario</span>
+      <span class="cual">Volver al índice de la materia</span>
+    </a>
+  </div>
+</nav>
+
+<footer class="pie">
+  <div class="pie-int">
+    <p>Apuntes de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería.</p>
+    <p>Material original del Dr. José de Jesús Ángel Ángel.</p>
+  </div>
+</footer>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],macros:{'\\gr':'\\operatorname{gr}'},throwOnError:false})"></script>
+
+<script>
+/* Único script del sitio: cierra el temario con Escape o al pulsar fuera. */
+(function () {
+  var menu = document.querySelector('.menu');
+  if (!menu) return;
+  document.addEventListener('click', function (e) {
+    if (menu.open && !menu.contains(e.target)) menu.open = false;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

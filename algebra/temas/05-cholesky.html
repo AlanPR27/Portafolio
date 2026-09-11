@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Descomposición de Cholesky — Álgebra Lineal Avanzada</title>
+<meta name="description" content="A = LLᵀ para matrices simétricas definidas positivas: condiciones de existencia, el ejemplo 3 × 3 resuelto, y por qué cuesta la mitad que una factorización LU.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+<link rel="stylesheet" href="../css/algebra.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<!-- barra:inicio -->
+<header class="barra">
+  <div class="barra-int">
+    <a href="../../index.html">Apuntes</a>
+    <span class="sep">/</span>
+    <a href="../index.html">Álgebra Lineal Avanzada</a>
+    <span class="sep">/</span>
+    <span class="aqui">05 Descomposición de Cholesky</span>
+    <details class="menu">
+      <summary>Temario 05/09</summary>
+      <div class="menu-panel">
+        <ol class="menu-lista">
+        <li><a href="01-campos-finitos.html"><span class="mn">01</span><span class="mt">Campos finitos</span></a></li>
+        <li><a href="02-cuatro-subespacios.html"><span class="mn">02</span><span class="mt">Los cuatro subespacios fundamentales</span></a></li>
+        <li><a href="03-valores-vectores-propios.html"><span class="mn">03</span><span class="mt">Valores y vectores propios</span></a></li>
+        <li><a href="04-qr-gram-schmidt.html"><span class="mn">04</span><span class="mt">Descomposición QR y Gram–Schmidt</span></a></li>
+        <li><a href="05-cholesky.html" aria-current="page"><span class="mn">05</span><span class="mt">Descomposición de Cholesky</span></a></li>
+        <li><a href="06-svd-metodo-general.html"><span class="mn">06</span><span class="mt">SVD — teoría y método general</span></a></li>
+        <li><a href="07-svd-valores-enteros.html"><span class="mn">07</span><span class="mt">SVD con valores singulares enteros</span></a></li>
+        <li><a href="08-pseudoinversa.html"><span class="mn">08</span><span class="mt">Pseudoinversa de Moore–Penrose</span></a></li>
+        <li><a href="09-aplicaciones-svd.html"><span class="mn">09</span><span class="mt">Aplicaciones de la SVD y compresión de imágenes</span></a></li>
+        </ol>
+      </div>
+    </details>
+  </div>
+</header>
+<!-- barra:fin -->
+
+<main class="hoja">
+
+  <header class="cabecera" id="contenido">
+    <p class="indice">05</p>
+    <div class="texto">
+      <h1>Descomposición de Cholesky</h1>
+      <p class="entradilla">La factorización más barata del curso, y la única que además responde una pregunta: si el algoritmo termina, la matriz era definida positiva.</p>
+    </div>
+  </header>
+
+  <h2><span class="n">1</span><span class="t">Qué matrices la admiten</span></h2>
+
+
+  <p>La descomposición de Cholesky no existe para cualquier matriz. Hacen falta dos condiciones, y
+  conviene enunciarlas juntas porque la segunda suele darse por supuesta.</p>
+
+  <div class="nota">
+    <span class="titulo">Simétrica y definida positiva</span>
+    <p>\(A\) debe cumplir \(A=A^{T}\), y además \(x^{T}Ax&gt;0\) para todo \(x\ne 0\). Esto
+    último equivale a que todos sus valores propios sean positivos, y también a que todos sus
+    menores principales líderes tengan determinante positivo. Bajo esas dos condiciones existe una
+    única matriz triangular inferior \(L\) con diagonal positiva tal que \(A=LL^{T}\).</p>
+  </div>
+
+  <p>La simetría por sí sola no basta: \(\begin{pmatrix}0&amp;1\\1&amp;0\end{pmatrix}\) es
+  simétrica pero tiene valores propios \(1\) y \(-1\), y al intentar Cholesky aparece la raíz
+  cuadrada de un número negativo.</p>
+
+  <hr class="sigma" style="--i:1">
+
+  <h2><span class="n">2</span><span class="t">La factorización</span></h2>
+
+
+  <p>Se busca \(A=LL^{T}\) con \(L\) triangular inferior. Igualando entradas y despejando en
+  orden se obtienen las dos recurrencias que definen el algoritmo:</p>
+
+  <p>$$\ell_{kk}=\sqrt{a_{kk}-\sum_{j&lt;k}\ell_{kj}^{2}},\qquad
+  \ell_{ik}=\frac{1}{\ell_{kk}}\Big(a_{ik}-\sum_{j&lt;k}\ell_{ij}\ell_{kj}\Big)\ \ (i&gt;k)$$</p>
+
+  <p>Cada entrada se calcula a partir de las ya calculadas, sin necesidad de pivoteo: la definición
+  positiva garantiza que el radicando nunca es negativo y que nunca se divide entre cero.</p>
+
+  <p>Conviene saber que existen dos convenciones. La de arriba produce \(L\) triangular
+  <em>inferior</em> con \(A=LL^{T}\). Mathematica, con <code>CholeskyDecomposition</code>,
+  devuelve en cambio la triangular <em>superior</em> \(U\) con \(A=U^{T}U\); las dos son la
+  misma factorización con \(U=L^{T}\).</p>
+
+  <hr class="sigma" style="--i:2">
+
+  <h2><span class="n">3</span><span class="t">El ejemplo del cuaderno</span></h2>
+
+
+  <p>$$A=\begin{pmatrix}4&amp;2&amp;1\\2&amp;2&amp;1\\1&amp;1&amp;1\end{pmatrix}$$</p>
+
+  <p>Primero hay que ganarse el derecho a aplicar el algoritmo. La matriz es simétrica a la vista, y
+  sus menores principales líderes son \(4\), \(\det\begin{pmatrix}4&amp;2\\2&amp;2\end{pmatrix}=4\)
+  y \(\det A=2\): los tres positivos, luego es definida positiva.</p>
+
+  <p>Aplicando las recurrencias por columnas se obtiene la triangular superior</p>
+
+  <p>$$U=\begin{pmatrix}2&amp;1&amp;\tfrac12\\[2pt]0&amp;1&amp;\tfrac12\\[2pt]
+  0&amp;0&amp;\tfrac{1}{\sqrt2}\end{pmatrix},\qquad A=U^{T}U$$</p>
+
+  <p>Paso a paso: \(u_{11}=\sqrt4=2\); \(u_{12}=2/2=1\); \(u_{13}=1/2\);
+  \(u_{22}=\sqrt{2-1^{2}}=1\); \(u_{23}=(1-1\cdot\tfrac12)/1=\tfrac12\); y por último
+  \(u_{33}=\sqrt{1-\tfrac14-\tfrac14}=\tfrac{1}{\sqrt2}\).</p>
+
+  <div class="nota">
+    <span class="titulo">La comprobación barata</span>
+    <p>Como \(A=U^{T}U\), se tiene \(\det A=(\det U)^{2}\). Aquí
+    \(\det U=2\cdot 1\cdot\tfrac{1}{\sqrt2}=\sqrt2\), y en efecto
+    \((\sqrt2)^{2}=2=\det A\). Como el determinante de una triangular es el producto de su
+    diagonal, Cholesky regala el determinante sin trabajo extra, y siempre positivo —otra
+    consecuencia de la definición positiva.</p>
+  </div>
+
+  <hr class="sigma" style="--i:3">
+
+  <h2><span class="n">4</span><span class="t">Cholesky como prueba</span></h2>
+
+
+  <p>La propiedad más útil en la práctica no es la factorización en sí, sino su fracaso. El
+  algoritmo intenta calcular \(\ell_{kk}=\sqrt{\,\cdot\,}\) en cada paso, y el radicando sale
+  negativo <strong>si y sólo si</strong> la matriz no es definida positiva.</p>
+
+  <p>Eso convierte a Cholesky en la manera estándar de contestar «¿es esta matriz definida
+  positiva?». Es mucho más barato que calcular los valores propios y más estable que calcular los
+  determinantes de todos los menores principales. Se usa así en optimización, donde en cada
+  iteración de un método de Newton hay que comprobar si la matriz hessiana es definida positiva
+  antes de confiar en la dirección de descenso.</p>
+
+  <hr class="sigma" style="--i:4">
+
+  <h2><span class="n">5</span><span class="t">Por qué cuesta la mitad</span></h2>
+
+
+  <p>Una factorización LU general de una matriz \(n\times n\) cuesta del orden de
+  \(\tfrac{2}{3}n^{3}\) operaciones. Cholesky cuesta \(\tfrac{1}{3}n^{3}\): exactamente la
+  mitad.</p>
+
+  <p>La razón es directa. LU calcula dos triángulos, \(L\) y \(U\), sin relación entre sí.
+  Cholesky calcula uno solo, porque la simetría garantiza que el otro es su transpuesta, y además
+  no necesita pivoteo parcial, que es la parte con búsquedas y permutaciones. A cambio paga
+  \(n\) raíces cuadradas, que son \(O(n)\) y no cambian el orden.</p>
+
+  <p>Existe una variante \(A=LDL^{T}\) con \(L\) de diagonal unitaria y \(D\) diagonal, que
+  evita las raíces por completo y además funciona para matrices simétricas indefinidas, donde
+  Cholesky no existe.</p>
+
+  <hr class="sigma" style="--i:5">
+
+  <h2><span class="n">6</span><span class="t">Dónde aparece</span></h2>
+
+
+  <p><strong>Mínimos cuadrados.</strong> Las ecuaciones normales \(A^{T}Ax=A^{T}b\) tienen a
+  \(A^{T}A\) simétrica y, si \(A\) tiene columnas independientes, definida positiva: el caso
+  exacto de Cholesky. Es la vía más rápida, con la advertencia del tema anterior sobre el número de
+  condición al cuadrado.</p>
+
+  <p><strong>Simulación de variables correlacionadas.</strong> Para generar un vector gaussiano con
+  matriz de covarianza \(\Sigma\), se factoriza \(\Sigma=LL^{T}\) y se toma \(x=Lz\) con
+  \(z\) de componentes normales independientes. Entonces
+  \(\operatorname{Cov}(x)=L\,\operatorname{Cov}(z)\,L^{T}=LL^{T}=\Sigma\). Es el mecanismo
+  estándar en Monte Carlo financiero y en procesos gaussianos.</p>
+
+  <p><strong>Filtro de Kalman y regresión con procesos gaussianos.</strong> Ambos necesitan resolver
+  sistemas con matrices de covarianza en cada paso; hacerlo por Cholesky es lo que los vuelve
+  viables en tiempo real.</p>
+
+  <hr class="sigma" style="--i:6">
+
+  <section class="recursos">
+    <h2><span class="n">material</span><span class="t">Recursos del tema</span></h2>
+
+    <ul class="adjuntos">
+      <li>
+        <a href="../assets/wolfram/cholesky.nb">
+          <span>
+            <span class="archivo">cholesky.nb</span>
+            <span class="que">La matriz 3 × 3 del ejemplo, su determinante y el resultado de CholeskyDecomposition.</span>
+          </span>
+          <span class="ext">cuaderno</span>
+          <span class="peso">5 KB</span>
+        </a>
+      </li>
+    </ul>
+
+    <p class="atribucion">Cuaderno del Dr. José de Jesús Ángel Ángel, Facultad de Ingeniería, Universidad Anáhuac México. Este tema no tiene PDF de apuntes: el resumen está escrito a partir del cálculo del cuaderno.</p>
+  </section>
+
+</main>
+
+<nav class="nav-temas" aria-label="Navegación entre temas">
+  <div class="nav-temas-int">
+    <a href="04-qr-gram-schmidt.html">
+      <span class="dir">Tema anterior</span>
+      <span class="cual">04 Descomposición QR y Gram–Schmidt</span>
+    </a>
+    <a class="sig" href="06-svd-metodo-general.html">
+      <span class="dir">Tema siguiente</span>
+      <span class="cual">06 SVD — teoría y método general</span>
+    </a>
+  </div>
+</nav>
+
+<footer class="pie">
+  <div class="pie-int">
+    <p>Apuntes de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería.</p>
+    <p>Material original del Dr. José de Jesús Ángel Ángel.</p>
+  </div>
+</footer>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],macros:{'\\gr':'\\operatorname{gr}'},throwOnError:false})"></script>
+
+<script>
+/* Único script del sitio: cierra el temario con Escape o al pulsar fuera. */
+(function () {
+  var menu = document.querySelector('.menu');
+  if (!menu) return;
+  document.addEventListener('click', function (e) {
+    if (menu.open && !menu.contains(e.target)) menu.open = false;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sellado de tiempo — Blockchain</title>
+<meta name="description" content="Probar que un documento existía en una fecha sin revelar su contenido: el esquema RFC 3161 con autoridad de sellado, el encadenamiento de Haber–Stornetta, la agregación por árboles de Merkle y el anclaje en una cadena pública.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../css/blockchain.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<!-- barra:inicio -->
+<header class="barra">
+  <div class="barra-int">
+    <a href="../../index.html">Apuntes</a>
+    <span class="sep">/</span>
+    <a href="../index.html">Blockchain</a>
+    <span class="sep">/</span>
+    <span class="aqui">04 Sellado de tiempo</span>
+    <div class="barra-der">
+      <nav class="cadena-nav" aria-label="Cadena de temas">
+        <a class="bloque" href="01-funciones-hash.html" title="Funciones hash: fundamentos">01</a><span class="union"></span><a class="bloque" href="02-hash-aplicaciones.html" title="Aplicaciones de las funciones hash">02</a><span class="union"></span><a class="bloque" href="03-tarea-hash-artesanal.html" title="Tarea 1: construir y atacar una función hash">03</a><span class="union"></span><a class="bloque" href="04-sellado-de-tiempo.html" aria-current="page" title="Sellado de tiempo">04</a><span class="union"></span><a class="bloque" href="05-esquemas-de-compromiso.html" title="Esquemas de compromiso">05</a><span class="union"></span><a class="bloque" href="06-blockchain-artesanal.html" title="Blockchain artesanal: el pipeline completo">06</a><span class="union"></span><a class="bloque" href="07-blockchain-aplicaciones.html" title="Aplicaciones de blockchain por sector">07</a>
+      </nav>
+      <details class="menu">
+        <summary>temario</summary>
+        <div class="menu-panel">
+          <ol class="menu-lista">
+        <li><a href="01-funciones-hash.html"><span class="mn">01</span><span class="mt">Funciones hash: fundamentos</span></a></li>
+        <li><a href="02-hash-aplicaciones.html"><span class="mn">02</span><span class="mt">Aplicaciones de las funciones hash</span></a></li>
+        <li><a href="03-tarea-hash-artesanal.html"><span class="mn">03</span><span class="mt">Tarea 1: construir y atacar una función hash</span></a></li>
+        <li><a href="04-sellado-de-tiempo.html" aria-current="page"><span class="mn">04</span><span class="mt">Sellado de tiempo</span></a></li>
+        <li><a href="05-esquemas-de-compromiso.html"><span class="mn">05</span><span class="mt">Esquemas de compromiso</span></a></li>
+        <li><a href="06-blockchain-artesanal.html"><span class="mn">06</span><span class="mt">Blockchain artesanal: el pipeline completo</span></a></li>
+        <li><a href="07-blockchain-aplicaciones.html"><span class="mn">07</span><span class="mt">Aplicaciones de blockchain por sector</span></a></li>
+          </ol>
+        </div>
+      </details>
+    </div>
+  </div>
+</header>
+<!-- barra:fin -->
+
+<main class="hoja">
+
+  <header class="cabecera" id="contenido">
+    <p class="indice">04</p>
+    <div class="texto">
+      <h1>Sellado de tiempo</h1>
+      <p class="entradilla">La fecha de un archivo se falsifica en dos clics. Probar cuándo existió algo, sin enseñárselo a nadie y sin que nadie pueda mover la fecha después, necesita bastante más que un reloj.</p>
+    </div>
+  </header>
+
+  <h2><span class="hash">ba3701</span><span class="t">El problema</span></h2>
+
+
+  <p>El sellado de tiempo digital resuelve algo muy concreto: <strong>probar que un documento
+  existía en un momento determinado</strong>, sin depender de la fecha del sistema de archivos
+  —que cualquiera modifica— ni de que un tercero necesite ver el contenido original.</p>
+
+  <p>Esa segunda condición es la que hace elegante la solución. En lugar de firmar el documento
+  completo, se firma un resumen:</p>
+
+  <figure class="codigo">
+  <pre><code>h = H(documento)</code></pre>
+  <figcaption>Sólo <span class="v">h</span> sale de tu poder. El documento nunca se envía, lo que
+  preserva la confidencialidad por completo.</figcaption>
+  </figure>
+
+  <p>La propiedad que sostiene todo esto es la <strong>resistencia a colisiones</strong>: si nadie
+  puede encontrar otro documento con el mismo <span class="v">h</span>, entonces el sello vale para
+  ese documento y sólo para ése.</p>
+
+  <h2><span class="hash">13e8b6</span><span class="t">RFC 3161: la autoridad de sellado</span></h2>
+
+
+  <p>El esquema estándar define una <strong>TSA</strong>, <em>Time Stamping Authority</em>, y un
+  protocolo de cinco pasos:</p>
+
+  <ol>
+    <li>El cliente calcula <span class="v">h</span> = <span class="v">H</span>(documento).</li>
+    <li>Envía <span class="v">h</span> a la TSA junto con el identificador del algoritmo hash.</li>
+    <li>La TSA construye el token y lo firma con su clave privada.</li>
+    <li>Devuelve al cliente el token de tiempo <span class="hex">TS</span>.</li>
+    <li>Cualquiera puede verificar la firma con la clave pública de la TSA, y recalcular
+    <span class="v">H</span>(documento) para confirmar que coincide con <span class="v">h</span>.</li>
+  </ol>
+
+  <figure class="codigo">
+  <pre><code>TS = Sign_TSA( h ‖ t ‖ nonce ‖ policy_id )</code></pre>
+  <figcaption>El tiempo <span class="v">t</span> viene de un reloj confiable, sincronizado por NTP
+  o GPS con trazabilidad a un patrón oficial. El nonce evita repeticiones.</figcaption>
+  </figure>
+
+  <div class="nota aviso">
+    <span class="titulo">De qué depende la seguridad</span>
+    <p>De dos cosas, y una de ellas no es criptográfica. La resistencia a colisiones del hash
+    —que nadie pueda encontrar otro documento con el mismo <span class="v">h</span>— y la
+    <strong>confianza en la TSA</strong>: su clave privada y su reloj. Es un punto único de fallo,
+    y todo lo que sigue en este tema existe para reducirlo.</p>
+  </div>
+
+  <h2><span class="hash">eae906</span><span class="t">Haber–Stornetta: encadenar los sellos</span></h2>
+
+
+  <p>Para no depender enteramente de la honestidad de la autoridad, se encadenan los sellos: cada
+  nuevo sello incorpora el hash del anterior.</p>
+
+  <figure class="codigo">
+  <pre><code>h_n = H( documento_n ‖ h_(n−1) )</code></pre>
+  <figcaption>El resultado es una cadena verificable en la que cada eslabón depende de todos los
+  anteriores.</figcaption>
+  </figure>
+
+  <p>Quien quisiera falsificar la fecha de un documento tendría que recalcular todos los sellos
+  posteriores, lo que es computacionalmente inviable si la cadena es públicamente conocida. En la
+  propuesta original esa publicidad se conseguía de la manera más analógica posible:
+  <strong>publicando el valor de la cadena en el aviso clasificado de un periódico</strong>. Miles
+  de copias impresas distribuidas por todo el país son un registro sorprendentemente difícil de
+  reescribir.</p>
+
+  <p>Aquí es donde conviene detenerse, porque esto es Bitcoin quince años antes de Bitcoin: la idea
+  de que encadenar hashes vuelve inmutable un registro es exactamente la del tema 06.</p>
+
+  <h2><span class="hash">1b347d</span><span class="t">Merkle: sellar muchos a la vez</span></h2>
+
+
+  <p>Firmar un sello por documento no escala. La solución es agregar:</p>
+
+  <ol>
+    <li>Se agrupan <span class="v">N</span> hashes de documentos como hojas de un árbol de
+    Merkle.</li>
+    <li>Se hashean por parejas, luego los resultados por parejas, hasta quedar con un único valor:
+    la <strong>raíz</strong> <span class="v">R</span>.</li>
+    <li>Sólo <span class="v">R</span> se firma y se ancla.</li>
+    <li>Cada usuario recibe su <strong>prueba de inclusión</strong>: el camino de hashes hermanos
+    desde su hoja hasta la raíz, de tamaño O(log <span class="v">N</span>).</li>
+  </ol>
+
+  <p>El ahorro es el que hace viable todo lo demás. Con 1 048 576 documentos, la prueba son veinte
+  hashes: <strong>640 bytes en lugar de gigabytes</strong>, y una sola firma en lugar de un
+  millón.</p>
+
+  <p>Esto es exactamente lo que hace <span class="hex">OpenTimestamps</span>: agrega miles de
+  hashes en un árbol de Merkle y ancla sólo la raíz en la cadena de Bitcoin, repartiendo el costo
+  de una transacción entre todos los documentos del lote.</p>
+
+  <div class="nota">
+    <span class="titulo">Qué propiedad sostiene la prueba de inclusión</span>
+    <p>La <strong>segunda preimagen</strong>. Un verificador recibe una hoja y un camino, y
+    recomputa la raíz. Si alguien pudiera fabricar un conjunto distinto de transacciones con la
+    misma raíz, la prueba dejaría de significar nada. Por eso el RFC 6962 prefija bytes distintos a
+    hojas y a nodos internos: sin esa distinción, la ambigüedad entre ambos es explotable.</p>
+  </div>
+
+  <h2><span class="hash">683f2a</span><span class="t">Anclar en una cadena pública</span></h2>
+
+
+  <p>La última variante elimina a la autoridad. En vez de confiar en una TSA central, se publica
+  <span class="v">h</span> —o la raíz de Merkle— dentro de una transacción en una blockchain
+  pública. La marca de tiempo del bloque minado sirve como prueba.</p>
+
+  <p>El cambio de fondo es dónde reside la confianza: <strong>ya no en la honestidad de un
+  tercero, sino en el costo computacional de reescribir la cadena</strong>. Para mover la fecha
+  hacia atrás habría que reminar ese bloque y todos los posteriores, compitiendo contra el resto de
+  la red.</p>
+
+  <div class="tabla-env">
+  <table>
+    <thead><tr><th>método</th><th>confía en</th><th>ventaja</th><th>desventaja</th></tr></thead>
+    <tbody>
+      <tr><td>TSA (RFC 3161)</td><td>autoridad central</td><td>simple, estándar, legalmente reconocido</td><td class="roto">punto único de fallo</td></tr>
+      <tr><td>Haber–Stornetta</td><td>cadena pública y testigos</td><td>resistente a manipulación retroactiva</td><td>requiere publicación continua</td></tr>
+      <tr><td>Merkle + TSA o cadena</td><td>combinación</td><td class="valido">eficiente para volumen alto</td><td>complejidad de implementación</td></tr>
+      <tr><td>blockchain puro</td><td>red descentralizada</td><td class="valido">sin autoridad central</td><td>costos, latencia, tamaño de prueba</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Ninguna fila domina a las demás. La TSA sigue siendo la única con reconocimiento legal
+  explícito en la mayoría de las jurisdicciones, que para un documento que puede acabar en un
+  tribunal pesa más que cualquier propiedad criptográfica.</p>
+
+  <section class="recursos">
+    <h2><span class="hash">08c727</span><span class="t">Recursos del tema</span></h2>
+
+    <ul class="adjuntos">
+      <li>
+        <a href="../assets/pdf/sellado-de-tiempo.pdf">
+          <span>
+            <span class="archivo">sellado-de-tiempo.pdf</span>
+            <span class="que">El método completo: la idea central, el esquema RFC 3161 paso a paso, el encadenamiento de Haber–Stornetta, la variante con árboles de Merkle, el anclaje en blockchain y el cuadro comparativo.</span>
+          </span>
+          <span class="ext">3 páginas</span>
+          <span class="peso">30 KB</span>
+        </a>
+      </li>
+      <li>
+        <a href="../assets/pdf/laboratorio-funciones-hash.pdf">
+          <span>
+            <span class="archivo">laboratorio-funciones-hash.pdf</span>
+            <span class="que">El laboratorio completo del curso, fuente principal de la materia.</span>
+          </span>
+          <span class="ext">lab</span>
+          <span class="peso">3.2 MB</span>
+        </a>
+      </li>
+    </ul>
+
+    <p class="atribucion">Material del Dr. José de Jesús Ángel Ángel, Facultad de Ingeniería, Universidad Anáhuac México.</p>
+  </section>
+
+</main>
+
+<nav class="nav-temas" aria-label="Navegación entre temas">
+  <div class="nav-temas-int">
+    <a href="03-tarea-hash-artesanal.html">
+      <span class="dir">tema anterior</span>
+      <span class="cual">03 Tarea 1: construir y atacar una función hash</span>
+    </a>
+    <a class="sig" href="05-esquemas-de-compromiso.html">
+      <span class="dir">tema siguiente</span>
+      <span class="cual">05 Esquemas de compromiso</span>
+    </a>
+  </div>
+</nav>
+
+<footer class="pie">
+  <div class="pie-int">
+    <p>Apuntes de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería.</p>
+    <p>Material original del Dr. José de Jesús Ángel Ángel.</p>
+  </div>
+</footer>
+
+<script>
+/* Único script de la materia: cierra el temario con Escape o al pulsar fuera. */
+(function () {
+  var menu = document.querySelector('.menu');
+  if (!menu) return;
+  document.addEventListener('click', function (e) {
+    if (menu.open && !menu.contains(e.target)) menu.open = false;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

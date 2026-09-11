@@ -1,0 +1,240 @@
+@charset "utf-8";
+
+/* =========================================================================
+   Portada. No pertenece a ninguna de las dos materias, así que no reutiliza
+   ni algebra.css ni blockchain.css: son dos identidades y ésta es la puerta.
+
+   Principio: la página son dos accesos, y cada uno habla con la voz de su
+   materia — serif y retícula para Álgebra, monoespaciada y encadenamiento
+   para Blockchain. La portada no inventa un tercer estilo: los enfrenta.
+   ========================================================================= */
+
+:root {
+  --papel:   #f2f3f4;
+  --tinta:   #11161b;
+  --tinta-2: #505b66;
+  --regla:   #d5dbe1;
+
+  /* Acento de Álgebra: la tinta a saturación plena. */
+  --alg:     #2338c9;
+  --alg-sup: rgba(35, 56, 201, 0.08);
+
+  /* Acento de Blockchain: provisional hasta escribir blockchain.css. */
+  --blk:     #9a4a00;
+  --blk-sup: rgba(154, 74, 0, 0.08);
+
+  --serif: "Source Serif 4", ui-serif, Georgia, "Times New Roman", serif;
+  --mono:  "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  --pad: 1.25rem;
+  --ancho: 62rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --papel:   #0e1317;
+    --tinta:   #e5ebf0;
+    --tinta-2: #9daab6;
+    --regla:   #2a333c;
+    --alg:     #8fa6ff;
+    --alg-sup: rgba(143, 166, 255, 0.10);
+    --blk:     #e0954a;
+    --blk-sup: rgba(224, 149, 74, 0.10);
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--tinta);
+  background: var(--papel);
+  font-family: var(--serif);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+a { color: inherit; }
+
+:focus-visible { outline: 2px solid var(--tinta); outline-offset: 3px; }
+
+.saltar { position: absolute; left: -9999px; }
+.saltar:focus {
+  left: 0.5rem; top: 0.5rem;
+  background: var(--papel); padding: 0.6rem 1rem; border: 1px solid var(--tinta);
+}
+
+.envoltura {
+  width: min(100% - 2 * var(--pad), var(--ancho));
+  margin-inline: auto;
+}
+
+/* ------------------------------- Cabecera ------------------------------- */
+
+.cabecera { padding: 4.5rem 0 2.6rem; }
+
+.sello {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--tinta-2);
+  margin: 0 0 1.1rem;
+}
+
+h1 {
+  margin: 0 0 0.7rem;
+  font-size: clamp(2rem, 1.3rem + 3vw, 3.1rem);
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.entradilla {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 1.15rem;
+  color: var(--tinta-2);
+}
+
+/* -------------------------------- Puertas ------------------------------- */
+
+.puertas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  border-top: 1px solid var(--regla);
+  border-left: 1px solid var(--regla);
+}
+
+.puerta {
+  display: block;
+  text-decoration: none;
+  padding: 2.6rem 2rem 2.8rem;
+  border-right: 1px solid var(--regla);
+  border-bottom: 1px solid var(--regla);
+  position: relative;
+  isolation: isolate;
+}
+
+.puerta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: transparent;
+  transition: background 0.12s ease;
+}
+
+.puerta:hover::before { background: var(--tono-sup); }
+
+.puerta .materia {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  color: var(--tono);
+  margin-bottom: 1.6rem;
+}
+
+.puerta .nombre {
+  display: block;
+  font-size: 1.55rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.7rem;
+  text-wrap: balance;
+}
+
+.puerta .resumen {
+  display: block;
+  color: var(--tinta-2);
+  font-size: 0.98rem;
+  max-width: 34ch;
+  margin-bottom: 1.6rem;
+}
+
+.puerta .cuenta {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  color: var(--tinta-2);
+}
+
+.puerta:hover .nombre { color: var(--tono); }
+
+/* Álgebra: la retícula y la diagonal de Sigma, en pequeño. */
+.puerta.algebra { --tono: var(--alg); --tono-sup: var(--alg-sup); }
+
+.puerta.algebra .marca {
+  display: block;
+  width: 2.6rem;
+  height: 2.6rem;
+  margin-bottom: 1.5rem;
+  background:
+    linear-gradient(to bottom right,
+      transparent calc(50% - 0.5px), var(--alg) calc(50% - 0.5px),
+      var(--alg) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
+    repeating-linear-gradient(to right,
+      var(--regla) 0 1px, transparent 1px 0.65rem);
+}
+
+/* Blockchain: la voz monoespaciada y el bloque enlazado. */
+.puerta.blockchain { --tono: var(--blk); --tono-sup: var(--blk-sup); }
+
+.puerta.blockchain .nombre,
+.puerta.blockchain .resumen { font-family: var(--mono); }
+
+.puerta.blockchain .nombre { font-size: 1.3rem; letter-spacing: -0.005em; }
+.puerta.blockchain .resumen { font-size: 0.88rem; line-height: 1.55; }
+
+.puerta.blockchain .marca {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 2.6rem;
+  margin-bottom: 1.5rem;
+}
+
+.puerta.blockchain .marca i {
+  display: block;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 1px solid var(--blk);
+}
+
+.puerta.blockchain .marca b {
+  display: block;
+  width: 0.5rem;
+  height: 1px;
+  background: var(--blk);
+}
+
+/* ---------------------------------- Pie --------------------------------- */
+
+.pie {
+  margin-top: auto;
+  padding: 2.4rem 0 3rem;
+  color: var(--tinta-2);
+  font-size: 0.86rem;
+}
+
+.pie p { margin: 0 0 0.4em; max-width: 58ch; }
+
+/* ------------------------------- Responsive ------------------------------ */
+
+@media (max-width: 46rem) {
+  :root { --pad: 1.1rem; }
+  .cabecera { padding: 2.8rem 0 2rem; }
+  .puerta { padding: 2rem 1.4rem 2.2rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

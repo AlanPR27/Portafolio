@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blockchain — Apuntes</title>
+<meta name="description" content="Apuntes del curso de Blockchain: funciones hash, sellado de tiempo, esquemas de compromiso y el pipeline de una cadena de bloques artesanal.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="css/blockchain.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<!-- barra:inicio -->
+<header class="barra">
+  <div class="barra-int">
+    <a href="../index.html">Apuntes</a>
+    <span class="sep">/</span>
+    <span class="aqui">Blockchain</span>
+    <div class="barra-der">
+      <nav class="cadena-nav" aria-label="Cadena de temas">
+        <a class="bloque" href="temas/01-funciones-hash.html" title="Funciones hash: fundamentos">01</a><span class="union"></span><a class="bloque" href="temas/02-hash-aplicaciones.html" title="Aplicaciones de las funciones hash">02</a><span class="union"></span><a class="bloque" href="temas/03-tarea-hash-artesanal.html" title="Tarea 1: construir y atacar una función hash">03</a><span class="union"></span><a class="bloque" href="temas/04-sellado-de-tiempo.html" title="Sellado de tiempo">04</a><span class="union"></span><a class="bloque" href="temas/05-esquemas-de-compromiso.html" title="Esquemas de compromiso">05</a><span class="union"></span><a class="bloque" href="temas/06-blockchain-artesanal.html" title="Blockchain artesanal: el pipeline completo">06</a><span class="union"></span><a class="bloque" href="temas/07-blockchain-aplicaciones.html" title="Aplicaciones de blockchain por sector">07</a>
+      </nav>
+      <details class="menu">
+        <summary>temario</summary>
+        <div class="menu-panel">
+          <ol class="menu-lista">
+        <li><a href="temas/01-funciones-hash.html"><span class="mn">01</span><span class="mt">Funciones hash: fundamentos</span></a></li>
+        <li><a href="temas/02-hash-aplicaciones.html"><span class="mn">02</span><span class="mt">Aplicaciones de las funciones hash</span></a></li>
+        <li><a href="temas/03-tarea-hash-artesanal.html"><span class="mn">03</span><span class="mt">Tarea 1: construir y atacar una función hash</span></a></li>
+        <li><a href="temas/04-sellado-de-tiempo.html"><span class="mn">04</span><span class="mt">Sellado de tiempo</span></a></li>
+        <li><a href="temas/05-esquemas-de-compromiso.html"><span class="mn">05</span><span class="mt">Esquemas de compromiso</span></a></li>
+        <li><a href="temas/06-blockchain-artesanal.html"><span class="mn">06</span><span class="mt">Blockchain artesanal: el pipeline completo</span></a></li>
+        <li><a href="temas/07-blockchain-aplicaciones.html"><span class="mn">07</span><span class="mt">Aplicaciones de blockchain por sector</span></a></li>
+          </ol>
+        </div>
+      </details>
+    </div>
+  </div>
+</header>
+<!-- barra:fin -->
+
+<main class="hoja" id="contenido">
+
+  <header class="cabecera">
+    <p class="indice">625da4</p>
+    <div class="texto">
+      <h1>Blockchain</h1>
+      <p class="entradilla">Una función hash, una firma, un encadenamiento y un sello de tiempo.
+      Con esas cuatro piezas se construye todo lo demás, y casi todo el curso consiste en
+      entender qué garantiza cada una y qué pasa el día que deja de garantizarlo.</p>
+    </div>
+  </header>
+
+  <p>El orden de los temas sigue el del curso, que va de la primitiva a la aplicación. Primero
+  la función hash y sus tres resistencias, porque son la base de todo. Después el sellado de
+  tiempo y los esquemas de compromiso, que son las dos construcciones que la usan de manera más
+  directa. Al final, el pipeline completo y los dos catálogos de aplicaciones.</p>
+
+  <p>Los identificadores hexadecimales que acompañan a cada sección dentro de un tema no son
+  decoración: son los primeros seis dígitos del <span class="hex">SHA-256</span> del título de esa
+  sección. Longitud fija, seis dígitos siempre, cambie lo que cambie el título.</p>
+
+  <h2><span class="hash">4183c6</span><span class="t">Los siete temas</span></h2>
+
+  <ol class="cadena-indice">
+      <li>
+        <a href="temas/01-funciones-hash.html">
+          <span class="num">tema 01</span>
+          <span class="titulo">Funciones hash: fundamentos</span>
+          <span class="sub">Las cuatro propiedades observables, las tres resistencias y por qué no son la misma, la construcción iterada y el ataque que le sale gratis, la cota del cumpleaños, el estado de los estándares y el costo deliberado de un KDF.</span>
+        </a>
+      </li>
+      <li>
+        <a href="temas/02-hash-aplicaciones.html">
+          <span class="num">tema 02</span>
+          <span class="titulo">Aplicaciones de las funciones hash</span>
+          <span class="sub">Doce aplicaciones desplegadas hoy, de la verificación de descargas a la transparencia de certificados, con el estándar que las respalda en cada caso.</span>
+        </a>
+      </li>
+      <li>
+        <a href="temas/03-tarea-hash-artesanal.html">
+          <span class="num">tema 03</span>
+          <span class="titulo">Tarea 1: construir y atacar una función hash</span>
+          <span class="sub">El laboratorio: diseñar una función hash propia, medir su avalancha y atacarla por colisión, preimagen y segunda preimagen hasta ver la separación cuadrática.</span>
+        </a>
+      </li>
+      <li>
+        <a href="temas/04-sellado-de-tiempo.html">
+          <span class="num">tema 04</span>
+          <span class="titulo">Sellado de tiempo</span>
+          <span class="sub">Probar que un documento existía en una fecha sin enseñárselo a nadie: RFC 3161, el encadenamiento de Haber–Stornetta, la agregación por Merkle y el anclaje en cadena.</span>
+        </a>
+      </li>
+      <li>
+        <a href="temas/05-esquemas-de-compromiso.html">
+          <span class="num">tema 05</span>
+          <span class="titulo">Esquemas de compromiso</span>
+          <span class="sub">El sobre cerrado digital: ocultamiento y vinculación, el teorema que impide tener las dos perfectas, y el catálogo que va de Blum a KZG y a los esquemas reticulares.</span>
+        </a>
+      </li>
+      <li>
+        <a href="temas/06-blockchain-artesanal.html">
+          <span class="num">tema 06</span>
+          <span class="titulo">Blockchain artesanal: el pipeline completo</span>
+          <span class="sub">Hash, firma, encadenamiento y sellado de tiempo: los cuatro ingredientes mínimos de una cadena de bloques, y qué le falta todavía para ser una de verdad.</span>
+        </a>
+      </li>
+      <li>
+        <a href="temas/07-blockchain-aplicaciones.html">
+          <span class="num">tema 07</span>
+          <span class="titulo">Aplicaciones de blockchain por sector</span>
+          <span class="sub">Ciento dieciséis entradas por sector, separando lo que opera de verdad de lo que es un comunicado de prensa, y la prueba de cuatro preguntas que hay que pasar antes.</span>
+        </a>
+      </li>
+  </ol>
+
+  <h2><span class="hash">6e8fc7</span><span class="t">Sobre el material</span></h2>
+
+  <p>Los siete PDF son material del <strong>Dr. José de Jesús Ángel Ángel</strong>, Facultad de
+  Ingeniería, Universidad Anáhuac México. Los resúmenes de cada tema son míos, escritos para
+  estudiar; si hay un error, es mío y no del original.</p>
+
+  <p>La fuente principal es el laboratorio interactivo del curso, un documento de ocho semanas con
+  laboratorios ejecutables, una síntesis transversal, ocho retos verificables y un anexo sobre el
+  estado del arte de la criptografía desplegada. Los otros seis PDF desarrollan temas concretos.</p>
+
+</main>
+
+<footer class="pie">
+  <div class="pie-int">
+    <p>Apuntes de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería.</p>
+    <p>Material original del Dr. José de Jesús Ángel Ángel.</p>
+  </div>
+</footer>
+
+<script>
+/* Único script de la materia: cierra el temario con Escape o al pulsar fuera. */
+(function () {
+  var menu = document.querySelector('.menu');
+  if (!menu) return;
+  document.addEventListener('click', function (e) {
+    if (menu.open && !menu.contains(e.target)) menu.open = false;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

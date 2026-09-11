@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aplicaciones de las funciones hash — Blockchain</title>
+<meta name="description" content="Doce aplicaciones de las funciones hash en sistemas desplegados hoy, con el estándar que respalda cada una: integridad, firmas, contraseñas, HMAC, TLS, Bitcoin, Merkle, Git y transparencia de certificados.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../css/blockchain.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<!-- barra:inicio -->
+<header class="barra">
+  <div class="barra-int">
+    <a href="../../index.html">Apuntes</a>
+    <span class="sep">/</span>
+    <a href="../index.html">Blockchain</a>
+    <span class="sep">/</span>
+    <span class="aqui">02 Aplicaciones de las funciones hash</span>
+    <div class="barra-der">
+      <nav class="cadena-nav" aria-label="Cadena de temas">
+        <a class="bloque" href="01-funciones-hash.html" title="Funciones hash: fundamentos">01</a><span class="union"></span><a class="bloque" href="02-hash-aplicaciones.html" aria-current="page" title="Aplicaciones de las funciones hash">02</a><span class="union"></span><a class="bloque" href="03-tarea-hash-artesanal.html" title="Tarea 1: construir y atacar una función hash">03</a><span class="union"></span><a class="bloque" href="04-sellado-de-tiempo.html" title="Sellado de tiempo">04</a><span class="union"></span><a class="bloque" href="05-esquemas-de-compromiso.html" title="Esquemas de compromiso">05</a><span class="union"></span><a class="bloque" href="06-blockchain-artesanal.html" title="Blockchain artesanal: el pipeline completo">06</a><span class="union"></span><a class="bloque" href="07-blockchain-aplicaciones.html" title="Aplicaciones de blockchain por sector">07</a>
+      </nav>
+      <details class="menu">
+        <summary>temario</summary>
+        <div class="menu-panel">
+          <ol class="menu-lista">
+        <li><a href="01-funciones-hash.html"><span class="mn">01</span><span class="mt">Funciones hash: fundamentos</span></a></li>
+        <li><a href="02-hash-aplicaciones.html" aria-current="page"><span class="mn">02</span><span class="mt">Aplicaciones de las funciones hash</span></a></li>
+        <li><a href="03-tarea-hash-artesanal.html"><span class="mn">03</span><span class="mt">Tarea 1: construir y atacar una función hash</span></a></li>
+        <li><a href="04-sellado-de-tiempo.html"><span class="mn">04</span><span class="mt">Sellado de tiempo</span></a></li>
+        <li><a href="05-esquemas-de-compromiso.html"><span class="mn">05</span><span class="mt">Esquemas de compromiso</span></a></li>
+        <li><a href="06-blockchain-artesanal.html"><span class="mn">06</span><span class="mt">Blockchain artesanal: el pipeline completo</span></a></li>
+        <li><a href="07-blockchain-aplicaciones.html"><span class="mn">07</span><span class="mt">Aplicaciones de blockchain por sector</span></a></li>
+          </ol>
+        </div>
+      </details>
+    </div>
+  </div>
+</header>
+<!-- barra:fin -->
+
+<main class="hoja">
+
+  <header class="cabecera" id="contenido">
+    <p class="indice">02</p>
+    <div class="texto">
+      <h1>Aplicaciones de las funciones hash</h1>
+      <p class="entradilla">Dónde están funcionando ahora mismo las tres resistencias del tema anterior. La lista es larga y aburrida a propósito: eso es exactamente lo que significa que una primitiva sea infraestructura.</p>
+    </div>
+  </header>
+
+  <h2><span class="hash">805fb1</span><span class="t">Por qué la lista importa</span></h2>
+
+
+  <p>El tema anterior definió tres propiedades y midió cuánto cuesta romperlas. Éste contesta la
+  pregunta siguiente: ¿dónde están apoyadas hoy? La respuesta corta es que las funciones hash son
+  un componente <strong>estructural, no accesorio</strong>, de la seguridad informática
+  contemporánea: sostienen la web segura, las criptomonedas, el control de versiones de casi todo
+  el software moderno y la autenticación de miles de millones de usuarios al día.</p>
+
+  <p>Las familias SHA-2 y SHA-3, estandarizadas por el NIST en <span class="hex">FIPS 180-4</span>
+  y <span class="hex">FIPS 202</span>, cumplen las tres propiedades bajo los modelos de seguridad
+  actuales. Todo lo que sigue descansa en eso.</p>
+
+  <h2><span class="hash">81ed34</span><span class="t">Integridad: comprobar que lo que llegó es lo que salió</span></h2>
+
+
+  <p><strong>Checksums de distribución.</strong> Los <span class="hex">sha256sum</span> publicados
+  junto a una descarga permiten detectar si un archivo se corrompió o fue alterado, comparando el
+  hash que publica el distribuidor contra el que se calcula localmente. Es el mecanismo estándar
+  de distribución de software: kernels de Linux, imágenes ISO, paquetes de pip y de npm.</p>
+
+  <p><strong>Deduplicación y almacenamiento direccionado por contenido.</strong> Sistemas de
+  archivos y de respaldo —IPFS, Git, ZFS, Dropbox— usan el hash del contenido como identificador
+  único. Dos archivos idénticos tienen el mismo nombre interno, así que se guardan una sola vez, y
+  de paso la verificación de integridad sale gratis.</p>
+
+  <p><strong>Cómputo forense.</strong> El National Software Reference Library del NIST mantiene
+  bases de datos de hashes de archivos conocidos. Un investigador las usa para descartar de golpe
+  los archivos de sistema legítimos y quedarse sólo con lo que no reconoce.</p>
+
+  <div class="nota">
+    <span class="titulo">Git y la migración de SHA-1</span>
+    <p>Git identifica cada objeto —commit, árbol, blob— por el hash de su contenido, lo que
+    garantiza la integridad del historial completo: cambiar cualquier commit altera todos los
+    hashes posteriores. Es también el ejemplo vivo de qué pasa cuando una función cae. Tras la
+    demostración práctica de colisiones en SHAttered, el proyecto arrancó la transición de SHA-1 a
+    SHA-256, y arrastra años de trabajo por una decisión de diseño tomada en 2005.</p>
+  </div>
+
+  <h2><span class="hash">4e60c0</span><span class="t">Firmas digitales: nadie firma el mensaje</span></h2>
+
+
+  <p>Los algoritmos de firma como <span class="hex">RSA-PSS</span> y
+  <span class="hex">ECDSA</span> no firman el mensaje completo: firman su hash. El estándar del
+  NIST para firmas digitales, <span class="hex">FIPS 186-5</span>, especifica explícitamente el uso
+  de SHA-2 o SHA-3 como paso previo.</p>
+
+  <p>Hay dos razones. La primera es de costo: firmar un resumen de 32 bytes es mucho más barato que
+  firmar un archivo de un gigabyte. La segunda es de seguridad: evita ataques de maleabilidad sobre
+  la estructura algebraica de la firma.</p>
+
+  <p>Y hay una consecuencia, que es la del tema anterior y conviene repetir: <strong>esa
+  construcción hace que la seguridad de la firma no pueda superar a la resistencia a colisión del
+  hash</strong>. Con una colisión, el atacante hace firmar el documento inocuo y exhibe el
+  fraudulento con la misma firma válida, sin tocar jamás la clave privada.</p>
+
+  <p><strong>Firma de código.</strong> Authenticode en Windows y codesign en macOS hashean el
+  binario ejecutable y firman ese hash. El sistema operativo verifica antes de ejecutar que el
+  software no fue modificado desde que lo publicó el desarrollador.</p>
+
+  <h2><span class="hash">ecd3f9</span><span class="t">Autenticación: contraseñas y HMAC</span></h2>
+
+
+  <p><strong>Almacenamiento de contraseñas.</strong> En lugar de guardarlas en claro, los sistemas
+  almacenan <span class="hex">H(contraseña ‖ sal)</span> usando funciones de derivación de clave
+  diseñadas para ser <em>deliberadamente costosas</em>: PBKDF2, bcrypt o Argon2. Las referencias
+  son <span class="hex">RFC 2898</span> y la guía <span class="hex">NIST SP 800-63B</span>. El tema
+  anterior desarrolla por qué la velocidad, que es una virtud en todo lo demás, aquí es el
+  defecto.</p>
+
+  <p><strong>HMAC.</strong> Combina una función hash con una clave secreta para producir un código
+  de autenticación de mensajes que garantiza integridad y autenticidad a la vez. Está en
+  <span class="hex">RFC 2104</span> y se usa en APIs REST, en tokens JWT con el algoritmo
+  <span class="hex">HS256</span> y en prácticamente todos los protocolos de red modernos. Su razón
+  de existir es el ataque de extensión de longitud del tema 01.</p>
+
+  <h2><span class="hash">f8283c</span><span class="t">TLS: toda la web segura</span></h2>
+
+
+  <p>TLS 1.3 —<span class="hex">RFC 8446</span>— usa funciones hash en dos lugares distintos del
+  mismo handshake. Dentro de <span class="hex">HKDF</span>, la función de derivación de claves del
+  <span class="hex">RFC 5869</span>, para producir las claves de sesión a partir del secreto
+  compartido. Y dentro de HMAC, para autenticar los mensajes del propio handshake y evitar que un
+  intermediario los altere.</p>
+
+  <p>Las funciones concretas son SHA-256 y SHA-384, según la suite negociada. Todo el tráfico HTTPS
+  del planeta depende de esta maquinaria, lo que explica por qué la migración de una función
+  debilitada tarda años: no es un componente, es un cimiento.</p>
+
+  <h2><span class="hash">babfc2</span><span class="t">Blockchain, Merkle y transparencia</span></h2>
+
+
+  <p><strong>Bitcoin y la prueba de trabajo.</strong> Bitcoin aplica SHA-256 dos veces
+  —<span class="hex">double-SHA256</span>— tanto para encadenar bloques como para el algoritmo de
+  prueba de trabajo, en el que los mineros buscan un nonce tal que el hash del encabezado quede por
+  debajo de un umbral de dificultad. El doble hasheo no es superstición: neutraliza la extensión de
+  longitud sobre el encabezado.</p>
+
+  <p><strong>Árboles de Merkle.</strong> Permiten verificar que un dato pertenece a un conjunto
+  grande con una prueba logarítmica en el tamaño del conjunto. Bitcoin y Ethereum los usan para
+  resumir las transacciones de un bloque; con un millón de transacciones, la prueba son veinte
+  hashes —640 bytes— en lugar de gigabytes. El tema 04 los desarrolla.</p>
+
+  <p><strong>Transparencia de certificados.</strong> El <span class="hex">RFC 6962</span> usa
+  árboles de Merkle sobre certificados X.509 para crear registros públicos, sólo-anexables y
+  auditables. Sirve para detectar certificados TLS fraudulentos emitidos por autoridades
+  certificadoras comprometidas, que es un problema que ningún otro mecanismo resolvía.</p>
+
+  <div class="nota">
+    <span class="titulo">Un detalle de implementación con consecuencias</span>
+    <p>El RFC 6962 prefija <span class="hex">0x00</span> a las hojas y <span class="hex">0x01</span>
+    a los nodos internos antes de hashear. Sin esa distinción, un atacante puede presentar un nodo
+    interno como si fuera una hoja y construir una segunda preimagen del árbol. Es el tipo de
+    detalle que no aparece en la definición matemática y que hunde una implementación.</p>
+  </div>
+
+  <h2><span class="hash">82dee4</span><span class="t">Lo que sigue abierto</span></h2>
+
+
+  <p>El análisis formal de las funciones hash sigue siendo un área activa de investigación,
+  particularmente en torno a la resistencia cuántica de las construcciones actuales. Como se vio en
+  el tema anterior, la conclusión hoy es tranquilizadora —Grover deja a SHA-256 con del orden de
+  128 bits— pero es una conclusión que depende de supuestos sobre memoria cuántica que podrían
+  cambiar.</p>
+
+  <p>Lo que no va a cambiar es la dependencia. Cada una de las aplicaciones de esta lista tendría
+  que migrarse si la función que usa cayera, y la lista es, esencialmente, la infraestructura
+  digital entera.</p>
+
+  <section class="recursos">
+    <h2><span class="hash">08c727</span><span class="t">Recursos del tema</span></h2>
+
+    <ul class="adjuntos">
+      <li>
+        <a href="../assets/pdf/hash-aplicaciones.pdf">
+          <span>
+            <span class="archivo">hash-aplicaciones.pdf</span>
+            <span class="que">Panorama de doce aplicaciones en sistemas desplegados, cada una con el estándar o la publicación técnica que la respalda, y dieciséis referencias.</span>
+          </span>
+          <span class="ext">4 páginas</span>
+          <span class="peso">50 KB</span>
+        </a>
+      </li>
+      <li>
+        <a href="../assets/pdf/laboratorio-funciones-hash.pdf">
+          <span>
+            <span class="archivo">laboratorio-funciones-hash.pdf</span>
+            <span class="que">El laboratorio completo del curso, fuente principal de la materia.</span>
+          </span>
+          <span class="ext">lab</span>
+          <span class="peso">3.2 MB</span>
+        </a>
+      </li>
+    </ul>
+
+    <p class="atribucion">Material del Dr. José de Jesús Ángel Ángel, Facultad de Ingeniería, Universidad Anáhuac México.</p>
+  </section>
+
+</main>
+
+<nav class="nav-temas" aria-label="Navegación entre temas">
+  <div class="nav-temas-int">
+    <a href="01-funciones-hash.html">
+      <span class="dir">tema anterior</span>
+      <span class="cual">01 Funciones hash: fundamentos</span>
+    </a>
+    <a class="sig" href="03-tarea-hash-artesanal.html">
+      <span class="dir">tema siguiente</span>
+      <span class="cual">03 Tarea 1: construir y atacar una función hash</span>
+    </a>
+  </div>
+</nav>
+
+<footer class="pie">
+  <div class="pie-int">
+    <p>Apuntes de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería.</p>
+    <p>Material original del Dr. José de Jesús Ángel Ángel.</p>
+  </div>
+</footer>
+
+<script>
+/* Único script de la materia: cierra el temario con Escape o al pulsar fuera. */
+(function () {
+  var menu = document.querySelector('.menu');
+  if (!menu) return;
+  document.addEventListener('click', function (e) {
+    if (menu.open && !menu.contains(e.target)) menu.open = false;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

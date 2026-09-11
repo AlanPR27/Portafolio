@@ -1,0 +1,7 @@
+.DS_Store
+Thumbs.db
+_fuentes/
+*.zip
+
+# Brief de trabajo: se queda local, no forma parte del sitio publicado.
+CLAUDE.md

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Álgebra Lineal Avanzada — Apuntes</title>
+<meta name="description" content="Apuntes del curso de Álgebra Lineal Avanzada: campos finitos, los cuatro subespacios fundamentales, factorizaciones QR y Cholesky, y la descomposición en valores singulares.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="css/algebra.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<!-- barra:inicio -->
+<header class="barra">
+  <div class="barra-int">
+    <a href="../index.html">Apuntes</a>
+    <span class="sep">/</span>
+    <span class="aqui">Álgebra Lineal Avanzada</span>
+    <details class="menu">
+      <summary>Temario</summary>
+      <div class="menu-panel">
+        <ol class="menu-lista">
+        <li><a href="temas/01-campos-finitos.html"><span class="mn">01</span><span class="mt">Campos finitos</span></a></li>
+        <li><a href="temas/02-cuatro-subespacios.html"><span class="mn">02</span><span class="mt">Los cuatro subespacios fundamentales</span></a></li>
+        <li><a href="temas/03-valores-vectores-propios.html"><span class="mn">03</span><span class="mt">Valores y vectores propios</span></a></li>
+        <li><a href="temas/04-qr-gram-schmidt.html"><span class="mn">04</span><span class="mt">Descomposición QR y Gram–Schmidt</span></a></li>
+        <li><a href="temas/05-cholesky.html"><span class="mn">05</span><span class="mt">Descomposición de Cholesky</span></a></li>
+        <li><a href="temas/06-svd-metodo-general.html"><span class="mn">06</span><span class="mt">SVD — teoría y método general</span></a></li>
+        <li><a href="temas/07-svd-valores-enteros.html"><span class="mn">07</span><span class="mt">SVD con valores singulares enteros</span></a></li>
+        <li><a href="temas/08-pseudoinversa.html"><span class="mn">08</span><span class="mt">Pseudoinversa de Moore–Penrose</span></a></li>
+        <li><a href="temas/09-aplicaciones-svd.html"><span class="mn">09</span><span class="mt">Aplicaciones de la SVD y compresión de imágenes</span></a></li>
+        </ol>
+      </div>
+    </details>
+  </div>
+</header>
+<!-- barra:fin -->
+
+<main class="hoja" id="contenido">
+
+  <header class="cabecera">
+    <p class="indice">9×1</p>
+    <div class="texto">
+      <h1>Álgebra Lineal Avanzada</h1>
+      <p class="entradilla">Campos finitos, los cuatro subespacios fundamentales y las
+      factorizaciones matriciales, hasta llegar a la descomposición en valores singulares
+      y a lo que se construye con ella.</p>
+    </div>
+  </header>
+
+  <p>El curso avanza en dos movimientos. El primero cambia el campo sobre el que se
+  hace álgebra lineal: si las demostraciones sólo usan los axiomas de campo, todo lo
+  conocido sigue valiendo sobre un campo con dieciséis elementos, y de ahí sale buena
+  parte de la criptografía y de los códigos correctores. El segundo cambia la pregunta:
+  en lugar de resolver <em>Ax</em> = <em>b</em>, se busca escribir <em>A</em> como
+  producto de piezas que se entienden por separado —una rotación, un estiramiento, otra
+  rotación— y ahí aparecen QR, Cholesky y la SVD.</p>
+
+  <p>Cada tema termina con los apuntes originales en PDF y los cuadernos de Wolfram
+  correspondientes, descargables.</p>
+
+  <hr class="sigma" style="--i:1">
+
+  <h2><span class="n">temario</span><span class="t">Los nueve temas</span></h2>
+
+  <table class="matriz">
+    <tbody>
+      <tr>
+        <td class="idx">01</td>
+        <td class="tema">
+          <a href="temas/01-campos-finitos.html">Campos finitos</a>
+          <p>Construcción de F<sub>p</sub><sup>n</sup> como cociente, notación por cadenas
+          de bits, elemento primitivo y logaritmo discreto, y la galería completa de los
+          campos con 2, 4, 8 y 16 elementos.</p>
+        </td>
+        <td class="rec">1 pdf</td>
+      </tr>
+      <tr>
+        <td class="idx">02</td>
+        <td class="tema">
+          <a href="temas/02-cuatro-subespacios.html">Los cuatro subespacios fundamentales</a>
+          <p>Espacio fila, espacio columna, núcleo y núcleo izquierdo; las dos relaciones
+          de dimensión y las dos de ortogonalidad, leídas como la separación entre lo que
+          un modelo explica y lo que deja como residuo.</p>
+        </td>
+        <td class="rec">1 pdf, 1 nb</td>
+      </tr>
+      <tr>
+        <td class="idx">03</td>
+        <td class="tema">
+          <a href="temas/03-valores-vectores-propios.html">Valores y vectores propios</a>
+          <p>Diagonalización A = PDP<sup>−1</sup>, qué cambia al reordenar los valores
+          propios y qué no cambia al reescalar los vectores propios.</p>
+        </td>
+        <td class="rec">1 nb</td>
+      </tr>
+      <tr>
+        <td class="idx">04</td>
+        <td class="tema">
+          <a href="temas/04-qr-gram-schmidt.html">Descomposición QR y Gram–Schmidt</a>
+          <p>El proceso de ortonormalización paso a paso, cómo se construye R a partir de
+          Q, y la comparación con el comando directo del sistema.</p>
+        </td>
+        <td class="rec">1 nb</td>
+      </tr>
+      <tr>
+        <td class="idx">05</td>
+        <td class="tema">
+          <a href="temas/05-cholesky.html">Descomposición de Cholesky</a>
+          <p>A = LL<sup>T</sup> para matrices simétricas definidas positivas: cuándo
+          existe, qué la hace la mitad de cara que una LU y cómo se usa como prueba de
+          definición positiva.</p>
+        </td>
+        <td class="rec">1 nb</td>
+      </tr>
+      <tr>
+        <td class="idx">06</td>
+        <td class="tema">
+          <a href="temas/06-svd-metodo-general.html">SVD — teoría y método general</a>
+          <p>El algoritmo de ocho pasos vía diagonalización de A<sup>T</sup>A, válido para
+          cualquier m × n, sus dos límites numéricos, y quince problemas 2 × 2 resueltos
+          con el mismo guion.</p>
+        </td>
+        <td class="rec">2 pdf, 2 nb</td>
+      </tr>
+      <tr>
+        <td class="idx">07</td>
+        <td class="tema">
+          <a href="temas/07-svd-valores-enteros.html">SVD con valores singulares enteros</a>
+          <p>Cuatro recetas para fabricar matrices cuya SVD sale exacta a mano, y el
+          catálogo de ejemplos 2 × 2, 2 × 3, 2 × 4, 2 × 5 y 3 × 5 que producen.</p>
+        </td>
+        <td class="rec">1 pdf</td>
+      </tr>
+      <tr>
+        <td class="idx">08</td>
+        <td class="tema">
+          <a href="temas/08-pseudoinversa.html">Pseudoinversa de Moore–Penrose</a>
+          <p>Mínimos cuadrados de norma mínima para sistemas sin solución única, por
+          factorización de rango y por la vía espectral.</p>
+        </td>
+        <td class="rec">1 nb</td>
+      </tr>
+      <tr>
+        <td class="idx">09</td>
+        <td class="tema">
+          <a href="temas/09-aplicaciones-svd.html">Aplicaciones de la SVD y compresión de imágenes</a>
+          <p>Eckart–Young–Mirsky y noventa aplicaciones vigentes por área, más el
+          ejercicio propio de compresión por truncamiento de rango en Wolfram.</p>
+        </td>
+        <td class="rec">1 pdf, 2 wl</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr class="sigma" style="--i:2">
+
+  <h2><span class="n">fuente</span><span class="t">Sobre el material</span></h2>
+
+  <p>Los apuntes en PDF y los cuadernos de Wolfram son material del
+  <strong>Dr. José de Jesús Ángel Ángel</strong>, Facultad de Ingeniería, Universidad
+  Anáhuac México. Los resúmenes de cada tema son míos, escritos para estudiar; si hay
+  un error, es mío y no del original.</p>
+
+  <p>La única excepción es el ejercicio de compresión de imágenes del tema 09, cuyo
+  código es propio.</p>
+
+</main>
+
+<footer class="pie">
+  <div class="pie-int">
+    <p>Apuntes de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería.</p>
+    <p>Material original del Dr. José de Jesús Ángel Ángel.</p>
+  </div>
+</footer>
+
+<script>
+/* Único script del sitio: cierra el temario con Escape o al pulsar fuera. */
+(function () {
+  var menu = document.querySelector('.menu');
+  if (!menu) return;
+  document.addEventListener('click', function (e) {
+    if (menu.open && !menu.contains(e.target)) menu.open = false;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,154 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      4937,        146]
+NotebookOptionsPosition[      3443,        110]
+NotebookOutlinePosition[      4234,        134]
+CellTagsIndexPosition[      4141,        129]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[{
+ RowBox[{"A", "=", 
+  RowBox[{"(", GridBox[{
+     {"4", "2", "1"},
+     {"2", "2", "1"},
+     {"1", "1", "1"}
+    }], ")"}]}], "\[IndentingNewLine]", 
+ RowBox[{"Det", "[", "A", "]"}]}], "Input",
+ CellChangeTimes->{{3.8716424375369806`*^9, 3.8716424653406954`*^9}, 
+   3.8716425504624615`*^9, {3.8716426469288883`*^9, 3.871642661661683*^9}},
+ CellLabel->"In[29]:=",ExpressionUUID->"bf5e5a5f-39d5-478e-b7bb-6056bc87d5de"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"4", ",", "2", ",", "1"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"2", ",", "2", ",", "1"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"1", ",", "1", ",", "1"}], "}"}]}], "}"}]], "Output",
+ CellChangeTimes->{3.871642466162041*^9, 3.871642552729426*^9, 
+  3.871642663411147*^9},
+ CellLabel->"Out[29]=",ExpressionUUID->"64805b89-0505-4ee7-bbc1-5d9d1ca5dc82"],
+
+Cell[BoxData["2"], "Output",
+ CellChangeTimes->{3.871642466162041*^9, 3.871642552729426*^9, 
+  3.871642663415145*^9},
+ CellLabel->"Out[30]=",ExpressionUUID->"e85b1302-619d-4b49-8cd2-6dbf41b1dab2"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"CholeskyDecomposition", "[", 
+   RowBox[{"(", GridBox[{
+      {"4", "2", "1"},
+      {"2", "2", "1"},
+      {"1", "1", "1"}
+     }], ")"}], "]"}], "//", "MatrixForm"}]], "Input",
+ CellChangeTimes->{
+  3.8716425299173813`*^9, {3.871642563605488*^9, 3.8716425794765444`*^9}},
+ CellTags->"CholeskyDecomposition_templates",
+ CellLabel->"In[27]:=",ExpressionUUID->"e3a4df07-d10a-410c-8304-418b291ced3a"],
+
+Cell[BoxData[
+ TagBox[
+  RowBox[{"(", "\[NoBreak]", GridBox[{
+     {"2", "1", 
+      FractionBox["1", "2"]},
+     {"0", "1", 
+      FractionBox["1", "2"]},
+     {"0", "0", 
+      FractionBox["1", 
+       SqrtBox["2"]]}
+    },
+    GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
+    GridBoxSpacings->{"Columns" -> {
+        Offset[0.27999999999999997`], {
+         Offset[0.7]}, 
+        Offset[0.27999999999999997`]}, "Rows" -> {
+        Offset[0.2], {
+         Offset[0.4]}, 
+        Offset[0.2]}}], "\[NoBreak]", ")"}],
+  Function[BoxForm`e$, 
+   MatrixForm[BoxForm`e$]]]], "Output",
+ CellChangeTimes->{
+  3.871642531770132*^9, {3.8716425652664633`*^9, 3.8716425809499063`*^9}},
+ CellTags->"CholeskyDecomposition_templates",
+ CellLabel->
+  "Out[27]//MatrixForm=",ExpressionUUID->"3ae239c0-adfb-4bce-8dc5-\
+90b679e92e57"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"PositiveDefiniteMatrixQ", "[", "A", "]"}]], "Input",
+ CellChangeTimes->{{3.8716426224485855`*^9, 3.871642630293621*^9}, 
+   3.871642674271678*^9},
+ CellLabel->"In[31]:=",ExpressionUUID->"760659f9-8de0-42fe-9507-12c345f4c526"],
+
+Cell[BoxData["True"], "Output",
+ CellChangeTimes->{3.8716426323935995`*^9, 3.8716426758962355`*^9},
+ CellLabel->"Out[31]=",ExpressionUUID->"0f3ec9db-b874-4915-9bd6-38f49e3d8d39"]
+}, Open  ]]
+},
+WindowSize->{836.25, 619.5},
+WindowMargins->{{163.5, Automatic}, {-34.5, Automatic}},
+FrontEndVersion->"13.0 para Microsoft Windows (64-bit) (December 2, 2021)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"e72fc8bc-9f69-4e09-8933-a23f7033f4e0"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{
+ "CholeskyDecomposition_templates"->{
+  Cell[1681, 55, 433, 11, 75, "Input",ExpressionUUID->"e3a4df07-d10a-410c-8304-418b291ced3a",
+   CellTags->"CholeskyDecomposition_templates"],
+  Cell[2117, 68, 843, 26, 103, "Output",ExpressionUUID->"3ae239c0-adfb-4bce-8dc5-90b679e92e57",
+   CellTags->"CholeskyDecomposition_templates"]}
+ }
+*)
+(*CellTagsIndex
+CellTagsIndex->{
+ {"CholeskyDecomposition_templates", 3829, 121}
+ }
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 434, 10, 98, "Input",ExpressionUUID->"bf5e5a5f-39d5-478e-b7bb-6056bc87d5de"],
+Cell[1017, 34, 428, 11, 32, "Output",ExpressionUUID->"64805b89-0505-4ee7-bbc1-5d9d1ca5dc82"],
+Cell[1448, 47, 196, 3, 32, "Output",ExpressionUUID->"e85b1302-619d-4b49-8cd2-6dbf41b1dab2"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1681, 55, 433, 11, 75, "Input",ExpressionUUID->"e3a4df07-d10a-410c-8304-418b291ced3a",
+ CellTags->"CholeskyDecomposition_templates"],
+Cell[2117, 68, 843, 26, 103, "Output",ExpressionUUID->"3ae239c0-adfb-4bce-8dc5-90b679e92e57",
+ CellTags->"CholeskyDecomposition_templates"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2997, 99, 249, 4, 43, "Input",ExpressionUUID->"760659f9-8de0-42fe-9507-12c345f4c526"],
+Cell[3249, 105, 178, 2, 55, "Output",ExpressionUUID->"0f3ec9db-b874-4915-9bd6-38f49e3d8d39"]
+}, Open  ]]
+}
+]
+*)
+

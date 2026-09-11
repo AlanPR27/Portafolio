@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aplicaciones de blockchain por sector — Blockchain</title>
+<meta name="description" content="Catálogo sectorial de aplicaciones de blockchain distinguiendo operación real verificable de propuesta o piloto, con la prueba de cuatro preguntas y diez notas de advertencia.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../css/blockchain.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<!-- barra:inicio -->
+<header class="barra">
+  <div class="barra-int">
+    <a href="../../index.html">Apuntes</a>
+    <span class="sep">/</span>
+    <a href="../index.html">Blockchain</a>
+    <span class="sep">/</span>
+    <span class="aqui">07 Aplicaciones de blockchain por sector</span>
+    <div class="barra-der">
+      <nav class="cadena-nav" aria-label="Cadena de temas">
+        <a class="bloque" href="01-funciones-hash.html" title="Funciones hash: fundamentos">01</a><span class="union"></span><a class="bloque" href="02-hash-aplicaciones.html" title="Aplicaciones de las funciones hash">02</a><span class="union"></span><a class="bloque" href="03-tarea-hash-artesanal.html" title="Tarea 1: construir y atacar una función hash">03</a><span class="union"></span><a class="bloque" href="04-sellado-de-tiempo.html" title="Sellado de tiempo">04</a><span class="union"></span><a class="bloque" href="05-esquemas-de-compromiso.html" title="Esquemas de compromiso">05</a><span class="union"></span><a class="bloque" href="06-blockchain-artesanal.html" title="Blockchain artesanal: el pipeline completo">06</a><span class="union"></span><a class="bloque" href="07-blockchain-aplicaciones.html" aria-current="page" title="Aplicaciones de blockchain por sector">07</a>
+      </nav>
+      <details class="menu">
+        <summary>temario</summary>
+        <div class="menu-panel">
+          <ol class="menu-lista">
+        <li><a href="01-funciones-hash.html"><span class="mn">01</span><span class="mt">Funciones hash: fundamentos</span></a></li>
+        <li><a href="02-hash-aplicaciones.html"><span class="mn">02</span><span class="mt">Aplicaciones de las funciones hash</span></a></li>
+        <li><a href="03-tarea-hash-artesanal.html"><span class="mn">03</span><span class="mt">Tarea 1: construir y atacar una función hash</span></a></li>
+        <li><a href="04-sellado-de-tiempo.html"><span class="mn">04</span><span class="mt">Sellado de tiempo</span></a></li>
+        <li><a href="05-esquemas-de-compromiso.html"><span class="mn">05</span><span class="mt">Esquemas de compromiso</span></a></li>
+        <li><a href="06-blockchain-artesanal.html"><span class="mn">06</span><span class="mt">Blockchain artesanal: el pipeline completo</span></a></li>
+        <li><a href="07-blockchain-aplicaciones.html" aria-current="page"><span class="mn">07</span><span class="mt">Aplicaciones de blockchain por sector</span></a></li>
+          </ol>
+        </div>
+      </details>
+    </div>
+  </div>
+</header>
+<!-- barra:fin -->
+
+<main class="hoja">
+
+  <header class="cabecera" id="contenido">
+    <p class="indice">07</p>
+    <div class="texto">
+      <h1>Aplicaciones de blockchain por sector</h1>
+      <p class="entradilla">En álgebra lineal, listar aplicaciones es listar hechos. En blockchain, listarlas sin más equivale a listar comunicados de prensa. Este catálogo separa lo uno de lo otro, empezando por el proyecto más ambicioso del sector, que cerró.</p>
+    </div>
+  </header>
+
+  <h2><span class="hash">884317</span><span class="t">Por qué este catálogo se lee distinto</span></h2>
+
+
+  <p>Una cadena de bloques es un registro replicado entre varias partes, ordenado
+  criptográficamente, en el que ninguna puede alterar por sí sola lo ya escrito. Su promesa es
+  acotada y precisa: permite que actores que no confían entre sí compartan un registro común sin
+  depender de un intermediario que todos acepten.</p>
+
+  <p>Entre 2017 y 2022 se anunciaron centenares de proyectos que hoy no existen. Por eso, en el
+  catálogo del curso, la marca ★ <strong>no significa «especialmente interesante» sino «en
+  operación real verificable u obligatoria por regulación vigente»</strong>. Las entradas sin marca
+  son propuestas, pilotos o aplicaciones de adopción limitada, enunciadas porque forman parte
+  legítima del panorama, no porque estén funcionando a escala.</p>
+
+  <div class="nota aviso">
+    <span class="titulo">La lección de TradeLens</span>
+    <p>La plataforma de Maersk e IBM cerró en 2023 tras cuatro años de operación, pese a haber
+    alcanzado más de 175 organizaciones y 600 puertos y terminales. <strong>No fracasó por la
+    tecnología</strong>: fracasó porque los competidores de Maersk no quisieron poner sus datos
+    operativos en una plataforma copropiedad de su rival. La gobernanza vence a la tecnología, y
+    con más frecuencia de la que la literatura del sector admite.</p>
+  </div>
+
+  <p>El panorama a mediados de 2026 es desigual pero ya no especulativo en todos los frentes. Los
+  activos del mundo real tokenizados alcanzaron unos 32 200 millones de dólares en junio de 2026,
+  casi el triple que un año antes, con los bonos del Tesoro estadounidense a la cabeza. En sentido
+  opuesto, la trazabilidad alimentaria y logística sigue dominada por pilotos que no escalan.</p>
+
+  <h2><span class="hash">526c90</span><span class="t">La prueba de cuatro preguntas</span></h2>
+
+
+  <p>Antes de cualquier entrada del catálogo conviene aplicar cuatro preguntas. <strong>Si alguna se
+  responde que no, casi siempre una base de datos con firmas digitales resuelve mejor y más
+  barato.</strong></p>
+
+  <ol>
+    <li>¿Participan varias organizaciones que necesitan escribir en el mismo registro?</li>
+    <li>¿Existe desconfianza real entre ellas, o intereses en conflicto?</li>
+    <li>¿Falta un intermediario neutral que todas acepten, o el existente es costoso o lento?</li>
+    <li>¿Importa que el registro sea auditable por terceros y resistente a modificación
+    retroactiva?</li>
+  </ol>
+
+  <p>Es una prueba incómoda porque elimina la mayoría de los casos de uso anunciados. Ése es
+  justamente su valor.</p>
+
+  <h2><span class="hash">7645d5</span><span class="t">Primitivas y mecanismos</span></h2>
+
+
+  <p>Antes de los sectores, las piezas. Las marcadas son las que operan de verdad.</p>
+
+  <div class="tabla-env">
+  <table>
+    <thead><tr><th>mecanismo</th><th>estado</th><th>observación</th></tr></thead>
+    <tbody>
+      <tr><td>sellado de tiempo y anclaje de resúmenes</td><td class="valido">★ real</td><td>la aplicación más sólida y menos vistosa; el documento nunca sale de su repositorio</td></tr>
+      <tr><td>contratos inteligentes</td><td class="valido">★ real</td><td>funcionan bien con dinero y tokens, y mal con hechos del mundo físico</td></tr>
+      <tr><td>monedas estables</td><td class="valido">★ real</td><td>hoy mueven volúmenes significativos en pagos transfronterizos</td></tr>
+      <tr><td>liquidación atómica entrega contra pago</td><td class="valido">★ real</td><td>elimina el riesgo de contraparte; el beneficio más citado por los análisis institucionales</td></tr>
+      <tr><td>pruebas de conocimiento cero</td><td class="valido">★ real</td><td>reconcilian auditabilidad con confidencialidad; el área de mayor progreso</td></tr>
+      <tr><td>tokens fungibles y no fungibles</td><td>parcial</td><td>los estándares con controles de cumplimiento fueron condición para la entrada institucional</td></tr>
+      <tr><td>identidad autosoberana</td><td>parcial</td><td>la cadena se usa sólo para registro de emisores y revocaciones</td></tr>
+      <tr><td>oráculos</td><td class="roto">[!] eslabón débil</td><td>el punto frágil de casi toda aplicación de trazabilidad</td></tr>
+      <tr><td>interoperabilidad entre cadenas</td><td class="roto">problemática</td><td>históricamente el punto de mayor incidencia de fallas de seguridad</td></tr>
+      <tr><td>gobernanza de consorcio</td><td>decisivo</td><td>determina el éxito o el fracaso con más frecuencia que la arquitectura técnica</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2><span class="hash">683cd0</span><span class="t">Finanzas: donde sí está pasando</span></h2>
+
+
+  <p>Es el sector con la brecha más pequeña entre anuncio y operación, y conviene entender por qué:
+  los activos financieros ya son registros: no hay que meter nada del mundo físico en la cadena.</p>
+
+  <p><strong>Fondos del mercado monetario tokenizados.</strong> El fondo BUIDL de BlackRock, emitido
+  a través de Securitize, opera en varias redes con custodia de un banco tradicional y auditoría
+  externa, y se acepta como colateral en plataformas de activos digitales. Es la prueba
+  institucional más clara de que el modelo funciona.</p>
+
+  <p><strong>Bonos del Tesoro tokenizados.</strong> La categoría más grande del mercado de activos
+  tokenizados, con alrededor de quince mil millones de dólares a mediados de 2026. Su atractivo es
+  prosaico: colateral de alta calidad disponible las veinticuatro horas.</p>
+
+  <p><strong>Pagos transfronterizos con monedas estables.</strong> Liquidación en minutos y a costo
+  bajo frente a la cadena de bancos corresponsales, particularmente relevante en corredores con
+  infraestructura bancaria débil.</p>
+
+  <p><strong>Colateral y reporto intradía.</strong> Movilizar garantías en minutos en lugar de días
+  libera capital inmovilizado; es uno de los usos con retorno más claro para la banca mayorista.</p>
+
+  <p><strong>Oro tokenizado.</strong> Señal de madurez: en 2026 la correlación entre el oro
+  tokenizado y el mercado físico tradicional superó el umbral de 0.70, lo que indica que el mercado
+  en cadena dejó de fijar precios de manera aislada.</p>
+
+  <div class="nota aviso">
+    <span class="titulo">Y donde el entusiasmo excede al volumen</span>
+    <p>Los bienes raíces fraccionados son el contraste. El Departamento de Tierras de Dubái abrió en
+    febrero de 2026 la segunda fase de su programa, que permite reventa de unidades tokenizadas.
+    Aun así, el valor inmobiliario en cadena era de apenas doscientos millones de dólares. La señal
+    a vigilar es otra: la depositaria estadounidense DTCC lanzó un piloto de valores tokenizados en
+    mayo de 2026, y si la infraestructura central adopta, el resto sigue.</p>
+  </div>
+
+  <h2><span class="hash">870f1a</span><span class="t">Los demás sectores</span></h2>
+
+
+  <p>El catálogo cubre doce sectores con 116 entradas en total: logística y cadena de suministro,
+  ingeniería industrial, química de procesos, automotriz, biomédica, turismo, espectáculos y
+  deportes, bienes de alto valor, academia, y sector público y ambiental.</p>
+
+  <p>El patrón es consistente y vale más que la lista. Donde el objeto ya es digital —un valor, un
+  certificado, un registro de propiedad intelectual, un asiento contable— la adopción avanza. Donde
+  hay que <strong>vincular un objeto físico con su representación digital</strong> —un contenedor,
+  un lote de alimentos, una pieza de repuesto, un diamante— los proyectos se estancan en piloto, y
+  siempre por la misma razón.</p>
+
+  <p>Algunos casos que sí operan: el factoraje, que evita el descuento múltiple de una misma factura
+  ante financiadores distintos —un problema con pérdidas documentadas—; los registros accionarios;
+  y la trazabilidad de credenciales académicas, donde el objeto es un documento firmado y no una
+  cosa.</p>
+
+  <h2><span class="hash">1da526</span><span class="t">Las advertencias</span></h2>
+
+
+  <p>Las notas finales del catálogo son la parte más útil, porque explican los fracasos en lugar de
+  omitirlos.</p>
+
+  <p><strong>El problema del oráculo.</strong> Una cadena garantiza que nadie alteró lo que se
+  escribió; <span class="roto">no garantiza que lo que se escribió fuera cierto</span>. Si alguien
+  registra que un contenedor va refrigerado y no lo va, la cadena preserva esa mentira con
+  integridad criptográfica perfecta. Es el eslabón débil de casi toda aplicación de trazabilidad, y
+  no tiene solución técnica dentro de la cadena.</p>
+
+  <p><strong>Tokenizar no crea liquidez.</strong> Fraccionar un activo ilíquido produce fracciones
+  ilíquidas. La liquidez viene de que haya compradores, no del formato del registro.</p>
+
+  <p><strong>La regulación es neutral respecto a la tecnología.</strong> Un instrumento tokenizado
+  está sujeto a las mismas obligaciones que su equivalente tradicional. Nada se simplifica por estar
+  en cadena.</p>
+
+  <p><strong>Inmutabilidad contra derecho al olvido.</strong> El RGPD exige poder borrar datos
+  personales; una cadena inmutable no puede. Los datos personales no deben ir en cadena, sólo sus
+  hashes, y aun así la tensión persiste. El hashing camaleónico del tema 05 es una de las pocas
+  respuestas técnicas serias.</p>
+
+  <p><strong>¿Qué queda de la propiedad original en una cadena permisionada?</strong> La mayoría de
+  los casos empresariales usa redes donde sólo participantes autorizados validan. Si un grupo cerrado
+  y conocido controla la validación, buena parte de la resistencia a la censura y de la
+  descentralización desaparece, y la pregunta de si hacía falta una blockchain vuelve a abrirse.</p>
+
+  <p><strong>Votación electoral.</strong> La postura del catálogo es escéptica y está bien fundada:
+  la cadena resuelve la integridad del registro, que nunca fue el problema difícil. El problema
+  difícil es el secreto del voto, la coerción del votante y la seguridad del dispositivo desde el
+  que se vota, y ninguno de los tres se resuelve encadenando hashes.</p>
+
+  <p><strong>Sesgo de supervivencia.</strong> La literatura del sector describe los proyectos que
+  siguen vivos y rara vez los que cerraron, lo que sesga sistemáticamente cualquier evaluación de
+  tasa de éxito. TradeLens es la excepción útil precisamente porque su cierre está documentado.</p>
+
+  <section class="recursos">
+    <h2><span class="hash">08c727</span><span class="t">Recursos del tema</span></h2>
+
+    <ul class="adjuntos">
+      <li>
+        <a href="../assets/pdf/blockchain-aplicaciones.pdf">
+          <span>
+            <span class="archivo">blockchain-aplicaciones.pdf</span>
+            <span class="que">Catálogo sectorial completo: 116 entradas en doce sectores con la distinción entre operación real, obligación regulatoria y propuesta, la prueba previa de cuatro preguntas y diez notas de advertencia.</span>
+          </span>
+          <span class="ext">10 páginas</span>
+          <span class="peso">85 KB</span>
+        </a>
+      </li>
+    </ul>
+
+    <p class="atribucion">Material del Dr. José de Jesús Ángel Ángel, Facultad de Ingeniería, Universidad Anáhuac México.</p>
+  </section>
+
+</main>
+
+<nav class="nav-temas" aria-label="Navegación entre temas">
+  <div class="nav-temas-int">
+    <a href="06-blockchain-artesanal.html">
+      <span class="dir">tema anterior</span>
+      <span class="cual">06 Blockchain artesanal: el pipeline completo</span>
+    </a>
+    <a class="sig" href="../index.html">
+      <span class="dir">fin del temario</span>
+      <span class="cual">volver al índice de la materia</span>
+    </a>
+  </div>
+</nav>
+
+<footer class="pie">
+  <div class="pie-int">
+    <p>Apuntes de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería.</p>
+    <p>Material original del Dr. José de Jesús Ángel Ángel.</p>
+  </div>
+</footer>
+
+<script>
+/* Único script de la materia: cierra el temario con Escape o al pulsar fuera. */
+(function () {
+  var menu = document.querySelector('.menu');
+  if (!menu) return;
+  document.addEventListener('click', function (e) {
+    if (menu.open && !menu.contains(e.target)) menu.open = false;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

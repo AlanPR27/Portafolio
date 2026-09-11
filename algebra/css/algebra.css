@@ -1,0 +1,784 @@
+@charset "utf-8";
+
+/* =========================================================================
+   Álgebra Lineal Avanzada — hoja de estilos propia.
+   No se comparte con Blockchain: son dos identidades visuales distintas.
+
+   Principio: la página se comporta como una matriz. El contenido se alinea
+   a columnas visibles, las secciones se indexan por posición en el raíl
+   izquierdo, y los separadores trazan la diagonal de Sigma — escalonándose
+   a la derecha y acortándose, porque s1 >= s2 >= ... >= sp.
+   ========================================================================= */
+
+:root {
+  /* Tinta y papel frío. Un solo acento: la misma tinta a saturación plena. */
+  --papel:      #f4f6f8;
+  --tinta:      #12171c;
+  --tinta-2:    #4d5966;
+  --regla:      #d4dbe1;
+  --regla-2:    #e4e9ee;
+  --reticula:   rgba(18, 23, 28, 0.045);
+  --acento:     #2338c9;
+  --acento-sup: rgba(35, 56, 201, 0.10);
+
+  --serif: "Source Serif 4", ui-serif, Georgia, "Times New Roman", serif;
+  --mono:  "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  --medida: 72ch;   /* ancho de la columna; el texto cae en ~68 caracteres */
+  --rail:   5.5rem; /* raíl de índices */
+  --nota:   11rem;  /* margen de notas */
+  --celda:  2.75rem;/* paso de la retícula de fondo */
+  --pad:    1.25rem;
+
+  --sigma-max:  2.8rem; /* longitud del primer trazo diagonal */
+  --sigma-paso: 0.24rem;/* cuánto se acorta cada trazo siguiente */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --papel:      #0f1418;
+    --tinta:      #e3e9ee;
+    --tinta-2:    #9aa7b4;
+    --regla:      #2b343d;
+    --regla-2:    #1c242b;
+    --reticula:   rgba(227, 233, 238, 0.05);
+    --acento:     #8fa6ff;
+    --acento-sup: rgba(143, 166, 255, 0.13);
+  }
+}
+
+:root[data-theme="dark"] {
+  --papel:      #0f1418;
+  --tinta:      #e3e9ee;
+  --tinta-2:    #9aa7b4;
+  --regla:      #2b343d;
+  --regla-2:    #1c242b;
+  --reticula:   rgba(227, 233, 238, 0.05);
+  --acento:     #8fa6ff;
+  --acento-sup: rgba(143, 166, 255, 0.13);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  color: var(--tinta);
+  background-color: var(--papel);
+  /* La retícula como sustrato: columnas, no cuadrícula. */
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--reticula) 0 1px,
+    transparent 1px var(--celda)
+  );
+  font-family: var(--serif);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  font-variant-numeric: oldstyle-nums proportional-nums;
+}
+
+/* ---------- Enlaces: acento + subrayado desplazado. Sin flechas. -------- */
+
+a {
+  color: var(--acento);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  text-decoration-color: color-mix(in srgb, var(--acento) 45%, transparent);
+}
+
+a:hover { text-decoration-color: currentColor; }
+
+:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+.saltar {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--papel);
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--acento);
+  z-index: 10;
+}
+.saltar:focus { left: 0.5rem; top: 0.5rem; }
+
+/* ---------------------------- Barra superior --------------------------- */
+
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--regla);
+  background: var(--papel); /* opaca: se queda fija sobre el texto */
+}
+
+.barra-int {
+  width: min(100% - 2 * var(--pad), calc(var(--rail) + var(--medida) + var(--nota)));
+  margin-inline: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.55rem 0.9rem;
+  padding: 0.7rem 0;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.01em;
+  color: var(--tinta-2);
+}
+
+.barra-int > a { color: inherit; text-decoration-color: var(--regla); }
+.barra-int > a:hover { color: var(--acento); }
+.barra-int .sep { color: var(--regla); }
+.barra-int .aqui { color: var(--tinta); }
+
+/* ------------------------- Temario desplegable -------------------------- */
+/* <details> nativo: funciona sin JS; el script sólo cierra al salir. */
+
+.menu { margin-left: auto; position: relative; }
+
+.menu > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.15rem 0;
+  color: var(--tinta);
+  white-space: nowrap;
+}
+
+.menu > summary::-webkit-details-marker { display: none; }
+
+/* El indicador es un trazo diagonal, el mismo motivo que separa secciones. */
+.menu > summary::after {
+  content: "";
+  width: 0.62rem;
+  height: 0.62rem;
+  flex: none;
+  background: linear-gradient(
+    to bottom right,
+    transparent calc(50% - 0.5px),
+    var(--acento) calc(50% - 0.5px),
+    var(--acento) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px)
+  );
+  transition: transform 0.12s ease;
+}
+
+.menu[open] > summary::after { transform: scaleY(-1); }
+.menu > summary:hover { color: var(--acento); }
+
+.menu-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.7rem);
+  z-index: 30;
+  min-width: min(23rem, calc(100vw - 2 * var(--pad)));
+  background: var(--papel);
+  border: 1px solid var(--regla);
+  padding: 0.3rem 0;
+  max-height: min(70vh, 34rem);
+  overflow-y: auto;
+}
+
+.menu-lista { list-style: none; margin: 0; padding: 0; }
+.menu-lista li { margin: 0; }
+
+.menu-lista a {
+  display: grid;
+  grid-template-columns: 2.4rem minmax(0, 1fr);
+  gap: 0.2rem;
+  align-items: baseline;
+  padding: 0.42rem 0.95rem;
+  text-decoration: none;
+  color: var(--tinta);
+  border-left: 2px solid transparent;
+}
+
+.menu-lista .mn {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  color: var(--tinta-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.menu-lista .mt {
+  font-family: var(--serif);
+  font-size: 0.93rem;
+  line-height: 1.3;
+}
+
+.menu-lista a:hover { background: var(--acento-sup); }
+.menu-lista a:hover .mn { color: var(--acento); }
+
+.menu-lista a[aria-current="page"] {
+  border-left-color: var(--acento);
+  background: var(--acento-sup);
+}
+.menu-lista a[aria-current="page"] .mn { color: var(--acento); }
+.menu-lista a[aria-current="page"] .mt { font-weight: 600; }
+
+/* ------------------------------- Retícula ------------------------------ */
+
+.hoja {
+  position: relative;
+  width: min(100% - 2 * var(--pad), calc(var(--rail) + var(--medida) + var(--nota)));
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: var(--rail) minmax(0, 1fr) var(--nota);
+  padding-block: 3.5rem 4rem;
+}
+
+/* Las dos reglas verticales que delimitan la columna del cuerpo. */
+.hoja::before,
+.hoja::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--regla);
+}
+.hoja::before { left: var(--rail); }
+.hoja::after  { right: var(--nota); }
+
+.hoja > * { grid-column: 2; padding-inline: 1.6rem; }
+
+/* Bloques que abarcan raíl + cuerpo: su etiqueta vive en el raíl.
+   Estos selectores tienen que pesar más que `.hoja > *`, o el raíl no existe. */
+.hoja > h2,
+.hoja > .cabecera,
+.hoja > .recursos {
+  grid-column: 1 / 3;
+  padding-inline: 0;
+  display: grid;
+  grid-template-columns: var(--rail) minmax(0, 1fr);
+  align-items: baseline;
+}
+
+.hoja > .sigma { grid-column: 1 / 4; }
+
+/* ------------------------------ Encabezados ---------------------------- */
+
+.cabecera { margin-bottom: 1.8rem; }
+
+.cabecera > .indice {
+  grid-column: 1;
+  margin: 0;
+  padding-right: 1rem;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--tinta-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.cabecera > .texto { grid-column: 2; padding-inline: 1.6rem; }
+
+h1 {
+  font-size: clamp(1.9rem, 1.4rem + 2vw, 2.7rem);
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 0 0 0.6rem;
+  text-wrap: balance;
+}
+
+.entradilla {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.5;
+  color: var(--tinta-2);
+  max-width: 54ch;
+}
+
+/* h2 ocupa raíl + cuerpo: el número vive en el raíl, no como eyebrow. */
+h2 {
+  display: grid;
+  grid-template-columns: var(--rail) minmax(0, 1fr);
+  align-items: baseline;
+  margin: 2.4rem 0 0.9rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+/* Tras una diagonal el aire ya lo puso el separador. */
+.sigma + h2 { margin-top: 1.5rem; }
+
+h2 > .n {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--acento);
+  padding-right: 1rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+h2 > .t { padding-inline: 1.6rem; }
+
+h3 {
+  font-size: 1.075rem;
+  font-weight: 600;
+  margin: 1.9rem 0 0.5rem;
+  line-height: 1.3;
+}
+
+p { margin: 0 0 1.05em; }
+p:last-child { margin-bottom: 0; }
+
+strong { font-weight: 600; }
+
+ul, ol { margin: 0 0 1.05em; padding-left: 1.35em; }
+li { margin-bottom: 0.35em; }
+li::marker { color: var(--tinta-2); }
+
+/* ------------------- La diagonal de Sigma como separador ---------------- */
+/* Cada trazo baja, se corre a la derecha y mide menos que el anterior.     */
+
+.sigma {
+  --i: 1;
+  --len: calc(var(--sigma-max) - (var(--i) - 1) * var(--sigma-paso));
+  border: 0;
+  height: var(--len);
+  width: var(--len);
+  margin: 2.9rem 0 0;
+  margin-left: calc(var(--rail) + 1.6rem + (var(--i) - 1) * 1.5rem);
+  padding: 0;
+  background: linear-gradient(
+    to bottom right,
+    transparent calc(50% - 0.5px),
+    var(--acento) calc(50% - 0.5px),
+    var(--acento) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px)
+  );
+}
+
+/* -------------------------- Cantidades y símbolos ---------------------- */
+
+/* Valores singulares y magnitudes medidas: el acento sólo aquí y en enlaces. */
+.sigma-val {
+  color: var(--acento);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Cadenas de bits, elementos de campo, nombres de archivo. */
+code, .bits, kbd {
+  font-family: var(--mono);
+  font-size: 0.88em;
+  font-variant-numeric: tabular-nums;
+}
+
+code {
+  background: var(--regla-2);
+  padding: 0.1em 0.35em;
+}
+
+.bits {
+  letter-spacing: 0.06em;
+  color: var(--tinta);
+}
+
+/* ------------------------------- Código -------------------------------- */
+/* Fondo tenue, monoespaciada, y ya. Sin resaltado de sintaxis. */
+
+pre {
+  margin: 1.5rem 0;
+  padding: 1.1rem 1.25rem;
+  background: var(--regla-2);
+  border-left: 2px solid var(--acento);
+  overflow-x: auto;
+  font-size: 0.855rem;
+  line-height: 1.55;
+  tab-size: 2;
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+figure.codigo { margin: 1.5rem 0; }
+figure.codigo pre { margin: 0; }
+
+figcaption {
+  margin-top: 0.55rem;
+  font-size: 0.855rem;
+  color: var(--tinta-2);
+  line-height: 1.45;
+}
+
+/* -------------------------------- Tablas ------------------------------- */
+/* Regladas con hairlines. Nunca tarjetas, nunca sombras, nunca radios. */
+
+.tabla-env { margin: 1.6rem 0; overflow-x: auto; }
+
+/* La leyenda va fuera del contenedor con scroll, o se recorta con la tabla. */
+figure.tabla { margin: 1.6rem 0; }
+figure.tabla .tabla-env { margin: 0; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+caption {
+  caption-side: bottom;
+  margin-top: 0.6rem;
+  font-size: 0.855rem;
+  color: var(--tinta-2);
+  text-align: left;
+  line-height: 1.45;
+}
+
+th, td {
+  text-align: left;
+  padding: 0.45rem 0.9rem 0.45rem 0;
+  border-bottom: 1px solid var(--regla-2);
+  vertical-align: baseline;
+}
+
+thead th {
+  border-bottom: 1px solid var(--tinta);
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--tinta);
+}
+
+tbody tr:last-child td { border-bottom: 1px solid var(--regla); }
+
+/* Tablas de aritmética de campo: monoespaciada y compacta.
+   width:auto para que las columnas se peguen y no queden huecos de datos. */
+table.campo { font-family: var(--mono); font-size: 0.82rem; width: auto; }
+table.campo th, table.campo td {
+  padding: 0.25rem 1.15rem 0.25rem 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+table.campo th:first-child, table.campo td:first-child { text-align: left; }
+table.campo thead th { color: var(--acento); }
+
+/* En la tabla de potencias la expresión polinomial se lee mejor alineada. */
+table.potencias td:nth-child(2),
+table.potencias th:nth-child(2) { text-align: left; padding-right: 1.4rem; }
+
+/* -------------------------------- Imágenes ------------------------------ */
+
+figure.imagen { margin: 1.7rem 0; }
+
+figure.imagen img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--regla);
+  background: #fff;
+}
+
+/* La imagen del ejercicio mide 49 × 42: hay que ampliarla sin suavizarla. */
+img.pixeles {
+  image-rendering: pixelated;
+  width: 9.2rem;
+}
+
+.imagen-par {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.4rem;
+  align-items: flex-start;
+}
+
+.imagen-par figure { margin: 0; }
+
+/* ------------------------------- Apartados ----------------------------- */
+/* Delimitados por una regla al costado, no por una caja. */
+
+/* La regla del costado cae sobre el borde izquierdo del cuerpo, no antes. */
+.hoja > .nota {
+  margin: 1.7rem 0 1.7rem 1.6rem;
+  padding: 0.15rem 1.6rem 0.15rem 1.3rem;
+}
+
+.nota { border-left: 1px solid var(--acento); }
+
+.nota > .titulo {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.nota p { font-size: 0.965rem; }
+
+/* ------------------------------ Adjuntos ------------------------------- */
+/* Lista reglada en columnas alineadas: archivo, extensión, peso.
+   Sin puntos medios, sin tarjetas, sin flechas.                            */
+
+.recursos { margin-top: 3rem; }
+
+/* Dentro de recursos se repite el patrón raíl + cuerpo un nivel más abajo. */
+.recursos > * { grid-column: 2; padding-inline: 1.6rem; }
+.recursos > h2 { grid-column: 1 / 3; padding-inline: 0; margin-top: 0; }
+
+.adjuntos { list-style: none; margin: 0; padding: 0 1.6rem; }
+
+.adjuntos li { margin: 0; border-top: 1px solid var(--regla-2); }
+.adjuntos li:last-child { border-bottom: 1px solid var(--regla); }
+
+.adjuntos a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6.5rem 5rem;
+  gap: 0.6rem;
+  align-items: baseline;
+  padding: 0.7rem 0;
+  text-decoration: none;
+  color: var(--tinta);
+}
+
+.adjuntos a:hover { background: var(--acento-sup); }
+.adjuntos a:hover .archivo { color: var(--acento); }
+
+.adjuntos .archivo {
+  font-family: var(--mono);
+  font-size: 0.86rem;
+  overflow-wrap: anywhere;
+}
+
+.adjuntos .que {
+  display: block;
+  font-family: var(--serif);
+  font-size: 0.93rem;
+  color: var(--tinta-2);
+  margin-top: 0.15rem;
+}
+
+.recursos .atribucion {
+  margin-top: 1.5rem;
+  font-size: 0.93rem;
+  color: var(--tinta-2);
+}
+
+.adjuntos .ext,
+.adjuntos .peso {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--tinta-2);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* -------------------- Índice de la materia: la matriz ------------------- */
+
+/* Una tabla con border-collapse ignora el padding, así que la sangría
+   que alinea con el cuerpo tiene que venir del margen. */
+.hoja > .matriz {
+  padding-inline: 0;
+  margin-inline: 1.6rem;
+  width: calc(100% - 3.2rem);
+}
+
+.matriz { border-collapse: collapse; }
+
+.matriz td {
+  border-bottom: 1px solid var(--regla-2);
+  padding: 0.85rem 0.9rem 0.85rem 0;
+  vertical-align: baseline;
+}
+
+.matriz tr:last-child td { border-bottom: 1px solid var(--regla); }
+.matriz tr:first-child td { border-top: 1px solid var(--regla); }
+
+.matriz .idx {
+  width: 3.5rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--acento);
+  font-variant-numeric: tabular-nums;
+}
+
+.matriz .tema a {
+  font-size: 1.12rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--tinta);
+  letter-spacing: -0.005em;
+}
+
+.matriz .tema a:hover { color: var(--acento); }
+
+.matriz .tema p {
+  margin: 0.15rem 0 0;
+  font-size: 0.93rem;
+  color: var(--tinta-2);
+  line-height: 1.45;
+  max-width: 52ch;
+}
+
+.matriz .rec {
+  width: 8.5rem;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  color: var(--tinta-2);
+  white-space: nowrap;
+}
+
+.matriz tr:hover .idx { color: var(--tinta); }
+
+/* ------------------------- Navegación entre temas ---------------------- */
+
+.nav-temas {
+  border-top: 1px solid var(--regla);
+  margin-top: 3.5rem;
+}
+
+/* Alineada a la columna del cuerpo, no al ancho total de la hoja. */
+.nav-temas-int {
+  width: min(100% - 2 * var(--pad), calc(var(--rail) + var(--medida) + var(--nota)));
+  margin-inline: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: space-between;
+  padding: 1.6rem var(--nota) 2.2rem calc(var(--rail) + 1.6rem);
+}
+
+.nav-temas a {
+  text-decoration: none;
+  max-width: 22rem;
+  display: block;
+}
+
+.nav-temas .dir {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  color: var(--tinta-2);
+  margin-bottom: 0.2rem;
+}
+
+.nav-temas .cual {
+  font-weight: 600;
+  color: var(--tinta);
+  line-height: 1.3;
+}
+
+.nav-temas a:hover .cual { color: var(--acento); }
+.nav-temas .sig { text-align: right; margin-left: auto; }
+
+/* --------------------------------- Pie --------------------------------- */
+
+.pie {
+  border-top: 1px solid var(--regla);
+  color: var(--tinta-2);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.pie-int {
+  width: min(100% - 2 * var(--pad), calc(var(--rail) + var(--medida) + var(--nota)));
+  margin-inline: auto;
+  padding: 1.8rem var(--nota) 2.6rem calc(var(--rail) + 1.6rem);
+}
+
+.pie p { margin-bottom: 0.4em; max-width: 58ch; }
+
+/* --------------------------------- KaTeX -------------------------------- */
+
+.katex { font-size: 1.045em; }
+
+.katex-display {
+  margin: 1.4rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: 0.2rem;
+}
+
+/* ------------------------------ Responsive ------------------------------ */
+/* El raíl se pliega: el índice pasa a ser una línea sobre el encabezado.   */
+
+@media (max-width: 62rem) {
+  :root { --nota: 0rem; }
+  .hoja::after { display: none; }
+}
+
+@media (max-width: 46rem) {
+  :root { --rail: 0rem; --pad: 1.1rem; }
+
+  body { background-image: none; }
+
+  .hoja { grid-template-columns: minmax(0, 1fr); padding-block: 2.4rem 3rem; }
+  .hoja::before { display: none; }
+  .hoja > * { grid-column: 1; padding-inline: 0; }
+
+  /* El raíl se pliega: los índices pasan a ser una línea sobre su encabezado. */
+  .hoja > h2,
+  .hoja > .cabecera,
+  .hoja > .recursos { grid-column: 1; display: block; padding-inline: 0; }
+
+  .cabecera > .indice { padding-right: 0; text-align: left; margin-bottom: 0.2rem; }
+  .cabecera > .texto { padding-inline: 0; }
+
+  .recursos > *,
+  .recursos > h2,
+  .adjuntos { padding-inline: 0; }
+
+  .nav-temas-int,
+  .pie-int { padding-left: 0; padding-right: 0; }
+
+  h2 { display: block; }
+  h2 > .n { display: block; padding: 0 0 0.15rem; text-align: left; }
+  h2 > .t { padding-inline: 0; }
+
+  .hoja > .nota { margin-left: 0; padding-right: 0; }
+
+  /* El panel del temario pasa a ocupar el ancho de la barra. */
+  .menu { margin-left: auto; position: static; }
+  .menu-panel { left: 0; right: 0; min-width: 0; top: calc(100% + 1px); border-inline: 0; }
+  .barra-int .aqui { display: none; }
+  .barra-int .sep:last-of-type { display: none; }
+
+  .sigma { margin-left: calc((var(--i) - 1) * 1rem); }
+
+  .adjuntos a { grid-template-columns: minmax(0, 1fr) 4.5rem; }
+  .adjuntos .peso { grid-column: 2; }
+  .adjuntos .ext { grid-column: 1; text-align: left; }
+
+  .matriz .rec { display: none; }
+  .matriz .idx { width: 2.6rem; }
+  .hoja > .matriz { margin-inline: 0; width: 100%; }
+}
+
+@media (max-width: 23.5rem) {
+  body { font-size: 1rem; }
+  .matriz .idx { width: 2.2rem; }
+  .adjuntos a { grid-template-columns: minmax(0, 1fr); }
+  .adjuntos .ext, .adjuntos .peso { text-align: left; }
+}
+
+/* ------------------------- Movimiento e impresión ----------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  body { background: #fff; color: #000; background-image: none; }
+  .barra, .nav-temas { display: none; }
+  .hoja::before, .hoja::after { display: none; }
+  a { color: #000; }
+}

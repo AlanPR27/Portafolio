@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Funciones hash: fundamentos — Blockchain</title>
+<meta name="description" content="Las cuatro propiedades observables de una función hash, las tres resistencias, la construcción de Damgård–Merkle y el ataque de extensión de longitud, la cota del cumpleaños, el estado de los estándares y el almacenamiento de contraseñas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../css/blockchain.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<!-- barra:inicio -->
+<header class="barra">
+  <div class="barra-int">
+    <a href="../../index.html">Apuntes</a>
+    <span class="sep">/</span>
+    <a href="../index.html">Blockchain</a>
+    <span class="sep">/</span>
+    <span class="aqui">01 Funciones hash: fundamentos</span>
+    <div class="barra-der">
+      <nav class="cadena-nav" aria-label="Cadena de temas">
+        <a class="bloque" href="01-funciones-hash.html" aria-current="page" title="Funciones hash: fundamentos">01</a><span class="union"></span><a class="bloque" href="02-hash-aplicaciones.html" title="Aplicaciones de las funciones hash">02</a><span class="union"></span><a class="bloque" href="03-tarea-hash-artesanal.html" title="Tarea 1: construir y atacar una función hash">03</a><span class="union"></span><a class="bloque" href="04-sellado-de-tiempo.html" title="Sellado de tiempo">04</a><span class="union"></span><a class="bloque" href="05-esquemas-de-compromiso.html" title="Esquemas de compromiso">05</a><span class="union"></span><a class="bloque" href="06-blockchain-artesanal.html" title="Blockchain artesanal: el pipeline completo">06</a><span class="union"></span><a class="bloque" href="07-blockchain-aplicaciones.html" title="Aplicaciones de blockchain por sector">07</a>
+      </nav>
+      <details class="menu">
+        <summary>temario</summary>
+        <div class="menu-panel">
+          <ol class="menu-lista">
+        <li><a href="01-funciones-hash.html" aria-current="page"><span class="mn">01</span><span class="mt">Funciones hash: fundamentos</span></a></li>
+        <li><a href="02-hash-aplicaciones.html"><span class="mn">02</span><span class="mt">Aplicaciones de las funciones hash</span></a></li>
+        <li><a href="03-tarea-hash-artesanal.html"><span class="mn">03</span><span class="mt">Tarea 1: construir y atacar una función hash</span></a></li>
+        <li><a href="04-sellado-de-tiempo.html"><span class="mn">04</span><span class="mt">Sellado de tiempo</span></a></li>
+        <li><a href="05-esquemas-de-compromiso.html"><span class="mn">05</span><span class="mt">Esquemas de compromiso</span></a></li>
+        <li><a href="06-blockchain-artesanal.html"><span class="mn">06</span><span class="mt">Blockchain artesanal: el pipeline completo</span></a></li>
+        <li><a href="07-blockchain-aplicaciones.html"><span class="mn">07</span><span class="mt">Aplicaciones de blockchain por sector</span></a></li>
+          </ol>
+        </div>
+      </details>
+    </div>
+  </div>
+</header>
+<!-- barra:fin -->
+
+<main class="hoja">
+
+  <header class="cabecera" id="contenido">
+    <p class="indice">01</p>
+    <div class="texto">
+      <h1>Funciones hash: fundamentos</h1>
+      <p class="entradilla">Una huella de longitud fija para cualquier cosa que exista. El tema entero consiste en precisar qué garantiza esa huella, cuánto cuesta romper cada garantía, y qué se cae exactamente cuando una de ellas falla.</p>
+    </div>
+  </header>
+
+  <h2><span class="hash">740620</span><span class="t">Qué hace exactamente una función hash</span></h2>
+
+
+  <p>Una función hash criptográfica es una función
+  <span class="hex">H : {0,1}* → {0,1}<sup>n</sup></span>: traga cualquier cantidad de datos y
+  devuelve siempre la misma cantidad de bits. La comparación que mejor funciona es la de una
+  licuadora industrial: se mete lo que sea —una palabra, una película, una biblioteca entera— y
+  siempre sale exactamente un litro de puré.</p>
+
+  <p>De esa imagen salen tres propiedades que conviene tener presentes. Es
+  <strong>determinista</strong>: la misma entrada da la misma salida hoy y en diez años, en tu
+  máquina y en la mía. <strong>No se puede des-licuar</strong>: del puré no se recupera la
+  manzana. Y es <strong>discontinua a propósito</strong>: quitarle un pixel a una foto no cambia
+  «un poquito» el resultado, lo cambia por completo.</p>
+
+  <p>Esa última propiedad es el <strong>efecto avalancha</strong>, y es la que hace útil un hash
+  para detectar alteraciones. Formalmente se mide con el criterio estricto de avalancha: al
+  cambiar un solo bit de la entrada, cada bit de la salida debería cambiar con probabilidad
+  ½, de modo que la distancia de Hamming esperada entre los dos digests sea
+  <span class="hex">n/2</span>.</p>
+
+  <div class="nota aviso">
+    <span class="titulo">El 50 % no basta</span>
+    <p>Ésta es la lección que el laboratorio del curso monta un experimento entero para enseñar:
+    <strong>CRC32 también alcanza el 50 % de avalancha</strong>, y CRC32 no tiene ninguna de las
+    tres resistencias. El promedio miente. Hacen falta dos indicadores más para separar de verdad
+    una función criptográfica de una que no lo es.</p>
+  </div>
+
+  <p><strong>Los patrones de diferencia.</strong> Si se repite siempre el mismo volteo de bit sobre
+  mensajes distintos y la función es lineal, la diferencia de salida no depende del mensaje y
+  aparece un único patrón, una y otra vez. Un hash criptográfico produce un patrón distinto cada
+  vez.</p>
+
+  <p><strong>La matriz SAC.</strong> Imagine 32 interruptores —los primeros bits del mensaje— y
+  <span class="v">n</span> focos —los bits del digest—. La celda (<span class="v">i</span>, <span class="v">j</span>) responde a una sola pregunta: si acciono
+  el interruptor <span class="v">i</span>, ¿con qué frecuencia reacciona el foco <span class="v">j</span>? Una función ideal responde
+  lanzando una moneda por cada foco: toda la matriz en <span class="valido">0.5</span>. Los dos
+  extremos delatan estructura y son igual de graves:</p>
+
+  <div class="tabla-env">
+  <table>
+    <thead><tr><th>frecuencia</th><th>qué significa</th><th>qué gana el atacante</th></tr></thead>
+    <tbody>
+      <tr><td class="roto">0</td><td>el bit de salida es sordo a ese bit de entrada</td><td>puede modificar el mensaje ahí sabiendo que esa parte del digest no se moverá</td></tr>
+      <tr><td class="valido">≈ 0.5</td><td>no hay relación explotable</td><td>nada: la única forma de saber qué pasa es calcular el hash</td></tr>
+      <tr><td class="roto">1</td><td>el bit de salida está cableado al de entrada, lo copia</td><td>sabe exactamente qué bit del digest voltear y cómo compensarlo</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Cada celda en 0 o en 1 es una ecuación determinista entre entrada y salida; el 0.5 es,
+  literalmente, la ausencia de ecuaciones. CRC32 llena la matriz de ceros y unos casi a partes
+  iguales —por eso promedia un impecable 50 %— y no tiene una sola celda en 0.5.</p>
+
+  <p>Queda una cuarta propiedad, la <strong>uniformidad</strong>: al repartir miles de mensajes
+  parecidos en cubetas según los últimos bits del digest, deben quedar esparcidos. Es condición
+  necesaria y barata —la aprueba cualquier mezclador decente— y por sí sola no prueba nada.</p>
+
+  <h2><span class="hash">248c39</span><span class="t">Las tres resistencias, y por qué no son la misma</span></h2>
+
+
+  <p>Son tres preguntas distintas, y lo único que las distingue es <strong>qué recibe el
+  adversario y qué queda libre para que él lo elija</strong>. Ese reparto es todo el contenido
+  matemático.</p>
+
+  <div class="tabla-env">
+  <table>
+    <thead>
+      <tr><th>resistencia</th><th>el problema</th><th>quién elige</th><th>costo ideal</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>preimagen</strong></td>
+        <td>dado <span class="v">y</span>, hallar <span class="v">M</span> con <span class="v">H(M) = y</span></td>
+        <td>nada: el objetivo viene dado</td>
+        <td class="num">2<sup>n</sup></td>
+      </tr>
+      <tr>
+        <td><strong>2ª preimagen</strong></td>
+        <td>dado <span class="v">M</span>, hallar <span class="v">M′ ≠ M</span> con <span class="v">H(M′) = H(M)</span></td>
+        <td>sólo uno de los dos mensajes</td>
+        <td class="num">2<sup>n</sup></td>
+      </tr>
+      <tr>
+        <td><strong>colisión</strong></td>
+        <td>hallar cualquier par <span class="v">M ≠ M′</span> con <span class="v">H(M) = H(M′)</span></td>
+        <td>los dos lados, y el valor común</td>
+        <td class="num">2<sup>n/2</sup></td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Con huellas dactilares: la preimagen es «te doy una huella, encuentra al dueño»; la segunda
+  preimagen es «te doy una persona concreta, encuentra otra con su misma huella»; la colisión es
+  «encuentra cualesquiera dos personas que compartan huella». La tercera es la más fácil para el
+  atacante porque puede escoger ambos lados, y por eso es <strong>la primera que cae</strong>:
+  MD5 y SHA-1 están rotas en colisión, no en preimagen.</p>
+
+  <p>Entre las tres hay una implicación que sí vale y una que no. Si <span class="v">H</span> es resistente a
+  colisiones, entonces es resistente a segunda preimagen —la contrapuesta es inmediata: quien
+  encuentra una segunda preimagen ha encontrado, en particular, una colisión—. El recíproco falla
+  en el sentido fuerte: existen funciones resistentes a colisiones que no son resistentes a
+  preimagen, y se construyen explícitamente como contraejemplo.</p>
+
+  <div class="nota">
+    <span class="titulo">El error conceptual que hay que erradicar</span>
+    <p>Confundir colisión con segunda preimagen es frecuentísimo, y la diferencia no es semántica
+    sino <strong>cuadrática</strong>. Con <span class="v">n</span> = 24 bits, una colisión cuesta unos 5 000 intentos
+    y una segunda preimagen unos 16,7 millones: más de tres órdenes de magnitud sobre la misma
+    función y el mismo hardware.</p>
+  </div>
+
+  <p>Conviene tener a la vista dónde cae cada función conocida. MD5 y SHA-1 comparten región pese
+  a la enorme distancia entre ellas —MD5 colisiona en segundos y SHA-1 costó
+  <span class="hex">2<sup>63.1</sup></span>—, porque en ninguna de las dos se conoce un ataque
+  práctico de preimagen. Quien queda fuera de los tres círculos es CRC32: invertible en tiempo
+  lineal, con segunda preimagen y colisiones triviales. Es una suma de comprobación, no una
+  función hash criptográfica.</p>
+
+  <h2><span class="hash">cb8679</span><span class="t">Cómo está construida por dentro</span></h2>
+
+
+  <p>Un hash no procesa el mensaje de golpe: lo corta en bloques —64 bytes en SHA-256— y los va
+  digiriendo uno tras otro. Cada bloque se mezcla con el resultado del anterior, como una masa que
+  se amasa por tandas. Es la construcción <strong>iterada de Damgård–Merkle</strong>:</p>
+
+  <p><span class="hex">h<sub>i</sub> = f(h<sub>i−1</sub>, m<sub>i</sub>)</span>, partiendo de un
+  vector de inicialización <span class="v">h</span><sub>0</sub> fijo, y el digest es el estado final <span class="v">h</span><sub>t</sub>.</p>
+
+  <p>Antes hay que rellenar el mensaje para que sea múltiplo del tamaño de bloque, y ese relleno
+  <strong>codifica la longitud original</strong>. No es un detalle administrativo: sin esa
+  longitud, <span class="v">H(M)</span> y <span class="v">H(M ‖ 0x00…)</span> coinciden y se obtiene una segunda
+  preimagen gratis.</p>
+
+  <p>SHA-256 aplica 64 rondas de sumas, rotaciones y XOR sobre un estado de ocho palabras de 32
+  bits. Vale la pena saber que la difusión se completa <em>mucho antes</em> de terminar las 64
+  rondas: el resto es margen de seguridad deliberado, y es la razón de que el mejor criptoanálisis
+  publicado contra SHA-256 no rebase 31 de esas 64 rondas.</p>
+
+  <h3>El ataque que la arquitectura regala</h3>
+
+  <p>La construcción iterada tiene una consecuencia incómoda: <strong>si conoces el digest,
+  conoces el estado interno con el que quedó la máquina</strong>. Y con el estado en la mano puedes
+  seguir amasando —añadir texto al final— sin conocer el principio.</p>
+
+  <div class="nota aviso">
+    <span class="titulo">Extensión de longitud</span>
+    <p>Un servidor autentica peticiones con <span class="hex">t = H(k ‖ m)</span>, creyendo que sin
+    la clave nadie puede producir una <span class="v">t</span> válida. El atacante ve <span class="v">m</span> y <span class="v">t</span>, nunca la
+    clave. Partiendo de <span class="v">t</span> como estado interno, calcula
+    <span class="hex">H(k ‖ m ‖ relleno ‖ z)</span> para el sufijo <span class="v">z</span> que quiera, sin conocer
+    <span class="v">k</span> y sin necesitar siquiera su longitud —basta probar unas cuantas—. La falsificación de
+    firmas en la API de Flickr en 2009 fue exactamente esto.</p>
+  </div>
+
+  <p>La solución correcta es <strong>HMAC</strong>, del RFC 2104:</p>
+
+  <figure class="codigo">
+  <pre><code>HMAC(k, m) = H( (k XOR opad) ‖ H( (k XOR ipad) ‖ m ) )</code></pre>
+  <figcaption>El doble anidamiento hace que el estado interno final no sea el de un prefijo del
+  mensaje, y la extensión de longitud muere ahí.</figcaption>
+  </figure>
+
+  <p>SHA-3 no necesita HMAC para esto: su construcción de esponja es inmune a la extensión de
+  longitud por diseño. Bitcoin resuelve lo mismo aplicando SHA-256 dos veces.</p>
+
+  <h2><span class="hash">260395</span><span class="t">El ataque del cumpleaños</span></h2>
+
+
+  <p>En un salón con 23 personas la probabilidad de que dos compartan cumpleaños supera el 50 %. La
+  intuición falla porque uno se pregunta por sí mismo —«¿alguien cumple el mismo día que yo?»—
+  cuando la pregunta real es por todos los pares posibles, y con 23 personas hay 253 pares.</p>
+
+  <p>Traducido a hashes: no cuesta <span class="hex">2<sup>256</sup></span> romper SHA-256 por
+  colisión, cuesta <span class="hex">2<sup>128</sup></span>. La raíz cuadrada es el precio de que
+  el atacante pueda elegir los dos mensajes.</p>
+
+  <p>Conviene no confundir las dos constantes que aparecen, porque miden cosas distintas:</p>
+
+  <div class="tabla-env">
+  <table>
+    <thead><tr><th>cantidad</th><th>fórmula</th><th>constante</th></tr></thead>
+    <tbody>
+      <tr><td>intentos para que la probabilidad de colisión llegue a ½</td><td><span class="v">√(2 ln 2) · √N</span></td><td class="num">1.1774</td></tr>
+      <tr><td>número esperado de intentos hasta la primera colisión</td><td><span class="v">√(π/2) · √N</span></td><td class="num">1.2533</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>La distribución es asimétrica: la mediana cae por debajo de la media, que es justo lo que
+  explica que las dos constantes no coincidan. Con <span class="v">N</span> = 2<sup>n</sup>, ambas dicen lo mismo en lo
+  esencial: el costo es del orden de 2<sup>n/2</sup>, no de 2<sup>n</sup>.</p>
+
+  <p>El contraste que hay que retener: con <span class="v">n</span> = 24, una colisión aparece cerca de los 4 000
+  intentos y una preimagen exige 16 millones. Ésa es toda la diferencia entre una resistencia y la
+  otra, y la razón de que los tamaños de digest se elijan al doble de la seguridad deseada.</p>
+
+  <h2><span class="hash">eb42a0</span><span class="t">Qué usar hoy, qué ya cayó</span></h2>
+
+
+  <p>Ninguna función hash muere de golpe. Primero alguien publica un ataque que cuesta un poco
+  menos que la fuerza bruta y nadie se alarma; luego el costo baja lo suficiente para un
+  laboratorio; y un día aparecen dos archivos distintos con el mismo hash, descargables por
+  cualquiera. En ese momento la función ya llevaba años muerta en los papers.</p>
+
+  <div class="tabla-env">
+  <table>
+    <thead>
+      <tr><th>función</th><th>bits</th><th>estado</th><th>mejor ataque conocido</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>MD5</td><td class="num">128</td><td class="roto">roto</td><td>colisión diferencial de Wang, segundos en una laptop; con prefijo elegido ≈ 2<sup>39</sup>, usado para falsificar certificados X.509 en Flame (2012)</td></tr>
+      <tr><td>SHA-1</td><td class="num">160</td><td class="roto">roto</td><td>SHAttered (2017) a 2<sup>63.1</sup>; colisión de prefijo elegido (2020) a 2<sup>63.4</sup>, por unos 45 000 USD de GPU rentada</td></tr>
+      <tr><td>SHA-256</td><td class="num">256</td><td class="valido">vigente</td><td>cumpleaños genérico; el criptoanálisis dedicado no rebasa 31 de las 64 rondas</td></tr>
+      <tr><td>SHA3-256</td><td class="num">256</td><td class="valido">vigente</td><td>cumpleaños genérico; no se supera 6 de las 24 rondas de Keccak-f</td></tr>
+      <tr><td>CRC32</td><td class="num">32</td><td class="roto">no criptográfica</td><td>invertible en tiempo lineal; nunca fue para seguridad</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>La <strong>colisión de prefijo elegido</strong> merece mención aparte porque es la que
+  convierte una rotura académica en una operativa. No basta con dos archivos basura que colisionan:
+  el atacante fija de antemano dos encabezados realistas —nombres, montos, campos de un certificado
+  X.509— y construye los sufijos. Es lo que permitió falsificar certificados con MD5 y lo que
+  terminó de retirar a SHA-1 de PGP y de la firma de documentos con formato.</p>
+
+  <h2><span class="hash">cbd2bd</span><span class="t">Contraseñas: por qué un hash rápido es un defecto</span></h2>
+
+
+  <p>Guardar <span class="hex">SHA-256(contraseña)</span> parece prudente: si roban la base de
+  datos, no hay contraseñas en claro. Pero el atacante <strong>no necesita invertir el hash</strong>.
+  Le basta con hashear las diez mil contraseñas más comunes y buscar coincidencias, y como el hash
+  es determinista, una sola tabla sirve para todos los usuarios de todas las bases de datos del
+  mundo. Eso es una tabla arcoíris.</p>
+
+  <p>Las dos defensas atacan cosas distintas y hacen falta las dos:</p>
+
+  <p>La <strong>sal</strong> rompe la reutilización. Un valor aleatorio distinto por usuario obliga
+  a rehacer la tabla para cada uno. Lo que hay que mirar en el experimento no es cuántas cuentas
+  caen —una contraseña débil concreta sigue siendo adivinable— sino cuántos hashes hubo que
+  calcular: la sal impide amortizar el ataque entre usuarios.</p>
+
+  <p>El <strong>factor de trabajo</strong> ataca lo otro: hace que cada intento cueste, digamos,
+  100 ms en lugar de 0,000002 s. Multiplicado por un diccionario de un millón de entradas, la
+  diferencia entre ambas cifras es la que decide si el ataque es cuestión de segundos o de
+  años.</p>
+
+  <div class="nota aviso">
+    <span class="titulo">LinkedIn, 2012</span>
+    <p>6,5 millones de hashes SHA-1 <em>sin sal</em>. Filtrar esa base equivalió a filtrar las
+    contraseñas en claro. De ahí salen bcrypt, scrypt y Argon2.</p>
+  </div>
+
+  <p>Hoy la recomendación sin matices es <strong>Argon2id</strong> —PHC 2015, RFC 9106— con
+  <code>t=1, p=4, m=2 GiB</code>, o <code>t=3, p=4, m=64 MiB</code> si hay poca memoria. PBKDF2
+  sigue siendo útil donde es lo único disponible, como en el navegador, pero sólo impone costo en
+  tiempo, no en memoria.</p>
+
+  <h2><span class="hash">e064ea</span><span class="t">Por qué SHA-256 se ejecuta en masa y otras funciones no</span></h2>
+
+
+  <p>Un equipo comercial de minado de 2026 ronda los 580 TH/s con una eficiencia cercana a
+  9,5 julios por terahash: en un segundo calcula lo que un núcleo de un procesador normal tardaría
+  más de medio año en calcular. Esa asimetría no es un accidente de fabricación, es una
+  <strong>propiedad de SHA-256</strong>.</p>
+
+  <p>SHA-256 es el sueño de un diseñador de circuitos: una secuencia fija de 64 rondas de sumas,
+  rotaciones y XOR. Sin memoria, sin bifurcaciones, sin datos impredecibles. Un ASIC despliega las
+  64 rondas en una cadena de segmentación y entrega un hash por ciclo de reloj. Una CPU, en cambio,
+  dedica la mayor parte de sus transistores a caché, predicción de saltos y ejecución fuera de
+  orden — todo eso, aquí, es silicio desperdiciado.</p>
+
+  <p>De ahí la idea que define a las funciones resistentes a hardware dedicado: <strong>si el
+  cuello de botella no es la aritmética sino la memoria, el fabricante de circuitos pierde su
+  ventaja</strong>. Nadie puede fabricar DRAM sustancialmente más barata que la que Samsung o
+  Micron ya le venden a cualquiera. La memoria es una mercancía; el silicio lógico a medida, no.</p>
+
+  <div class="tabla-env">
+  <table>
+    <thead>
+      <tr><th>función</th><th>recurso que impone</th><th>memoria por evaluación</th><th>ventaja del hardware dedicado</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>SHA-256, SHA-3, BLAKE2</td><td>sólo aritmética de registros</td><td class="num">≈ 0</td><td class="roto">10⁴–10⁵× en energía por hash</td></tr>
+      <tr><td>bcrypt <span class="hex">1999</span></td><td>cajas S de 4 KiB modificadas durante el cálculo</td><td class="num">4 KiB</td><td>GPU muy penalizada; FPGA y ASIC viables</td></tr>
+      <tr><td>scrypt <span class="hex">2009</span></td><td>memoria parametrizable con accesos dependientes de los datos</td><td class="num">128 KiB en Litecoin</td><td class="roto">ASIC comercial desde 2014</td></tr>
+      <tr><td>Ethash</td><td>lecturas aleatorias sobre un DAG</td><td class="num">&gt; 1 GiB</td><td>ASIC desde 2018, con ventaja modesta sobre una GPU</td></tr>
+      <tr><td>CryptoNight</td><td>scratchpad dimensionado para la caché L3</td><td class="num">2 MiB</td><td class="roto">ASIC en 2018; 2 MiB también caben en un chip</td></tr>
+      <tr><td>Argon2id <span class="hex">RFC 9106</span></td><td>memoria, multiplicaciones de 64 bits y resistencia a compromisos</td><td class="num">64 MiB – 2 GiB</td><td class="valido">reducida al controlador de memoria</td></tr>
+      <tr><td>RandomX</td><td>ejecuta programas aleatorios en una máquina virtual</td><td class="num">≈ 2 GiB</td><td class="valido">mínima: el ASIC tendría que ser una CPU</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>La idea en una frase: las funciones inmunes al hardware dedicado no lo son por ser más
+  criptográficas, sino por exigir un recurso que el atacante compra al mismo precio que todos.
+  RandomX lleva el argumento a su conclusión lógica — para construir el circuito óptimo habría que
+  construir un procesador de propósito general, que es precisamente lo que ya está en la
+  computadora de cualquiera.</p>
+
+  <div class="nota">
+    <span class="titulo">Tres reservas honestas</span>
+    <p><strong>Ninguna función es inmune, sólo cara de atacar:</strong> toda la lista salvo RandomX
+    terminó con hardware dedicado en el mercado; lo que cambia es la magnitud de la ventaja.
+    <strong>Puede ser contraproducente:</strong> si la red se mina con hardware de consumo, ese
+    hardware se renta, y varias cadenas pequeñas minables con GPU sufrieron ataques del 51 %
+    contratando capacidad por horas. <strong>Se paga en complejidad:</strong> una prueba de trabajo
+    que ejecuta programas aleatorios en una máquina virtual tiene una superficie de ataque
+    incomparablemente mayor que 64 rondas de sumas y rotaciones. Para contraseñas, en cambio, el
+    debate no existe: ahí el defensor fija los parámetros y la memoria es una defensa sin
+    contrapartida.</p>
+  </div>
+
+  <h2><span class="hash">3aa21b</span><span class="t">Qué se rompe cuando falla cada propiedad</span></h2>
+
+
+  <p>Hasta aquí las propiedades se enunciaron por separado. Conviene invertir la pregunta: si
+  mañana alguien rompe la resistencia a colisión de la función que estás usando, ¿qué deja de
+  funcionar y qué sigue en pie? La respuesta no es «todo»: cada propiedad sostiene piezas
+  distintas, y esa asignación es lo que decide qué hay que migrar con urgencia.</p>
+
+  <div class="nota">
+    <span class="titulo">La regla que ordena la tabla</span>
+    <p>Preimagen protege <strong>lo que debe permanecer oculto</strong>. Segunda preimagen protege
+    <strong>lo que ya fue publicado y aceptado</strong>. Colisión protege <strong>lo que será
+    elegido por el propio adversario</strong>.</p>
+  </div>
+
+  <div class="tabla-env">
+  <table>
+    <thead>
+      <tr><th>si falla…</th><th>el adversario puede…</th><th>dónde duele primero</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>preimagen</td><td>invertir huellas publicadas: recuperar contraseñas de un volcado, leer un compromiso antes de que lo abran</td><td>ocultamiento del compromiso, contraseñas, direcciones</td></tr>
+      <tr><td>2ª preimagen</td><td>sustituir un objeto ya publicado y aceptado sin alterar ningún hash difundido</td><td>encadenamiento de bloques, prueba de Merkle, documento ya firmado</td></tr>
+      <tr><td>colisión</td><td>fabricar de antemano dos objetos intercambiables: hacer firmar uno y exhibir el otro</td><td>firma digital, vinculación del compromiso, raíz de Merkle</td></tr>
+      <tr><td>prefijo elegido</td><td>dar a las dos versiones un encabezado realista fijado de antemano</td><td>firmas sobre documentos con formato, certificados, PGP</td></tr>
+      <tr><td>inmunidad a extensión</td><td>forjar etiquetas para mensajes que nunca vio, sin la clave</td><td>MAC artesanal, APIs firmadas, derivación de claves</td></tr>
+      <tr><td>salida indistinguible</td><td>sesgar o anticipar valores derivados: el nonce ganador, el resultado de un sorteo</td><td>prueba de trabajo, aleatoriedad pública, HMAC y BIP32</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>El caso canónico es la firma digital, y conviene tenerlo claro porque es contraintuitivo.
+  <strong>Nadie firma un documento: se firma su hash.</strong> Si el atacante consigue dos textos
+  con la misma huella —uno inocuo y otro fraudulento— basta con hacer firmar el primero para
+  quedarse con una firma válida sobre el segundo. La clave privada nunca se compromete y, aun así,
+  la firma es falsificable. Ésa es la consecuencia exacta de perder la resistencia a colisión, y es
+  la razón por la que este tema antecede a todos los demás del curso.</p>
+
+  <h2><span class="hash">24c2db</span><span class="t">El adversario cuántico</span></h2>
+
+
+  <p>La pregunta obligada en 2026 es qué sobrevive a una computadora cuántica. Para las funciones
+  hash la respuesta es tranquilizadora, y conviene saber por qué.</p>
+
+  <p>El algoritmo de <strong>Grover</strong> reduce la búsqueda de preimagen de 2<sup>n</sup> a
+  2<sup>n/2</sup>. Eso deja a SHA-256 con del orden de 128 bits frente a preimagen cuántica, que
+  sigue siendo inalcanzable. Además Grover no se paraleliza bien: <span class="v">k</span> máquinas sólo dan una
+  mejora de <span class="v">√k</span>, de modo que 2<sup>n/2</sup> es una cota inferior que ninguna arquitectura
+  razonable alcanza.</p>
+
+  <p>Para colisiones, el algoritmo de <strong>Brassard–Høyer–Tapp</strong> daría 2<sup>n/3</sup>, pero
+  exige memoria cuántica de acceso aleatorio en una escala que hoy nadie considera realista; bajo
+  modelos con memoria acotada la ventaja casi desaparece.</p>
+
+  <div class="nota">
+    <span class="titulo">Dónde está de verdad la presión</span>
+    <p>El algoritmo de <strong>Shor</strong> no toca las funciones hash: rompe la criptografía de
+    clave pública. RSA-2048 ofrece 112 bits de seguridad clásica y cero frente a Shor; ECDSA sobre
+    P-256 resulta incluso más barato de romper que RSA-2048. AES-256 y SHA-256 sobreviven con la
+    mitad de su margen; RSA, DSA y las curvas elípticas no sobreviven en absoluto.</p>
+    <p>La confirmación más elegante de esto es que una de las tres firmas post-cuánticas
+    estandarizadas por el NIST, <strong>SLH-DSA</strong> (FIPS 205), está construida
+    <em>enteramente</em> con funciones hash. La primitiva de este tema no es el problema: es la
+    respuesta.</p>
+  </div>
+
+  <section class="recursos">
+    <h2><span class="hash">08c727</span><span class="t">Recursos del tema</span></h2>
+
+    <ul class="adjuntos">
+      <li>
+        <a href="../assets/pdf/laboratorio-funciones-hash.pdf">
+          <span>
+            <span class="archivo">laboratorio-funciones-hash.pdf</span>
+            <span class="que">El laboratorio completo del curso: ocho semanas con mediciones ejecutables de avalancha y matriz SAC, caza de colisiones, microscopio de SHA-256 ronda por ronda, extensión de longitud paso a paso, árboles de Merkle, minado, compromisos de Pedersen, ocho retos verificables y un anexo sobre el estado del arte.</span>
+          </span>
+          <span class="ext">lab</span>
+          <span class="peso">3.2 MB</span>
+        </a>
+      </li>
+    </ul>
+
+    <p class="atribucion">Laboratorio del Dr. José de Jesús Ángel Ángel, MathCon / Lab-IA, Facultad de Ingeniería, Universidad Anáhuac México. Las implementaciones que incluye son didácticas y están verificadas contra los vectores de prueba de NIST y de los RFC; no son para producción.</p>
+  </section>
+
+</main>
+
+<nav class="nav-temas" aria-label="Navegación entre temas">
+  <div class="nav-temas-int">
+    <a href="../index.html">
+      <span class="dir">índice de la materia</span>
+      <span class="cual">Blockchain</span>
+    </a>
+    <a class="sig" href="02-hash-aplicaciones.html">
+      <span class="dir">tema siguiente</span>
+      <span class="cual">02 Aplicaciones de las funciones hash</span>
+    </a>
+  </div>
+</nav>
+
+<footer class="pie">
+  <div class="pie-int">
+    <p>Apuntes de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería.</p>
+    <p>Material original del Dr. José de Jesús Ángel Ángel.</p>
+  </div>
+</footer>
+
+<script>
+/* Único script de la materia: cierra el temario con Escape o al pulsar fuera. */
+(function () {
+  var menu = document.querySelector('.menu');
+  if (!menu) return;
+  document.addEventListener('click', function (e) {
+    if (menu.open && !menu.contains(e.target)) menu.open = false;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

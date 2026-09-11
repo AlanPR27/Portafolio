@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Valores y vectores propios — Álgebra Lineal Avanzada</title>
+<meta name="description" content="Diagonalización A = PDP⁻¹, el polinomio característico, y qué libertad hay al elegir los vectores propios sin que la matriz reconstruida cambie.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+<link rel="stylesheet" href="../css/algebra.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<!-- barra:inicio -->
+<header class="barra">
+  <div class="barra-int">
+    <a href="../../index.html">Apuntes</a>
+    <span class="sep">/</span>
+    <a href="../index.html">Álgebra Lineal Avanzada</a>
+    <span class="sep">/</span>
+    <span class="aqui">03 Valores y vectores propios</span>
+    <details class="menu">
+      <summary>Temario 03/09</summary>
+      <div class="menu-panel">
+        <ol class="menu-lista">
+        <li><a href="01-campos-finitos.html"><span class="mn">01</span><span class="mt">Campos finitos</span></a></li>
+        <li><a href="02-cuatro-subespacios.html"><span class="mn">02</span><span class="mt">Los cuatro subespacios fundamentales</span></a></li>
+        <li><a href="03-valores-vectores-propios.html" aria-current="page"><span class="mn">03</span><span class="mt">Valores y vectores propios</span></a></li>
+        <li><a href="04-qr-gram-schmidt.html"><span class="mn">04</span><span class="mt">Descomposición QR y Gram–Schmidt</span></a></li>
+        <li><a href="05-cholesky.html"><span class="mn">05</span><span class="mt">Descomposición de Cholesky</span></a></li>
+        <li><a href="06-svd-metodo-general.html"><span class="mn">06</span><span class="mt">SVD — teoría y método general</span></a></li>
+        <li><a href="07-svd-valores-enteros.html"><span class="mn">07</span><span class="mt">SVD con valores singulares enteros</span></a></li>
+        <li><a href="08-pseudoinversa.html"><span class="mn">08</span><span class="mt">Pseudoinversa de Moore–Penrose</span></a></li>
+        <li><a href="09-aplicaciones-svd.html"><span class="mn">09</span><span class="mt">Aplicaciones de la SVD y compresión de imágenes</span></a></li>
+        </ol>
+      </div>
+    </details>
+  </div>
+</header>
+<!-- barra:fin -->
+
+<main class="hoja">
+
+  <header class="cabecera" id="contenido">
+    <p class="indice">03</p>
+    <div class="texto">
+      <h1>Valores y vectores propios</h1>
+      <p class="entradilla">Encontrar las direcciones en las que una matriz sólo estira, y comprobar que la factorización que producen sobrevive a reescalar, cambiar de signo y reordenar.</p>
+    </div>
+  </header>
+
+  <h2><span class="n">1</span><span class="t">La ecuación que lo define</span></h2>
+
+
+  <p>Un vector no nulo \(v\) es <strong>vector propio</strong> de \(A\) si \(A\) no lo gira:
+  sólo lo estira o lo encoge, quizá invirtiéndolo.</p>
+
+  <p>$$Av=\lambda v,\qquad v\ne 0$$</p>
+
+  <p>El escalar \(\lambda\) es el <strong>valor propio</strong> asociado. La condición se
+  reescribe como \((A-\lambda I)v=0\) con \(v\ne 0\), lo que exige que \(A-\lambda I\) sea
+  singular. De ahí sale la ecuación que se resuelve en la práctica.</p>
+
+  <p>$$p(\lambda)=\det(A-\lambda I)=0$$</p>
+
+  <hr class="sigma" style="--i:1">
+
+  <h2><span class="n">2</span><span class="t">El polinomio característico</span></h2>
+
+
+  <p>Con la matriz del cuaderno, \(A=\begin{pmatrix}2&amp;5\\4&amp;1\end{pmatrix}\), para
+  \(2\times 2\) basta recordar que \(p(\lambda)=\lambda^{2}-(\operatorname{tr}A)\lambda+\det A\):</p>
+
+  <p>$$p(\lambda)=\lambda^{2}-3\lambda-18=(\lambda-6)(\lambda+3)
+  \;\Longrightarrow\; \lambda_1=6,\ \lambda_2=-3$$</p>
+
+  <p>Para cada valor propio se resuelve el sistema homogéneo. Con \(\lambda_1=6\), la matriz
+  \(A-6I=\begin{pmatrix}-4&amp;5\\4&amp;-5\end{pmatrix}\) da la única ecuación
+  \(-4x+5y=0\), y por tanto \(v_1=(5,4)\). Con \(\lambda_2=-3\), la matriz
+  \(A+3I=\begin{pmatrix}5&amp;5\\4&amp;4\end{pmatrix}\) da \(x+y=0\), y por tanto
+  \(v_2=(-1,1)\).</p>
+
+  <p>Que los dos renglones de cada sistema sean proporcionales no es casualidad: es la señal de que
+  \(A-\lambda I\) es singular, que es justamente lo que se pidió al resolver \(p(\lambda)=0\).
+  Si al hacer el sistema salen renglones independientes, el valor propio está mal.</p>
+
+  <hr class="sigma" style="--i:2">
+
+  <h2><span class="n">3</span><span class="t">Diagonalización</span></h2>
+
+
+  <p>Si se reúnen los vectores propios como columnas de \(P\) y los valores propios en la
+  diagonal de \(D\) <em>en el mismo orden</em>, entonces \(AP=PD\), y si \(P\) es invertible:</p>
+
+  <p>$$A=PDP^{-1}$$</p>
+
+  <p>Con el ejemplo, \(P=\begin{pmatrix}5&amp;-1\\4&amp;1\end{pmatrix}\) y \(D=\operatorname{diag}(6,-3)\).
+  El determinante de \(P\) es 9 y su inversa es
+  \(P^{-1}=\tfrac{1}{9}\begin{pmatrix}1&amp;1\\-4&amp;5\end{pmatrix}\); multiplicando las tres
+  piezas se recupera \(A\).</p>
+
+  <p>Lo que hace útil esta forma es que las potencias se vuelven triviales, porque las
+  \(P^{-1}P\) intermedias se cancelan:</p>
+
+  <p>$$A^{k}=PD^{k}P^{-1},\qquad D^{k}=\operatorname{diag}(\lambda_1^{k},\dots,\lambda_n^{k})$$</p>
+
+  <hr class="sigma" style="--i:3">
+
+  <h2><span class="n">4</span><span class="t">Lo que se puede cambiar sin que A cambie</span></h2>
+
+
+  <p>La factorización no es única, y el cuaderno lo comprueba con tres experimentos. Los tres
+  devuelven la misma \(A\).</p>
+
+  <p><strong>Reescalar un vector propio.</strong> Si \(v\) es vector propio, \(cv\) también lo
+  es para cualquier \(c\ne 0\), porque \(A(cv)=cAv=\lambda(cv)\). Tomando
+  \(P=\begin{pmatrix}5&amp;-2\\4&amp;2\end{pmatrix}\) —con el segundo vector duplicado— el
+  producto \(PDP^{-1}\) sigue dando \(A\): el factor se cancela con el que aparece en
+  \(P^{-1}\).</p>
+
+  <p><strong>Cambiar el signo.</strong> Con
+  \(P=\begin{pmatrix}5&amp;1\\4&amp;-1\end{pmatrix}\), es decir usando \((1,-1)\) en lugar de
+  \((-1,1)\), el resultado tampoco cambia. Es el caso \(c=-1\) del anterior.</p>
+
+  <p><strong>Reordenar.</strong> Si se ponen los valores propios al revés,
+  \(D=\operatorname{diag}(-3,6)\), hay que reordenar las columnas de \(P\) en la misma forma:
+  \(P=\begin{pmatrix}1&amp;5\\-1&amp;4\end{pmatrix}\). De nuevo \(PDP^{-1}=A\).</p>
+
+  <div class="nota">
+    <span class="titulo">La única regla que sí importa</span>
+    <p>La columna \(i\) de \(P\) tiene que corresponder a la entrada \(i\) de \(D\). Todo lo
+    demás —escala, signo, orden— es libre. El error clásico es calcular los valores propios,
+    ordenarlos de mayor a menor por costumbre, y olvidar reordenar las columnas de \(P\) con
+    ellos. Este mismo cuidado reaparece en la SVD, donde la convención
+    \(\sigma_1\ge\sigma_2\ge\cdots\) sí es obligatoria y arrastra a \(U\) y \(V\).</p>
+  </div>
+
+  <hr class="sigma" style="--i:4">
+
+  <h2><span class="n">5</span><span class="t">Cuándo no se puede diagonalizar</span></h2>
+
+
+  <p>El argumento anterior necesita que \(P\) sea invertible, es decir que haya \(n\) vectores
+  propios linealmente independientes. Hay dos maneras de que eso falle.</p>
+
+  <p>La primera es inofensiva: un valor propio repetido cuyo espacio propio tenga la dimensión
+  completa. Por ejemplo \(A=2I\) tiene \(\lambda=2\) con multiplicidad \(n\) y todo
+  \(\mathbb{R}^n\) como espacio propio; se diagonaliza sin problema porque ya es diagonal.</p>
+
+  <p>La segunda es la que rompe el método. En
+  \(A=\begin{pmatrix}1&amp;1\\0&amp;1\end{pmatrix}\) el valor propio 1 tiene multiplicidad
+  algebraica 2, pero el sistema \((A-I)v=0\) sólo da la dirección \((1,0)\): la multiplicidad
+  geométrica es 1. No hay dos vectores propios independientes, no existe \(P\), y la matriz se
+  llama <strong>defectuosa</strong>.</p>
+
+  <p>Ésta es una de las razones por las que el curso termina en la SVD: la descomposición en
+  valores singulares existe para <em>toda</em> matriz real, sin excepciones de multiplicidad ni de
+  forma, mientras que la diagonalización sólo existe a veces.</p>
+
+  <hr class="sigma" style="--i:5">
+
+  <h2><span class="n">6</span><span class="t">El puente hacia la SVD</span></h2>
+
+
+  <p>Hay un caso en el que la diagonalización se comporta perfectamente: el simétrico. Si
+  \(A=A^{T}\), el teorema espectral garantiza que \(P\) puede tomarse <strong>ortogonal</strong>,
+  de modo que \(P^{-1}=P^{T}\) y la factorización es \(A=QDQ^{T}\), sin inversas que
+  calcular.</p>
+
+  <p>Eso enlaza directamente con los dos temas siguientes de factorizaciones y con la SVD. Para una
+  matriz simétrica se cumple \(\sigma_i=|\lambda_i|\): los valores singulares son los valores
+  propios en valor absoluto. Cuando además es definida positiva, todos los \(\lambda_i\) son
+  positivos y entonces \(\sigma_i=\lambda_i\) y \(U=V\), es decir, la SVD y la diagonalización
+  ortogonal coinciden. El signo negativo de un valor propio no desaparece: se absorbe como un
+  cambio de signo entre \(u_i\) y \(v_i\), porque \(\Sigma\) no admite entradas
+  negativas.</p>
+
+  <hr class="sigma" style="--i:6">
+
+  <section class="recursos">
+    <h2><span class="n">material</span><span class="t">Recursos del tema</span></h2>
+
+    <ul class="adjuntos">
+      <li>
+        <a href="../assets/wolfram/valores-vectores-propios.nb">
+          <span>
+            <span class="archivo">valores-vectores-propios.nb</span>
+            <span class="que">El ejemplo 2 × 2 con Eigensystem y los tres experimentos: reescalar un vector propio, cambiarle el signo y reordenar los valores propios.</span>
+          </span>
+          <span class="ext">cuaderno</span>
+          <span class="peso">18 KB</span>
+        </a>
+      </li>
+    </ul>
+
+    <p class="atribucion">Cuaderno del Dr. José de Jesús Ángel Ángel, Facultad de Ingeniería, Universidad Anáhuac México. Este tema no tiene PDF de apuntes: el resumen está escrito a partir del cálculo del cuaderno.</p>
+  </section>
+
+</main>
+
+<nav class="nav-temas" aria-label="Navegación entre temas">
+  <div class="nav-temas-int">
+    <a href="02-cuatro-subespacios.html">
+      <span class="dir">Tema anterior</span>
+      <span class="cual">02 Los cuatro subespacios fundamentales</span>
+    </a>
+    <a class="sig" href="04-qr-gram-schmidt.html">
+      <span class="dir">Tema siguiente</span>
+      <span class="cual">04 Descomposición QR y Gram–Schmidt</span>
+    </a>
+  </div>
+</nav>
+
+<footer class="pie">
+  <div class="pie-int">
+    <p>Apuntes de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería.</p>
+    <p>Material original del Dr. José de Jesús Ángel Ángel.</p>
+  </div>
+</footer>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],macros:{'\\gr':'\\operatorname{gr}'},throwOnError:false})"></script>
+
+<script>
+/* Único script del sitio: cierra el temario con Escape o al pulsar fuera. */
+(function () {
+  var menu = document.querySelector('.menu');
+  if (!menu) return;
+  document.addEventListener('click', function (e) {
+    if (menu.open && !menu.contains(e.target)) menu.open = false;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

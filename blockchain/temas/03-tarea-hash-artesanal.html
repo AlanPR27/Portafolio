@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tarea 1: construir y atacar una función hash — Blockchain</title>
+<meta name="description" content="La tarea de laboratorio: diseñar una función hash propia sin usar primitivas existentes, medir su efecto avalancha y atacarla por colisión, preimagen y segunda preimagen hasta ver la separación cuadrática.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../css/blockchain.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<!-- barra:inicio -->
+<header class="barra">
+  <div class="barra-int">
+    <a href="../../index.html">Apuntes</a>
+    <span class="sep">/</span>
+    <a href="../index.html">Blockchain</a>
+    <span class="sep">/</span>
+    <span class="aqui">03 Tarea 1: construir y atacar una función hash</span>
+    <div class="barra-der">
+      <nav class="cadena-nav" aria-label="Cadena de temas">
+        <a class="bloque" href="01-funciones-hash.html" title="Funciones hash: fundamentos">01</a><span class="union"></span><a class="bloque" href="02-hash-aplicaciones.html" title="Aplicaciones de las funciones hash">02</a><span class="union"></span><a class="bloque" href="03-tarea-hash-artesanal.html" aria-current="page" title="Tarea 1: construir y atacar una función hash">03</a><span class="union"></span><a class="bloque" href="04-sellado-de-tiempo.html" title="Sellado de tiempo">04</a><span class="union"></span><a class="bloque" href="05-esquemas-de-compromiso.html" title="Esquemas de compromiso">05</a><span class="union"></span><a class="bloque" href="06-blockchain-artesanal.html" title="Blockchain artesanal: el pipeline completo">06</a><span class="union"></span><a class="bloque" href="07-blockchain-aplicaciones.html" title="Aplicaciones de blockchain por sector">07</a>
+      </nav>
+      <details class="menu">
+        <summary>temario</summary>
+        <div class="menu-panel">
+          <ol class="menu-lista">
+        <li><a href="01-funciones-hash.html"><span class="mn">01</span><span class="mt">Funciones hash: fundamentos</span></a></li>
+        <li><a href="02-hash-aplicaciones.html"><span class="mn">02</span><span class="mt">Aplicaciones de las funciones hash</span></a></li>
+        <li><a href="03-tarea-hash-artesanal.html" aria-current="page"><span class="mn">03</span><span class="mt">Tarea 1: construir y atacar una función hash</span></a></li>
+        <li><a href="04-sellado-de-tiempo.html"><span class="mn">04</span><span class="mt">Sellado de tiempo</span></a></li>
+        <li><a href="05-esquemas-de-compromiso.html"><span class="mn">05</span><span class="mt">Esquemas de compromiso</span></a></li>
+        <li><a href="06-blockchain-artesanal.html"><span class="mn">06</span><span class="mt">Blockchain artesanal: el pipeline completo</span></a></li>
+        <li><a href="07-blockchain-aplicaciones.html"><span class="mn">07</span><span class="mt">Aplicaciones de blockchain por sector</span></a></li>
+          </ol>
+        </div>
+      </details>
+    </div>
+  </div>
+</header>
+<!-- barra:fin -->
+
+<main class="hoja">
+
+  <header class="cabecera" id="contenido">
+    <p class="indice">03</p>
+    <div class="texto">
+      <h1>Tarea 1: construir y atacar una función hash</h1>
+      <p class="entradilla">El objetivo no es construir una función segura: es medir con rigor por qué no lo es. Cuatro experimentos, tres ataques y una gráfica final en la que las curvas tienen que caer donde la teoría dice.</p>
+    </div>
+  </header>
+
+  <h2><span class="hash">3c9147</span><span class="t">El encargo</span></h2>
+
+
+  <p>Hay que construir una función <span class="hex">H : {0,1}* → {0,1}<sup>n</sup></span> de
+  manera artesanal, es decir <strong>sin invocar ninguna primitiva criptográfica existente</strong>:
+  nada de <span class="hex">hashlib</span>, ni MD5, ni SHA, ni CRC, ni bibliotecas equivalentes.
+  Después hay que atacarla.</p>
+
+  <div class="nota aviso">
+    <span class="titulo">Advertencia académica</span>
+    <p>La función que sale de esta práctica es un <strong>objeto didáctico</strong>. Bajo ninguna
+    circunstancia debe emplearse en un sistema real. Toda aplicación productiva tiene que usar
+    primitivas estandarizadas: SHA-2, SHA-3, BLAKE2 o BLAKE3.</p>
+  </div>
+
+  <p>El énfasis de la tarea está en la palabra <em>medir</em>. No basta con decir que la función es
+  débil: hay que cuantificar cuánto, contrastarlo con la predicción teórica, y atribuir cada
+  discrepancia a un componente concreto del diseño.</p>
+
+  <h2><span class="hash">203ecb</span><span class="t">Parte 1: construir la función</span></h2>
+
+
+  <p>Seis requisitos mínimos de diseño, y cada uno tiene una razón.</p>
+
+  <div class="tabla-env">
+  <table>
+    <thead><tr><th>requisito</th><th>qué se pide</th><th>por qué</th></tr></thead>
+    <tbody>
+      <tr><td>longitud de salida</td><td><span class="v">n</span> ∈ {16, 24, 32} bits</td><td>una salida corta es indispensable para que los ataques de las partes 3 y 4 sean viables</td></tr>
+      <tr><td>entrada arbitraria</td><td>relleno que codifique la longitud original, estilo Merkle–Damgård</td><td>sin la longitud, el relleno ambiguo regala segundas preimágenes</td></tr>
+      <tr><td>estructura iterativa</td><td>estado inicial <span class="v">h</span><sub>0</sub> y función de compresión <span class="v">f</span></td><td>es la arquitectura que usan las funciones reales</td></tr>
+      <tr><td>operaciones</td><td>al menos tres familias distintas</td><td>cada familia aporta una propiedad: difusión, no linealidad, asimetría</td></tr>
+      <tr><td>rondas</td><td>parametrizables</td><td>hay que comparar el comportamiento con pocas y con muchas</td></tr>
+      <tr><td>determinismo y eficiencia</td><td>misma entrada, misma salida; millones de evaluaciones por segundo</td><td>sin velocidad no hay experimento</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Las familias de operaciones sugeridas son XOR, suma modular, rotaciones, desplazamientos,
+  multiplicación por constantes impares, sustitución mediante una caja-S propia y permutación de
+  bytes. El esqueleto del enunciado:</p>
+
+  <figure class="codigo">
+  <pre><code>funcion H(M, n, rondas):
+    M &lt;- padding(M)                 # bloques de 32 bits + longitud
+    h &lt;- IV                          # constante de 32 bits, no trivial
+    para cada bloque m en M:
+        para r de 1 hasta rondas:
+            h &lt;- (h + m) mod 2^32    # difusion aritmetica
+            h &lt;- ROTL(h, 7)          # difusion posicional
+            h &lt;- h XOR SBOX(h)       # no linealidad
+            h &lt;- (h * C) mod 2^32    # C constante impar
+    devolver truncar(h, n)           # n bits de salida</code></pre>
+  <figcaption>Esqueleto sugerido. La combinación de suma, rotación, sustitución y multiplicación
+  cubre las tres familias exigidas; la caja-S es la única parte no lineal.</figcaption>
+  </figure>
+
+  <h2><span class="hash">255e87</span><span class="t">Parte 2: medir la avalancha</span></h2>
+
+
+  <p>El criterio estricto de avalancha pide que, al cambiar un solo bit de la entrada, cada bit de
+  la salida cambie con probabilidad ½. La distancia de Hamming esperada entre los dos digests es
+  entonces <span class="v">n</span>/2, o sea un 50 % de bits modificados.</p>
+
+  <p>El protocolo es concreto. Se toman <span class="v">N</span> ≥ 30 mensajes de distinta
+  naturaleza —texto en español, cadenas aleatorias, mensajes muy cortos, muy largos, y con alta
+  repetición—. Para cada uno se generan <span class="v">K</span> variantes que difieren en
+  exactamente un bit, se mide la distancia de Hamming entre digests, y se reporta el promedio:</p>
+
+  <figure class="codigo">
+  <pre><code>AV = (1 / (N·K)) · Σ_j Σ_i ( δ(j,i) / n ) · 100 %</code></pre>
+  <figcaption>Además del promedio hay que reportar desviación estándar, mínimo, máximo y el
+  histograma de distancias, que debe aproximarse a una binomial Bin(<span class="v">n</span>, ½).</figcaption>
+  </figure>
+
+  <p>El histograma es la parte que distingue un buen reporte de uno mediocre. Lo ideal es una
+  campana centrada en <span class="v">n</span>/2 con desviación √<span class="v">n</span>/2, que es
+  lo que produce lanzar una moneda por cada bit de salida. Una <strong>barra única</strong> —toda
+  la masa en un solo valor— significa varianza cero: el número de bits que cambian no depende del
+  mensaje, y eso es el sello inconfundible de una función lineal.</p>
+
+  <p>Hay que repetir variando el número de rondas y graficar AV en función de ellas. Si AV se aleja
+  del 50 %, la interpretación exigida es señalar <em>qué componente</em> lo provoca: difusión
+  insuficiente, linealidad, rotaciones mal elegidas o pocas rondas.</p>
+
+  <h2><span class="hash">7c16fa</span><span class="t">Parte 3: buscar colisiones</span></h2>
+
+
+  <p>Para una salida de <span class="v">n</span> bits, el número esperado de evaluaciones antes de
+  encontrar una colisión es √(π/2) · 2<sup>n/2</sup> ≈ 1.2533 · 2<sup>n/2</sup>, frente a
+  2<sup>n</sup> de una búsqueda exhaustiva. Truncando el digest a <span class="v">d</span> dígitos
+  hexadecimales, <span class="v">n</span> = 4<span class="v">d</span> y el costo queda
+  ≈ 1.2533 · 2<sup>2d</sup>.</p>
+
+  <p>La implementación es un diccionario de digest → mensaje, generando mensajes aleatorios hasta
+  la primera repetición. Hay que repetir con semillas distintas y barrer
+  <span class="v">d</span>:</p>
+
+  <div class="tabla-env">
+  <table>
+    <thead><tr><th class="num">d</th><th class="num">n</th><th class="num">intentos teóricos</th><th class="num">repeticiones</th></tr></thead>
+    <tbody>
+      <tr><td class="num">3</td><td class="num">12</td><td class="num">≈ 80</td><td class="num">100</td></tr>
+      <tr><td class="num">4</td><td class="num">16</td><td class="num">≈ 321</td><td class="num">100</td></tr>
+      <tr><td class="num">5</td><td class="num">20</td><td class="num">≈ 1 283</td><td class="num">50</td></tr>
+      <tr><td class="num">6</td><td class="num">24</td><td class="num">≈ 5 133</td><td class="num">50</td></tr>
+      <tr><td class="num">7</td><td class="num">28</td><td class="num">≈ 20 530</td><td class="num">20</td></tr>
+      <tr><td class="num">8</td><td class="num">32</td><td class="num">≈ 82 120</td><td class="num">10</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>La comprobación clave es graficar log₂(tiempo) contra <span class="v">d</span> y verificar
+  empíricamente la <strong>pendiente 2</strong>: el tiempo se multiplica por ≈ 4 por cada dígito
+  hexadecimal añadido.</p>
+
+  <h2><span class="hash">46f3f5</span><span class="t">Partes 4 y 5: preimagen y segunda preimagen</span></h2>
+
+
+  <p>Dado un objetivo <span class="v">y</span>, encontrar <span class="v">M</span> con
+  <span class="v">H(M) = y</span> requiere, para una función ideal, un número de intentos que sigue
+  una distribución geométrica de parámetro 2<sup>−n</sup>, con esperanza 2<sup>n</sup> =
+  2<sup>4d</sup>. La pendiente esperada ahora es <strong>4</strong>: el tiempo se multiplica por
+  ≈ 16 por cada dígito.</p>
+
+  <p>La segunda preimagen —dado <span class="v">M</span>, hallar <span class="v">M′ ≠ M</span> con
+  el mismo digest— tiene el mismo costo ideal, 2<sup>4d</sup>. Ése es justamente el punto: hay que
+  comprobar estadísticamente que el cociente ρ(<span class="v">d</span>) entre ambos tiempos es
+  ≈ 1, comparando las medias con sus intervalos de confianza.</p>
+
+  <div class="nota">
+    <span class="titulo">La verificación que delata un diseño débil</span>
+    <p>Para un mismo <span class="v">d</span> debe observarse
+    <span class="hex">T<sub>preimagen</sub> / T<sub>colisión</sub> ≈ 2<sup>2d</sup> / 1.2533</span>.
+    Para <span class="v">d</span> = 4 eso equivale a un factor cercano a <strong>200</strong>. Si el
+    cociente observado es mucho menor, la función tiene una debilidad estructural que hay que
+    investigar y reportar.</p>
+  </div>
+
+  <h3>Segundas preimágenes sin pagar el precio</h3>
+
+  <p>La fuerza bruta es el escenario ideal. La parte más instructiva de la tarea es intentar
+  obtenerlas <em>gratis</em>, explotando defectos del diseño. Hay que aplicar las cinco pruebas y
+  reportar el resultado de cada una:</p>
+
+  <div class="tabla-env">
+  <table>
+    <thead><tr><th>prueba</th><th>qué explota</th></tr></thead>
+    <tbody>
+      <tr><td>relleno ambiguo</td><td>¿<span class="v">H(M)</span> = <span class="hex">H(M ‖ 0x00…)</span>? Si el padding no codifica la longitud, la segunda preimagen sale gratis</td></tr>
+      <tr><td>permutación de bloques</td><td>¿<span class="hex">H(m₁‖m₂)</span> = <span class="hex">H(m₂‖m₁)</span>? Falla si <span class="v">f</span> es conmutativa, típico si sólo se usa XOR o suma</td></tr>
+      <tr><td>extensión de longitud</td><td>dado <span class="v">H(M)</span> sin conocer <span class="v">M</span>, calcular <span class="hex">H(M ‖ X)</span>: la debilidad clásica de Merkle–Damgård sin finalización</td></tr>
+      <tr><td>linealidad sobre F₂</td><td>buscar un Δ tal que <span class="hex">H(M ⊕ Δ) = H(M)</span> para todo <span class="v">M</span>: un solo Δ rompe la función por completo</td></tr>
+      <tr><td>puntos fijos</td><td>hallar (<span class="v">h</span>, <span class="v">m</span>) con <span class="hex">f(h, m) = h</span>: permite insertar bloques sin alterar el digest</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>La síntesis final es una única gráfica con las tres curvas empíricas superpuestas sobre las
+  teóricas. <strong>Las curvas de preimagen y de segunda preimagen deben coincidir</strong>; si no
+  lo hacen, hay un sesgo en la implementación o en el muestreo que hay que explicar.</p>
+
+  <h2><span class="hash">b63e2f</span><span class="t">Qué se evalúa</span></h2>
+
+
+  <p>Todos los tiempos reportados carecen de sentido sin la especificación del hardware, así que el
+  reporte incluye una ficha técnica del entorno: procesador con frecuencia y núcleos, memoria, GPU
+  si se usó, sistema operativo, lenguaje y versión, compilador y banderas, paralelismo, método de
+  medición —reloj monótono, número de repeticiones— y el throughput medido en hashes por
+  segundo.</p>
+
+  <p>La rúbrica pesa así:</p>
+
+  <div class="tabla-env">
+  <table>
+    <thead><tr><th>criterio</th><th class="num">peso</th></tr></thead>
+    <tbody>
+      <tr><td>razonamiento y conclusiones</td><td class="num">25 %</td></tr>
+      <tr><td>matemáticas empleadas</td><td class="num">20 %</td></tr>
+      <tr><td>diseño e implementación de la función</td><td class="num">15 %</td></tr>
+      <tr><td>diseño y ejecución experimental</td><td class="num">15 %</td></tr>
+      <tr><td>escritura y completitud del reporte</td><td class="num">15 %</td></tr>
+      <tr><td>reproducibilidad y entrega técnica</td><td class="num">10 %</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Los dos pesos más altos no están en construir la función ni en correr los experimentos, sino
+  en <strong>interpretarlos</strong>: contrastar cada resultado con su predicción teórica,
+  cuantificar la discrepancia y atribuirla a un componente concreto. El nivel sobresaliente exige
+  además reconocer los límites de validez —tamaño de muestra, hardware, <span class="v">n</span>
+  pequeño— y que la conclusión se sostenga íntegramente en los datos propios.</p>
+
+  <section class="recursos">
+    <h2><span class="hash">08c727</span><span class="t">Recursos del tema</span></h2>
+
+    <ul class="adjuntos">
+      <li>
+        <a href="../assets/pdf/tarea-hash-artesanal.pdf">
+          <span>
+            <span class="archivo">tarea-hash-artesanal.pdf</span>
+            <span class="que">El enunciado completo: requisitos de diseño, los cuatro protocolos experimentales con sus tablas y barridos, las pruebas estructurales, la ficha del entorno de cómputo y la rúbrica analítica.</span>
+          </span>
+          <span class="ext">10 páginas</span>
+          <span class="peso">99 KB</span>
+        </a>
+      </li>
+      <li>
+        <a href="../assets/pdf/laboratorio-funciones-hash.pdf">
+          <span>
+            <span class="archivo">laboratorio-funciones-hash.pdf</span>
+            <span class="que">El laboratorio completo del curso, fuente principal de la materia.</span>
+          </span>
+          <span class="ext">lab</span>
+          <span class="peso">3.2 MB</span>
+        </a>
+      </li>
+    </ul>
+
+    <p class="atribucion">Material del Dr. José de Jesús Ángel Ángel, Facultad de Ingeniería, Universidad Anáhuac México.</p>
+  </section>
+
+</main>
+
+<nav class="nav-temas" aria-label="Navegación entre temas">
+  <div class="nav-temas-int">
+    <a href="02-hash-aplicaciones.html">
+      <span class="dir">tema anterior</span>
+      <span class="cual">02 Aplicaciones de las funciones hash</span>
+    </a>
+    <a class="sig" href="04-sellado-de-tiempo.html">
+      <span class="dir">tema siguiente</span>
+      <span class="cual">04 Sellado de tiempo</span>
+    </a>
+  </div>
+</nav>
+
+<footer class="pie">
+  <div class="pie-int">
+    <p>Apuntes de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería.</p>
+    <p>Material original del Dr. José de Jesús Ángel Ángel.</p>
+  </div>
+</footer>
+
+<script>
+/* Único script de la materia: cierra el temario con Escape o al pulsar fuera. */
+(function () {
+  var menu = document.querySelector('.menu');
+  if (!menu) return;
+  document.addEventListener('click', function (e) {
+    if (menu.open && !menu.contains(e.target)) menu.open = false;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

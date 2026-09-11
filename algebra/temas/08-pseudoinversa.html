@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pseudoinversa de Moore–Penrose — Álgebra Lineal Avanzada</title>
+<meta name="description" content="Las cuatro condiciones de Penrose, la pseudoinversa desde la SVD y la fórmula por factorización de rango, con un ejemplo 6 × 4 de rango 2 resuelto.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+<link rel="stylesheet" href="../css/algebra.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<!-- barra:inicio -->
+<header class="barra">
+  <div class="barra-int">
+    <a href="../../index.html">Apuntes</a>
+    <span class="sep">/</span>
+    <a href="../index.html">Álgebra Lineal Avanzada</a>
+    <span class="sep">/</span>
+    <span class="aqui">08 Pseudoinversa de Moore–Penrose</span>
+    <details class="menu">
+      <summary>Temario 08/09</summary>
+      <div class="menu-panel">
+        <ol class="menu-lista">
+        <li><a href="01-campos-finitos.html"><span class="mn">01</span><span class="mt">Campos finitos</span></a></li>
+        <li><a href="02-cuatro-subespacios.html"><span class="mn">02</span><span class="mt">Los cuatro subespacios fundamentales</span></a></li>
+        <li><a href="03-valores-vectores-propios.html"><span class="mn">03</span><span class="mt">Valores y vectores propios</span></a></li>
+        <li><a href="04-qr-gram-schmidt.html"><span class="mn">04</span><span class="mt">Descomposición QR y Gram–Schmidt</span></a></li>
+        <li><a href="05-cholesky.html"><span class="mn">05</span><span class="mt">Descomposición de Cholesky</span></a></li>
+        <li><a href="06-svd-metodo-general.html"><span class="mn">06</span><span class="mt">SVD — teoría y método general</span></a></li>
+        <li><a href="07-svd-valores-enteros.html"><span class="mn">07</span><span class="mt">SVD con valores singulares enteros</span></a></li>
+        <li><a href="08-pseudoinversa.html" aria-current="page"><span class="mn">08</span><span class="mt">Pseudoinversa de Moore–Penrose</span></a></li>
+        <li><a href="09-aplicaciones-svd.html"><span class="mn">09</span><span class="mt">Aplicaciones de la SVD y compresión de imágenes</span></a></li>
+        </ol>
+      </div>
+    </details>
+  </div>
+</header>
+<!-- barra:fin -->
+
+<main class="hoja">
+
+  <header class="cabecera" id="contenido">
+    <p class="indice">08</p>
+    <div class="texto">
+      <h1>Pseudoinversa de Moore–Penrose</h1>
+      <p class="entradilla">Qué devolver cuando Ax = b no tiene solución, o tiene demasiadas. La respuesta es única y siempre existe, aunque la inversa no.</p>
+    </div>
+  </header>
+
+  <h2><span class="n">1</span><span class="t">El problema</span></h2>
+
+
+  <p>La inversa \(A^{-1}\) sólo existe si \(A\) es cuadrada y de rango completo. Fuera de ese
+  caso, \(Ax=b\) puede tener cero soluciones —el sistema sobredeterminado típico de un ajuste— o
+  infinitas —el subdeterminado—. La pseudoinversa de Moore–Penrose \(A^{+}\) resuelve los dos
+  casos a la vez y con un solo criterio.</p>
+
+  <div class="nota">
+    <span class="titulo">Qué devuelve</span>
+    <p>El vector \(x=A^{+}b\) es el que <strong>minimiza \(\lVert Ax-b\rVert\)</strong>, y de
+    entre todos los que empatan en ese mínimo, es el de <strong>norma \(\lVert x\rVert\)
+    más pequeña</strong>. Si el sistema tiene solución exacta única, coincide con ella; si \(A\)
+    es invertible, \(A^{+}=A^{-1}\).</p>
+  </div>
+
+  <p>La doble condición es lo que la hace única. Sin ella, en el caso subdeterminado habría que
+  elegir arbitrariamente entre infinitas soluciones exactas.</p>
+
+  <hr class="sigma" style="--i:1">
+
+  <h2><span class="n">2</span><span class="t">Las cuatro condiciones de Penrose</span></h2>
+
+
+  <p>La pseudoinversa se define como la única matriz \(A^{+}\) que cumple las cuatro:</p>
+
+  <p>$$AA^{+}A=A,\qquad A^{+}AA^{+}=A^{+},\qquad
+  (AA^{+})^{T}=AA^{+},\qquad (A^{+}A)^{T}=A^{+}A$$</p>
+
+  <p>Las dos primeras dicen que \(A^{+}\) se comporta como una inversa «en lo que puede». Las dos
+  últimas piden que \(AA^{+}\) y \(A^{+}A\) sean simétricas, y eso es lo que las convierte en
+  <strong>proyectores ortogonales</strong>: \(AA^{+}\) proyecta sobre \(\mathcal{C}(A)\) y
+  \(A^{+}A\) proyecta sobre \(\mathcal{C}(A^{T})\), los dos subespacios «útiles» del tema
+  02.</p>
+
+  <p>Ahí está la conexión con el residuo: \(Ax=AA^{+}b\) es la parte de \(b\) que el modelo
+  explica, y \(b-AA^{+}b\) es la que cae en \(\mathcal{N}(A^{T})\) y no puede explicar.
+  Minimizar \(\lVert Ax-b\rVert\) es exactamente proyectar.</p>
+
+  <hr class="sigma" style="--i:2">
+
+  <h2><span class="n">3</span><span class="t">Desde la SVD</span></h2>
+
+
+  <p>La vía conceptualmente más limpia pasa por el tema 06. Si \(A=U\Sigma V^{T}\), entonces</p>
+
+  <p>$$A^{+}=V\Sigma^{+}U^{T}$$</p>
+
+  <p>donde \(\Sigma^{+}\) se obtiene transponiendo \(\Sigma\) e invirtiendo sólo los valores
+  singulares no nulos: \(\sigma_i\mapsto 1/\sigma_i\) si \(\sigma_i&gt;0\), y \(0\mapsto 0\).
+  Ese «cero se queda en cero» es toda la definición, y es lo que selecciona la solución de norma
+  mínima.</p>
+
+  <p>Las cuatro condiciones de Penrose se verifican en dos líneas con esta forma, porque
+  \(U\) y \(V\) son ortogonales. Y de paso queda claro por qué la pseudoinversa es numéricamente
+  delicada: si algún \(\sigma_i\) es diminuto pero no exactamente cero, su inverso es enorme y
+  amplifica el ruido. De ahí sale la <strong>SVD truncada</strong>, que descarta los
+  \(\sigma_i\) por debajo de un umbral en lugar de invertirlos — el tema 09.</p>
+
+  <hr class="sigma" style="--i:3">
+
+  <h2><span class="n">4</span><span class="t">La fórmula por factorización de rango</span></h2>
+
+
+  <p>El cuaderno del curso usa una vía distinta, que no necesita calcular ninguna SVD y que sale
+  entera cuando la matriz es entera. Se apoya en la factorización de rango.</p>
+
+  <p>Sea \(A\in\mathbb{R}^{m\times n}\) de rango \(r\). Se toma \(P\) formada por \(r\)
+  columnas independientes de \(A\), y \(Q\) formada por \(r\) renglones independientes de
+  \(A\) puestos como columnas. Entonces</p>
+
+  <p>$$A^{+}=Q\,(P^{T}AQ)^{-1}P^{T}$$</p>
+
+  <p>Todo el cálculo se reduce a invertir una matriz \(r\times r\), que cuando el rango es bajo es
+  minúsculo comparado con el tamaño de \(A\).</p>
+
+  <div class="nota">
+    <span class="titulo">La hipótesis que hay que comprobar</span>
+    <p>La fórmula exige que \(P\) y \(Q\) tengan efectivamente rango \(r\). Si se toman «las
+    primeras \(r\) columnas» y «los primeros \(r\) renglones» por comodidad y resulta que no son
+    independientes, el producto \(P^{T}AQ\) sale singular y no hay inversa que calcular. El
+    cuaderno lo advierte explícitamente: primero se calcula el rango con la forma escalonada, y sólo
+    después se eligen las columnas y renglones, verificando que los elegidos sirven.</p>
+  </div>
+
+  <hr class="sigma" style="--i:4">
+
+  <h2><span class="n">5</span><span class="t">Un ejemplo de rango 2</span></h2>
+
+
+  <p>Sea la matriz \(6\times 4\) del cuaderno:</p>
+
+  <p>$$A=\begin{pmatrix}
+  -1&amp;0&amp;1&amp;2\\ -1&amp;1&amp;0&amp;-1\\ 0&amp;-1&amp;1&amp;3\\
+  0&amp;1&amp;-1&amp;-3\\ 1&amp;-1&amp;0&amp;1\\ 1&amp;0&amp;-1&amp;-2\end{pmatrix}$$</p>
+
+  <p>La forma escalonada reducida deja dos pivotes, así que \(r=2\): una matriz de 24 entradas
+  cuya información cabe en dos direcciones. Tomando las dos primeras columnas para \(P\) y los dos
+  primeros renglones para \(Q\):</p>
+
+  <p>$$P^{T}=\begin{pmatrix}-1&amp;-1&amp;0&amp;0&amp;1&amp;1\\0&amp;1&amp;-1&amp;1&amp;-1&amp;0\end{pmatrix},
+  \qquad Q=\begin{pmatrix}-1&amp;-1\\0&amp;1\\1&amp;0\\2&amp;-1\end{pmatrix}$$</p>
+
+  <p>El producto central es \(2\times 2\) y no es singular, así que las hipótesis se cumplen:</p>
+
+  <p>$$P^{T}AQ=\begin{pmatrix}-10&amp;-4\\-16&amp;14\end{pmatrix},\qquad
+  \det=-204$$</p>
+
+  <p>$$(P^{T}AQ)^{-1}=\begin{pmatrix}-\tfrac{7}{102}&amp;-\tfrac{1}{51}\\[3pt]
+  -\tfrac{4}{51}&amp;\tfrac{5}{102}\end{pmatrix}$$</p>
+
+  <p>y \(A^{+}=Q(P^{T}AQ)^{-1}P^{T}\) sale de multiplicar \(4\times 2\) por \(2\times 2\) por
+  \(2\times 6\), dando la matriz \(4\times 6\) de la pseudoinversa. Nótese la forma: la
+  pseudoinversa de una \(m\times n\) es \(n\times m\).</p>
+
+  <p>La verificación no es opcional. Basta comprobar las cuatro condiciones de Penrose; si alguna
+  falla, la elección de \(P\) o \(Q\) fue mala. El cuaderno incluye un segundo ejemplo,
+  \(6\times 3\) y también de rango 2, donde el producto central resulta
+  \(\begin{pmatrix}-22&amp;24\\-1&amp;7\end{pmatrix}\) con determinante \(-130\).</p>
+
+  <hr class="sigma" style="--i:5">
+
+  <h2><span class="n">6</span><span class="t">Para qué sirve</span></h2>
+
+
+  <p><strong>Mínimos cuadrados con rango deficiente.</strong> Es el caso que las ecuaciones normales
+  no cubren: si \(A\) tiene columnas dependientes, \(A^{T}A\) es singular y \(A^{T}Ax=A^{T}b\)
+  no determina \(x\). La pseudoinversa sí, eligiendo el de norma mínima.</p>
+
+  <p><strong>Problemas inversos.</strong> Reconstruir una causa a partir de un efecto medido suele
+  dar un sistema mal condicionado; la pseudoinversa truncada es la regularización más simple, y la
+  de Tikhonov es su versión suavizada.</p>
+
+  <p><strong>Como puente entre temas.</strong> Si \(A\) tiene columnas independientes,
+  \(A^{+}=(A^{T}A)^{-1}A^{T}\) y se recuperan las ecuaciones normales del tema 04. Si las tiene
+  dependientes, hace falta la definición general. La pseudoinversa es el enunciado que unifica los
+  dos casos.</p>
+
+  <hr class="sigma" style="--i:6">
+
+  <section class="recursos">
+    <h2><span class="n">material</span><span class="t">Recursos del tema</span></h2>
+
+    <ul class="adjuntos">
+      <li>
+        <a href="../assets/wolfram/pseudoinversa-moore-penrose.nb">
+          <span>
+            <span class="archivo">pseudoinversa-moore-penrose.nb</span>
+            <span class="que">Dos ejemplos de rango 2 —una matriz 6 × 4 y una 6 × 3— con el cálculo del rango, la elección de P y Q, la inversión del producto central y la verificación del resultado contra PseudoInverse.</span>
+          </span>
+          <span class="ext">cuaderno</span>
+          <span class="peso">58 KB</span>
+        </a>
+      </li>
+    </ul>
+
+    <p class="atribucion">Cuaderno del Dr. José de Jesús Ángel Ángel, Facultad de Ingeniería, Universidad Anáhuac México. Este tema no tiene PDF de apuntes: el resumen está escrito a partir del cálculo del cuaderno.</p>
+  </section>
+
+</main>
+
+<nav class="nav-temas" aria-label="Navegación entre temas">
+  <div class="nav-temas-int">
+    <a href="07-svd-valores-enteros.html">
+      <span class="dir">Tema anterior</span>
+      <span class="cual">07 SVD con valores singulares enteros</span>
+    </a>
+    <a class="sig" href="09-aplicaciones-svd.html">
+      <span class="dir">Tema siguiente</span>
+      <span class="cual">09 Aplicaciones de la SVD y compresión de imágenes</span>
+    </a>
+  </div>
+</nav>
+
+<footer class="pie">
+  <div class="pie-int">
+    <p>Apuntes de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería.</p>
+    <p>Material original del Dr. José de Jesús Ángel Ángel.</p>
+  </div>
+</footer>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],macros:{'\\gr':'\\operatorname{gr}'},throwOnError:false})"></script>
+
+<script>
+/* Único script del sitio: cierra el temario con Escape o al pulsar fuera. */
+(function () {
+  var menu = document.querySelector('.menu');
+  if (!menu) return;
+  document.addEventListener('click', function (e) {
+    if (menu.open && !menu.contains(e.target)) menu.open = false;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

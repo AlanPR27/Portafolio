@@ -1,0 +1,667 @@
+@charset "utf-8";
+
+/* =========================================================================
+   Blockchain — hoja de estilos propia.
+   No comparte nada con algebra.css: ni familia tipográfica, ni paleta, ni
+   principio de composición. Si las dos hojas fueran intercambiables, el
+   diseño habría fallado.
+
+   Principio: el encadenamiento. Una línea vertical recorre el documento
+   entero y no se rompe entre secciones; cada sección es un bloque colgado
+   de ella, identificado por los primeros seis dígitos hexadecimales del
+   SHA-256 de su propio título. Longitud fija, siempre seis.
+   ========================================================================= */
+
+:root {
+  /* Fondo claro, deliberadamente: el terminal negro con verde es el cliché
+     exacto de esta materia. Gris neutro de máquina, no papel. */
+  --papel:    #f1f1ef;
+  --tinta:    #16181a;
+  --tinta-2:  #5a6066;
+  --regla:    #d7d7d3;
+  --tenue:    #e6e6e2;
+  --cadena:   #c9c9c4;
+
+  --acento:   #8a4b0a;              /* el enlace íntegro */
+  --acento-sup: rgba(138, 75, 10, 0.09);
+  --roto:     #a11d1d;              /* la cadena rota */
+
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  --medida: 66ch;
+  --rail:   6.5rem;
+  --nota:   9rem;
+  --pad:    1.25rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --papel:    #121315;
+    --tinta:    #e6e6e2;
+    --tinta-2:  #9ea4a9;
+    --regla:    #2e3033;
+    --tenue:    #1b1d20;
+    --cadena:   #3a3d41;
+    --acento:   #e0a45c;
+    --acento-sup: rgba(224, 164, 92, 0.12);
+    --roto:     #f08a8a;
+  }
+}
+
+:root[data-theme="dark"] {
+  --papel:    #121315;
+  --tinta:    #e6e6e2;
+  --tinta-2:  #9ea4a9;
+  --regla:    #2e3033;
+  --tenue:    #1b1d20;
+  --cadena:   #3a3d41;
+  --acento:   #e0a45c;
+  --acento-sup: rgba(224, 164, 92, 0.12);
+  --roto:     #f08a8a;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+/* Monoespaciada como voz principal, no sólo para el código: la materia trata
+   literalmente sobre cadenas de longitud fija. Se compensa con interlineado
+   alto y medida corta, que es lo que la vuelve legible en prosa larga. */
+body {
+  margin: 0;
+  color: var(--tinta);
+  background: var(--papel);
+  font-family: var(--mono);
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  font-variant-ligatures: none;
+}
+
+a {
+  color: var(--acento);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  text-decoration-color: color-mix(in srgb, var(--acento) 40%, transparent);
+}
+
+a:hover { text-decoration-color: currentColor; }
+
+:focus-visible { outline: 2px solid var(--acento); outline-offset: 3px; }
+
+.saltar { position: absolute; left: -9999px; z-index: 40; }
+.saltar:focus {
+  left: 0.5rem; top: 0.5rem;
+  background: var(--papel); padding: 0.6rem 1rem; border: 1px solid var(--acento);
+}
+
+/* ------------------------------ Barra fija ------------------------------ */
+
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--papel);
+  border-bottom: 1px solid var(--regla);
+}
+
+.barra-int {
+  width: min(100% - 2 * var(--pad), calc(var(--rail) + var(--medida) + var(--nota)));
+  margin-inline: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.85rem;
+  padding: 0.6rem 0;
+  font-size: 0.74rem;
+  color: var(--tinta-2);
+}
+
+.barra-int > a { color: inherit; text-decoration-color: var(--regla); }
+.barra-int > a:hover { color: var(--acento); }
+.barra-int .sep { color: var(--cadena); }
+.barra-int .aqui { color: var(--tinta); }
+
+/* Cadena y temario viajan juntos, para que no se separen al envolver. */
+.barra-der {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+/* La navegación ES la cadena: siete bloques enlazados. */
+.cadena-nav {
+  display: flex;
+  align-items: center;
+}
+
+.cadena-nav .bloque {
+  width: 1.55rem;
+  height: 1.55rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--regla);
+  font-size: 0.66rem;
+  color: var(--tinta-2);
+  text-decoration: none;
+  flex: none;
+}
+
+.cadena-nav .union {
+  width: 0.42rem;
+  height: 1px;
+  background: var(--cadena);
+  flex: none;
+}
+
+.cadena-nav .bloque:hover {
+  border-color: var(--tinta);
+  color: var(--tinta);
+  background: var(--tenue);
+}
+
+.cadena-nav .bloque[aria-current="page"] {
+  border-color: var(--acento);
+  color: var(--acento);
+  font-weight: 500;
+  background: var(--acento-sup);
+}
+
+/* Lista completa de títulos, para quien no quiera adivinar por el número. */
+.menu { position: relative; }
+
+.menu > summary {
+  list-style: none;
+  cursor: pointer;
+  color: var(--tinta);
+  white-space: nowrap;
+  padding: 0.15rem 0;
+}
+.menu > summary::-webkit-details-marker { display: none; }
+.menu > summary::after { content: " [+]"; color: var(--acento); }
+.menu[open] > summary::after { content: " [-]"; }
+.menu > summary:hover { color: var(--acento); }
+
+.menu-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.6rem);
+  z-index: 30;
+  min-width: min(25rem, calc(100vw - 2 * var(--pad)));
+  background: var(--papel);
+  border: 1px solid var(--regla);
+  padding: 0.25rem 0;
+  max-height: min(70vh, 32rem);
+  overflow-y: auto;
+}
+
+.menu-lista { list-style: none; margin: 0; padding: 0; }
+
+.menu-lista a {
+  display: grid;
+  grid-template-columns: 2.1rem minmax(0, 1fr);
+  gap: 0.4rem;
+  padding: 0.4rem 0.9rem;
+  text-decoration: none;
+  color: var(--tinta);
+  border-left: 2px solid transparent;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.menu-lista .mn { color: var(--tinta-2); }
+.menu-lista a:hover { background: var(--acento-sup); }
+.menu-lista a[aria-current="page"] {
+  border-left-color: var(--acento);
+  background: var(--acento-sup);
+}
+.menu-lista a[aria-current="page"] .mn { color: var(--acento); }
+
+/* ------------------------- La cadena del documento ---------------------- */
+
+.hoja {
+  position: relative;
+  width: min(100% - 2 * var(--pad), calc(var(--rail) + var(--medida) + var(--nota)));
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: var(--rail) minmax(0, 1fr) var(--nota);
+  padding-block: 3.2rem 4rem;
+}
+
+/* La continuidad literal: una sola línea, de arriba abajo, sin cortes. */
+.hoja::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--rail);
+  width: 1px;
+  background: var(--cadena);
+}
+
+.hoja > * { grid-column: 2; padding-inline: 1.5rem; }
+
+.hoja > h2,
+.hoja > .cabecera,
+.hoja > .recursos {
+  grid-column: 1 / 3;
+  padding-inline: 0;
+  display: grid;
+  grid-template-columns: var(--rail) minmax(0, 1fr);
+  align-items: baseline;
+}
+
+/* ------------------------------ Encabezados ----------------------------- */
+
+.cabecera { margin-bottom: 2rem; }
+
+.cabecera > .indice {
+  grid-column: 1;
+  margin: 0;
+  padding-right: 1rem;
+  text-align: right;
+  font-size: 0.72rem;
+  color: var(--tinta-2);
+}
+
+.cabecera > .texto { grid-column: 2; padding-inline: 1.5rem; }
+
+h1 {
+  font-size: clamp(1.55rem, 1.15rem + 1.7vw, 2.2rem);
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin: 0 0 0.75rem;
+  text-wrap: balance;
+}
+
+.entradilla {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--tinta-2);
+  max-width: 56ch;
+}
+
+/* Cada sección es un bloque colgado de la cadena, con su digest por id. */
+h2 {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--rail) minmax(0, 1fr);
+  align-items: baseline;
+  margin: 2.9rem 0 1rem;
+  font-size: 1.08rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -0.015em;
+}
+
+/* El nodo se posa sobre la línea; la línea sigue por encima y por debajo. */
+h2::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--rail) - 0.22rem);
+  top: 0.62em;
+  width: 0.44rem;
+  height: 0.44rem;
+  background: var(--papel);
+  border: 1px solid var(--acento);
+}
+
+h2 > .hash {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--tinta-2);
+  padding-right: 1rem;
+  text-align: right;
+  letter-spacing: 0.02em;
+}
+
+h2 > .t { padding-inline: 1.5rem; }
+
+h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 1.9rem 0 0.5rem;
+  line-height: 1.5;
+}
+
+p { margin: 0 0 1.1em; }
+p:last-child { margin-bottom: 0; }
+
+strong { font-weight: 700; }
+
+/* Variables sueltas dentro de la prosa: la cursiva de JetBrains Mono. */
+.v { font-style: italic; }
+em { font-style: normal; color: var(--acento); }
+
+ul, ol { margin: 0 0 1.1em; padding-left: 1.5em; }
+li { margin-bottom: 0.45em; }
+li::marker { color: var(--tinta-2); }
+
+/* ------------------------ Dígitos y digests ----------------------------- */
+
+.hex {
+  color: var(--tinta);
+  background: var(--tenue);
+  padding: 0.08em 0.3em;
+  overflow-wrap: anywhere;
+}
+
+.roto { color: var(--roto); }
+.valido { color: var(--acento); }
+
+code {
+  background: var(--tenue);
+  padding: 0.08em 0.32em;
+  font-size: 0.92em;
+}
+
+/* --------------------------------- Código ------------------------------- */
+
+pre {
+  margin: 1.5rem 0;
+  padding: 1rem 1.15rem;
+  background: var(--tenue);
+  border-left: 2px solid var(--acento);
+  overflow-x: auto;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  tab-size: 2;
+}
+
+pre code { background: none; padding: 0; font-size: inherit; }
+
+figure.codigo { margin: 1.5rem 0; }
+figure.codigo pre { margin: 0; }
+
+figcaption {
+  margin-top: 0.55rem;
+  font-size: 0.78rem;
+  color: var(--tinta-2);
+  line-height: 1.6;
+}
+
+/* --------------------------------- Tablas ------------------------------- */
+
+.tabla-env { margin: 1.5rem 0; overflow-x: auto; }
+figure.tabla { margin: 1.5rem 0; }
+figure.tabla .tabla-env { margin: 0; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+th, td {
+  text-align: left;
+  padding: 0.4rem 0.9rem 0.4rem 0;
+  border-bottom: 1px solid var(--tenue);
+  vertical-align: top;
+}
+
+thead th {
+  border-bottom: 1px solid var(--tinta);
+  font-weight: 700;
+  color: var(--acento);
+  font-size: 0.72rem;
+}
+
+tbody tr:last-child td { border-bottom: 1px solid var(--regla); }
+
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* -------------------------------- Apartados ----------------------------- */
+/* Delimitados por una regla al costado. Nunca cajas con sombra ni radio. */
+
+.hoja > .nota {
+  margin: 1.6rem 0 1.6rem 1.5rem;
+  padding: 0.15rem 1.5rem 0.15rem 1.2rem;
+}
+
+.nota {
+  border-left: 1px solid var(--acento);
+  font-size: 0.88rem;
+}
+
+.nota.aviso { border-left-color: var(--roto); }
+
+.nota > .titulo {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+  color: var(--tinta);
+}
+
+.nota.aviso > .titulo { color: var(--roto); }
+
+/* -------------------------------- Adjuntos ------------------------------ */
+
+.recursos { margin-top: 3rem; }
+.recursos > * { grid-column: 2; padding-inline: 1.5rem; }
+.recursos > h2 { grid-column: 1 / 3; padding-inline: 0; margin-top: 0; }
+
+.adjuntos { list-style: none; margin: 0; padding: 0 1.5rem; }
+.adjuntos li { margin: 0; border-top: 1px solid var(--tenue); }
+.adjuntos li:last-child { border-bottom: 1px solid var(--regla); }
+
+.adjuntos a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6rem 4.5rem;
+  gap: 0.6rem;
+  align-items: baseline;
+  padding: 0.7rem 0;
+  text-decoration: none;
+  color: var(--tinta);
+}
+
+.adjuntos a:hover { background: var(--acento-sup); }
+.adjuntos a:hover .archivo { color: var(--acento); }
+
+.adjuntos .archivo { font-size: 0.8rem; overflow-wrap: anywhere; }
+
+.adjuntos .que {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--tinta-2);
+  line-height: 1.6;
+  margin-top: 0.2rem;
+}
+
+.adjuntos .ext,
+.adjuntos .peso {
+  font-size: 0.72rem;
+  color: var(--tinta-2);
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.recursos .atribucion {
+  margin-top: 1.5rem;
+  font-size: 0.8rem;
+  color: var(--tinta-2);
+}
+
+/* ------------------ Índice de la materia: la cadena entera --------------- */
+
+.cadena-indice { list-style: none; margin: 0; padding: 0 1.5rem; }
+
+.cadena-indice > li {
+  position: relative;
+  padding: 0 0 0 2.2rem;
+  margin: 0;
+}
+
+/* El tramo de cadena que une un tema con el siguiente. */
+.cadena-indice > li::before {
+  content: "";
+  position: absolute;
+  left: 0.42rem;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--cadena);
+}
+.cadena-indice > li:first-child::before { top: 1.55rem; }
+.cadena-indice > li:last-child::before { bottom: calc(100% - 1.55rem); }
+
+.cadena-indice > li::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 1.3rem;
+  width: 0.85rem;
+  height: 0.85rem;
+  background: var(--papel);
+  border: 1px solid var(--acento);
+}
+
+.cadena-indice a {
+  display: block;
+  padding: 1rem 0 1.1rem;
+  text-decoration: none;
+  color: var(--tinta);
+  border-bottom: 1px solid var(--tenue);
+}
+
+.cadena-indice li:last-child a { border-bottom: 0; }
+
+.cadena-indice .num {
+  font-size: 0.72rem;
+  color: var(--tinta-2);
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.cadena-indice .titulo {
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.45;
+  display: block;
+  letter-spacing: -0.015em;
+}
+
+.cadena-indice .sub {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--tinta-2);
+  line-height: 1.65;
+  max-width: 52ch;
+}
+
+.cadena-indice a:hover .titulo { color: var(--acento); }
+.cadena-indice a:hover .num { color: var(--acento); }
+
+/* --------------------------- Navegación inferior ------------------------ */
+
+.nav-temas { border-top: 1px solid var(--regla); margin-top: 3.2rem; }
+
+.nav-temas-int {
+  width: min(100% - 2 * var(--pad), calc(var(--rail) + var(--medida) + var(--nota)));
+  margin-inline: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.4rem;
+  justify-content: space-between;
+  padding: 1.5rem var(--nota) 2rem calc(var(--rail) + 1.5rem);
+}
+
+.nav-temas a { text-decoration: none; max-width: 22rem; display: block; }
+
+.nav-temas .dir {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--tinta-2);
+  margin-bottom: 0.25rem;
+}
+
+.nav-temas .cual { font-weight: 700; color: var(--tinta); line-height: 1.45; font-size: 0.88rem; }
+.nav-temas a:hover .cual { color: var(--acento); }
+.nav-temas .sig { text-align: right; margin-left: auto; }
+
+/* ----------------------------------- Pie -------------------------------- */
+
+.pie {
+  border-top: 1px solid var(--regla);
+  color: var(--tinta-2);
+  font-size: 0.76rem;
+  line-height: 1.7;
+}
+
+.pie-int {
+  width: min(100% - 2 * var(--pad), calc(var(--rail) + var(--medida) + var(--nota)));
+  margin-inline: auto;
+  padding: 1.7rem var(--nota) 2.4rem calc(var(--rail) + 1.5rem);
+}
+
+.pie p { margin: 0 0 0.4em; max-width: 62ch; }
+
+/* -------------------------------- Responsive ---------------------------- */
+
+@media (max-width: 62rem) {
+  :root { --nota: 0rem; }
+}
+
+@media (max-width: 46rem) {
+  :root { --rail: 0rem; --pad: 1.1rem; }
+
+  .hoja { grid-template-columns: minmax(0, 1fr); padding-block: 2.2rem 2.8rem; }
+  .hoja::before { display: none; }
+  .hoja > * { grid-column: 1; padding-inline: 0; }
+
+  .hoja > h2,
+  .hoja > .cabecera,
+  .hoja > .recursos { grid-column: 1; display: block; padding-inline: 0; }
+
+  .cabecera > .indice { padding-right: 0; text-align: left; margin-bottom: 0.25rem; }
+  .cabecera > .texto { padding-inline: 0; }
+
+  .recursos > *,
+  .recursos > h2,
+  .adjuntos,
+  .cadena-indice { padding-inline: 0; }
+
+  h2 { display: block; }
+  h2::before { display: none; }
+  h2 > .hash { display: block; padding: 0 0 0.1rem; text-align: left; }
+  h2 > .t { padding-inline: 0; }
+
+  .hoja > .nota { margin-left: 0; padding-right: 0; }
+
+  .nav-temas-int,
+  .pie-int { padding-left: 0; padding-right: 0; }
+
+  .barra-int .aqui { display: none; }
+  /* La cadena de bloques no cabe: se sustituye por el desplegable. */
+  .cadena-nav { display: none; }
+  .barra-der { margin-left: auto; }
+  .menu { position: static; }
+  .menu-panel { left: 0; right: 0; min-width: 0; top: calc(100% + 1px); border-inline: 0; }
+}
+
+@media (max-width: 23.5rem) {
+  body { font-size: 0.9rem; }
+  .adjuntos a { grid-template-columns: minmax(0, 1fr); }
+  .adjuntos .ext, .adjuntos .peso { text-align: left; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  body { background: #fff; color: #000; }
+  .barra, .nav-temas { display: none; }
+  .hoja::before { display: none; }
+  a { color: #000; }
+}
