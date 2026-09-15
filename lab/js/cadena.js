@@ -79,8 +79,8 @@ export class Cadena {
     return this.bloques.at(-1) ?? null;
   }
 
-  /** Crea y mina el bloque génesis, cuyo hashPrevio son 64 ceros. */
-  async iniciar(datos = 'Bloque génesis', opciones = {}) {
+  /** Crea el bloque génesis, cuyo hashPrevio son 64 ceros, sin minarlo todavía. */
+  crearGenesis(datos = 'Bloque génesis') {
     if (this.bloques.length) throw new Error('La cadena ya tiene bloque génesis.');
     const genesis = new Bloque({
       indice: 0,
@@ -90,7 +90,12 @@ export class Cadena {
       hashPrevio: CEROS_64,
     });
     this.bloques.push(genesis);
-    return genesis.minar(opciones);
+    return genesis;
+  }
+
+  /** Crea y mina el bloque génesis. */
+  async iniciar(datos = 'Bloque génesis', opciones = {}) {
+    return this.crearGenesis(datos).minar(opciones);
   }
 
   /** Agrega un bloque sin minar. Sólo puede colgar de un bloque ya minado. */

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sellado de tiempo — Laboratorio Blockchain 0.0</title>
+<meta name="description" content="Módulo 3 del laboratorio: sellar el hash de un documento con fecha, encadenar los recibos al estilo Haber–Stornetta, colar un sello retroactivo y encontrar dónde deja de ser consistente la cadena.">
+<script>document.documentElement.classList.add(window.isSecureContext && window.crypto && window.crypto.subtle ? 'cripto-ok' : 'cripto-no');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&amp;family=Martian+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="../css/lab.css">
+<script type="module" src="../js/timestamp.js"></script>
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<header class="barra">
+  <div class="barra-int">
+    <nav class="migas" aria-label="Ruta">
+      <a href="../../index.html">Apuntes</a>
+      <span aria-hidden="true">/</span>
+      <a href="../index.html">Laboratorio Blockchain 0.0</a>
+    </nav>
+    <nav class="modos" aria-label="Módulos del laboratorio">
+      <ol>
+        <li><a href="01-funcion-hash.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">01</span><span class="etiqueta">Hash</span></a></li>
+        <li><a href="02-firma-digital.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">02</span><span class="etiqueta">Firma</span></a></li>
+        <li><a href="03-sellado-de-tiempo.html" aria-current="page" data-estado="actual"><span class="marca" aria-hidden="true"></span><span class="n">03</span><span class="etiqueta">Sello de tiempo</span></a></li>
+        <li><a href="04-blockchain.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">04</span><span class="etiqueta">Blockchain 0.0</span></a></li>
+        <li><a href="05-transaccion.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">05</span><span class="etiqueta">Transacción</span></a></li>
+      </ol>
+    </nav>
+  </div>
+</header>
+
+<div class="aviso-contexto" role="alert">
+  <p><strong>Este laboratorio necesita JavaScript y un contexto seguro.</strong> Web Crypto sólo
+  existe en HTTPS, y los módulos no cargan si el archivo se abre con doble clic. Ábrelo desde
+  <a href="https://alanpr27.github.io/Portafolio/lab/">alanpr27.github.io/Portafolio/lab</a>.</p>
+</div>
+
+<main id="contenido" class="modulo">
+  <div class="envoltura">
+
+    <header class="cabeza">
+      <p class="numero" aria-hidden="true">03</p>
+      <div>
+        <h1><span class="sr">Módulo 3: </span>Sellado de tiempo</h1>
+        <p class="entradilla">Probar que un documento existía en un momento, sin enseñárselo a nadie.
+        Se hashea, se le pone fecha y se engancha al sello anterior. Después se intenta colar un sello
+        con la fecha atrasada, para ver dónde se nota.</p>
+        <p class="fuentes">Consistente con el <a href="../../blockchain/temas/04-sellado-de-tiempo.html">tema 04
+        de los apuntes de Blockchain</a> y con el
+        <a href="../../blockchain/assets/pdf/sellado-de-tiempo.pdf">método del curso</a>
+        (PDF, 3 pp, 30 KB).</p>
+      </div>
+    </header>
+
+    <!-- ============================================================ 1 -->
+    <section class="parte" aria-labelledby="p1">
+      <h2 id="p1"><span class="parte-n" aria-hidden="true">1</span>Qué es y por qué importa</h2>
+      <div class="prosa">
+        <p>La fecha de un archivo se cambia en dos clics. Un sello de tiempo intenta algo más
+        difícil: probar que un documento existía en cierto momento. Y no se sella el documento, sino
+        su hash, <code>h = H(documento)</code>. Sólo <em>h</em> sale de tus manos, y como nadie
+        puede fabricar otro documento con la misma huella —la resistencia a colisiones del módulo
+        1—, el sello vale para ese documento y sólo para ése.</p>
+
+        <p>En el estándar RFC 3161, una autoridad de sellado (TSA) recibe <em>h</em>, le agrega la
+        hora de un reloj confiable y lo firma con su llave privada:
+        <code>TS = Sign_TSA(h ‖ t ‖ nonce ‖ policy_id)</code>. La firma es la del módulo 2. La
+        confianza queda puesta en la autoridad: en su llave y en su reloj.</p>
+
+        <p>Haber y Stornetta propusieron no depender del todo de ella: encadenar los sellos,
+        <code>h_n = H(documento_n ‖ h_(n−1))</code>. Cada sello nuevo lleva dentro el hash del
+        anterior, así que meter uno con fecha atrasada obliga a recalcular todos los que vienen
+        después. Recalcular es barato, pero si el último hash ya se publicó —ellos lo ponían en un
+        aviso clasificado del periódico—, el recálculo deja de coincidir con lo publicado.</p>
+
+        <p>Aquí cada recibo es <code>{indice, hashDocumento, timestamp, hashPrevio, hashRecibo}</code>,
+        donde <code>hashRecibo</code> es el SHA-256 del JSON canónico de los otros cuatro campos. El
+        primer recibo apunta a 64 ceros, igual que el bloque génesis del módulo 4.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 2 -->
+    <section class="parte" aria-labelledby="p2">
+      <h2 id="p2"><span class="parte-n" aria-hidden="true">2</span>Laboratorio</h2>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">2.1</span>El documento</h3>
+
+        <fieldset class="opciones">
+          <legend>El documento es</legend>
+          <label class="opcion"><input type="radio" name="origen" value="texto" checked> un texto escrito aquí</label>
+          <label class="opcion"><input type="radio" name="origen" value="archivo"> un archivo de tu equipo</label>
+        </fieldset>
+
+        <div id="origen-texto">
+          <label for="doc-texto">Texto</label>
+          <textarea id="doc-texto" rows="3" spellcheck="false">Contrato de arrendamiento. Renta mensual: 8,500 pesos.</textarea>
+        </div>
+        <div id="origen-archivo" hidden>
+          <label for="doc-archivo">Archivo</label>
+          <input id="doc-archivo" type="file">
+          <p class="nota">El archivo se lee en tu navegador con FileReader y se hashea ahí mismo. No
+          se sube a ningún lado.</p>
+        </div>
+
+        <div class="digest-cabeza">
+          <span class="rotulo">SHA-256 del documento: lo único que se sella</span>
+          <button type="button" class="secundario chico" data-copiar="#doc-digest">Copiar digest</button>
+        </div>
+        <p class="digest" id="doc-digest"></p>
+
+        <dl class="lecturas">
+          <div class="lectura"><dt>Tamaño, en bytes</dt><dd id="doc-bytes">0</dd></div>
+          <div class="lectura"><dt>Origen</dt><dd class="dd-texto" id="doc-origen">—</dd></div>
+        </dl>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">2.2</span>Sellar y encadenar</h3>
+        <p class="banco-intro">Ya hay dos recibos de ejemplo. Cada sello nuevo se engancha al último,
+        y la línea del margen se disloca en el punto donde un enlace deja de coincidir.</p>
+
+        <div class="botones">
+          <button type="button" id="sellar" disabled>Sellar este documento</button>
+          <button type="button" class="secundario" id="publicar" disabled>Publicar el último hash</button>
+          <button type="button" class="secundario" id="reiniciar" disabled>Vaciar la lista</button>
+        </div>
+        <p class="estado" id="sellos-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Preparando…</span></p>
+        <p class="nota" id="publicado-nota">Nada publicado todavía. Publicar es copiar el último
+        hashRecibo a un lugar que ya no controlas, como el periódico de Haber y Stornetta.</p>
+
+        <ol class="cadena compacta" id="sellos" aria-label="Recibos de sellado, en orden"></ol>
+
+        <h4>Colar un sello con fecha atrasada</h4>
+        <p class="nota">Mete un recibo del documento de 2.1 justo antes del último, con una fecha
+        entre la de los dos anteriores. El recibo intruso está bien formado y bien enganchado a su
+        anterior: mira qué le pasa al que ya estaba después.</p>
+        <div class="botones">
+          <button type="button" class="secundario" id="retroactivo" disabled>Insertar sello retroactivo</button>
+          <button type="button" class="secundario" id="reencadenar" disabled>Recalcular todo lo posterior</button>
+        </div>
+        <p class="nota">Recalcular deja la lista consistente otra vez y cuesta milisegundos. Lo que no
+        puede arreglar es un hash que ya salió de la página: publica antes de colar el sello y
+        compara.</p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">2.3</span>Comprobar un documento</h3>
+        <p class="banco-intro">Así se usa un sello: alguien presenta un documento y dice que existía
+        en cierta fecha. Se busca su hash entre los recibos y se revisa que el recibo sea
+        consistente con la cadena. Cambia el texto de 2.1 y mira la respuesta.</p>
+        <p class="estado" id="busqueda-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Preparando…</span></p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 3 -->
+    <section class="parte" aria-labelledby="p3">
+      <h2 id="p3"><span class="parte-n" aria-hidden="true">3</span>Ejercicio: ¿dónde se rompe?</h2>
+      <div class="prosa">
+        <p>Seis documentos sellados en días distintos. Alguien alteró uno de los recibos de una de
+        tres maneras: le cambió la fecha sin recalcular nada; le cambió el documento y recalculó
+        sólo ese recibo; o le atrasó la fecha y recalculó sólo ese recibo. Tu tarea es encontrar el
+        <strong>primer recibo que ya no pasa la verificación</strong>, que no siempre es el que se
+        alteró.</p>
+        <p>Tres comprobaciones por recibo: que su hash recalculado coincida con el guardado, que su
+        hashPrevio sea el hashRecibo del anterior, y que su fecha no vaya hacia atrás. Aquí las
+        juntas no dicen si coinciden: compara tú los valores.</p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">3.1</span>Los seis recibos</h3>
+        <fieldset class="opciones">
+          <legend>¿Cuál es el primer recibo que deja de ser consistente?</legend>
+          <ol class="cadena compacta" id="reto-sellos" aria-label="Recibos del ejercicio"></ol>
+        </fieldset>
+        <div class="botones">
+          <button type="button" id="reto-comprobar" disabled>Comprobar respuesta</button>
+          <button type="button" class="secundario" id="reto-nuevo" disabled>Otro reto</button>
+        </div>
+        <p class="estado" id="reto-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Preparando el reto…</span></p>
+      </div>
+    </section>
+
+    <aside class="honestidad" aria-labelledby="h-honestidad">
+      <h2 id="h-honestidad">Qué se simplificó</h2>
+      <ul>
+        <li><strong>El sello es autoafirmado.</strong> El timestamp sale de <code>Date.now()</code>, el
+        reloj de tu equipo, que tú controlas: basta con adelantarlo o atrasarlo antes de sellar. Esto
+        no es un sello confiable.</li>
+        <li><strong>No hay autoridad de sellado.</strong> Una TSA real, según el RFC 3161, es un tercero
+        de confianza que toma la hora de un reloj trazable a un patrón oficial y firma el sello con su
+        propia llave. Esa firma es precisamente lo que aquí no existe, y es lo que da valor legal a un
+        sello. Está explicado en el <a href="../../blockchain/temas/04-sellado-de-tiempo.html">tema 04</a>
+        y en el <a href="../../blockchain/assets/pdf/sellado-de-tiempo.pdf">PDF del curso</a>.</li>
+        <li><strong>Encadenar sólo protege lo que ya se publicó.</strong> Mientras el último hash no
+        salga de esta pestaña, reescribir la lista entera es gratis, como se ve al recalcular. Por
+        eso Haber y Stornetta publicaban, y por eso hoy se ancla en una cadena pública.</li>
+        <li><strong>Un sello por documento no escala.</strong> Los sistemas reales, como
+        OpenTimestamps, agrupan miles de hashes en un árbol de Merkle y sellan sólo la raíz.</li>
+      </ul>
+    </aside>
+
+    <nav class="pasos" aria-label="Entre módulos">
+      <a href="02-firma-digital.html"><span class="dir">Anterior</span><span class="cual">02 Firma digital</span></a>
+      <a class="sig" href="04-blockchain.html"><span class="dir">Siguiente</span><span class="cual">04 Blockchain 0.0</span></a>
+    </nav>
+
+  </div>
+</main>
+
+<p class="sr" id="anuncio" aria-live="polite"></p>
+
+<footer class="pie">
+  <div class="envoltura">
+    <p>Laboratorio de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería. Construido
+    sobre el material del curso del Dr. José de Jesús Ángel Ángel.</p>
+    <p>Todo el cálculo ocurre en tu navegador con Web Crypto: nada de lo que escribes sale de tu equipo.</p>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,76 +1,34 @@
 /*
  * Módulo 1 — Función hash.
  * Laboratorio en vivo (digest y avalancha) y ejercicio de prueba de trabajo en
- * miniatura. Toda la criptografía sale de crypto-utils.js.
+ * miniatura. La criptografía sale de crypto-utils.js y la interfaz común de ui.js.
  */
 import {
   buscarNonce,
   cerosIniciales,
   diferenciaBits,
   hammingBytes,
-  hayCriptoSegura,
   sha256Hex,
   utf8,
 } from './crypto-utils.js';
-
-const $ = (selector) => document.querySelector(selector);
-
-const formato = new Intl.NumberFormat('es-MX');
-const formatoDecimal = new Intl.NumberFormat('es-MX', {
-  minimumFractionDigits: 1,
-  maximumFractionDigits: 1,
-});
+import {
+  $,
+  anunciar,
+  arrancar,
+  ceros,
+  formato,
+  formatoDecimal,
+  pintarDigest,
+  plural,
+  ponerEstado,
+  vaciarDigest,
+} from './ui.js';
 
 const BITS = 256;
 const MEDIA = BITS / 2; // 128: cada bit de salida cambia con probabilidad ½
 const DESVIACION = Math.sqrt(BITS) / 2; // 8: la de una binomial Bin(256, ½)
 const MAX_REGISTRO = 24;
 const ALFABETO = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-
-const plural = (n, uno, varios) => `${formato.format(n)} ${n === 1 ? uno : varios}`;
-const ceros = (n) => plural(n, 'cero', 'ceros');
-
-// ------------------------------------------------------------ utilidades DOM
-
-function anunciar(texto) {
-  const region = $('#anuncio');
-  region.textContent = '';
-  // Un cuadro después, para que el lector de pantalla registre el cambio.
-  requestAnimationFrame(() => {
-    region.textContent = texto;
-  });
-}
-
-function ponerEstado(elemento, estado, texto) {
-  elemento.dataset.estado = estado;
-  elemento.querySelector('.estado-texto').textContent = texto;
-}
-
-/**
- * Pinta un digest en palabras de 8. Invierte los dígitos que difieren de `otro`
- * y subraya los ceros iniciales si se pide: forma y contraste, no sólo color.
- */
-function pintarDigest(elemento, digest, { otro = null, marcarCeros = false } = {}) {
-  const cerosAlInicio = marcarCeros ? cerosIniciales(digest) : 0;
-  const fragmento = document.createDocumentFragment();
-  for (let i = 0; i < digest.length; i++) {
-    if (i > 0 && i % 8 === 0) fragmento.append(' ');
-    const caracter = digest[i];
-    let clase = null;
-    if (i < cerosAlInicio) clase = 'cero';
-    else if (otro && otro[i] !== caracter) clase = 'dif';
-    if (clase) {
-      const marca = document.createElement('b');
-      marca.className = clase;
-      marca.textContent = caracter;
-      fragmento.append(marca);
-    } else {
-      fragmento.append(caracter);
-    }
-  }
-  elemento.replaceChildren(fragmento);
-  elemento.dataset.completo = digest;
-}
 
 // ---------------------------------------------------- 2.1 digest en vivo
 
@@ -272,8 +230,7 @@ function ejercicioPrueba() {
 
     if (!/^\d+$/.test(bruto)) {
       $('#pow-cadena').textContent = `SHA-256(${JSON.stringify(texto.value)} ‖ nonce)`;
-      salida.replaceChildren();
-      delete salida.dataset.completo;
+      vaciarDigest(salida);
       ponerEstado(veredicto, 'pendiente', 'Escribe un nonce: un entero sin signo, como 0, 1 o 2.');
       return;
     }
@@ -360,37 +317,10 @@ function ejercicioPrueba() {
   verificarManual();
 }
 
-// ----------------------------------------------------------------- copiado
-
-function copiado() {
-  document.addEventListener('click', async (evento) => {
-    const boton = evento.target.closest('[data-copiar]');
-    if (!boton) return;
-    const valor = document.querySelector(boton.dataset.copiar)?.dataset.completo;
-    if (!valor) return;
-    boton.dataset.etiqueta ??= boton.textContent;
-    try {
-      await navigator.clipboard.writeText(valor);
-      boton.textContent = 'Copiado';
-      anunciar('Digest completo copiado.');
-    } catch {
-      boton.textContent = 'No se pudo copiar';
-    }
-    setTimeout(() => {
-      boton.textContent = boton.dataset.etiqueta;
-    }, 1500);
-  });
-}
-
 // ------------------------------------------------------------------ arranque
 
-if (hayCriptoSegura()) {
+arrancar(() => {
   laboratorioDigest();
   laboratorioAvalancha();
   ejercicioPrueba();
-  copiado();
-} else {
-  for (const elemento of document.querySelectorAll('main input, main textarea, main button')) {
-    elemento.disabled = true;
-  }
-}
+});

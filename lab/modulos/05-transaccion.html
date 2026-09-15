@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transacción — Laboratorio Blockchain 0.0</title>
+<meta name="description" content="Módulo 5 del laboratorio: custodia de lotes en una cadena de suministro con tres actores que firman, serialización canónica, bloques sellados y minados, trazabilidad por lote y tres ataques ejecutables.">
+<script>document.documentElement.classList.add(window.isSecureContext && window.crypto && window.crypto.subtle ? 'cripto-ok' : 'cripto-no');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&amp;family=Martian+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="../css/lab.css">
+<script type="module" src="../js/transaccion.js"></script>
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<header class="barra">
+  <div class="barra-int">
+    <nav class="migas" aria-label="Ruta">
+      <a href="../../index.html">Apuntes</a>
+      <span aria-hidden="true">/</span>
+      <a href="../index.html">Laboratorio Blockchain 0.0</a>
+    </nav>
+    <nav class="modos" aria-label="Módulos del laboratorio">
+      <ol>
+        <li><a href="01-funcion-hash.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">01</span><span class="etiqueta">Hash</span></a></li>
+        <li><a href="02-firma-digital.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">02</span><span class="etiqueta">Firma</span></a></li>
+        <li><a href="03-sellado-de-tiempo.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">03</span><span class="etiqueta">Sello de tiempo</span></a></li>
+        <li><a href="04-blockchain.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">04</span><span class="etiqueta">Blockchain 0.0</span></a></li>
+        <li><a href="05-transaccion.html" aria-current="page" data-estado="actual"><span class="marca" aria-hidden="true"></span><span class="n">05</span><span class="etiqueta">Transacción</span></a></li>
+      </ol>
+    </nav>
+  </div>
+</header>
+
+<div class="aviso-contexto" role="alert">
+  <p><strong>Este laboratorio necesita JavaScript y un contexto seguro.</strong> Web Crypto sólo
+  existe en HTTPS, y los módulos no cargan si el archivo se abre con doble clic. Ábrelo desde
+  <a href="https://alanpr27.github.io/Portafolio/lab/">alanpr27.github.io/Portafolio/lab</a>.</p>
+</div>
+
+<main id="contenido" class="modulo">
+  <div class="envoltura">
+
+    <header class="cabeza">
+      <p class="numero" aria-hidden="true">05</p>
+      <div>
+        <h1><span class="sr">Módulo 5: </span>Transacción</h1>
+        <p class="entradilla">Tres actores, cada uno con su par de llaves, registran la custodia de
+        lotes de producto. Cada evento se firma, se revisa, se agrupa en un bloque, se sella y se
+        mina. Después se ataca de tres maneras, con un botón cada una.</p>
+        <p class="fuentes">Integra los cuatro módulos anteriores. Consistente con el
+        <a href="../../blockchain/temas/06-blockchain-artesanal.html">tema 06</a> y con el
+        <a href="../../blockchain/temas/07-blockchain-aplicaciones.html">tema 07</a> de los apuntes de
+        Blockchain, donde la trazabilidad de suministro aparece como aplicación y el oráculo como su
+        eslabón débil.</p>
+      </div>
+    </header>
+
+    <!-- ============================================================ 1 -->
+    <section class="parte" aria-labelledby="p1">
+      <h2 id="p1"><span class="parte-n" aria-hidden="true">1</span>Qué es y por qué importa</h2>
+      <div class="prosa">
+        <p>Un almacén de distribución registra quién tuvo cada lote y cuándo. El
+        <strong>proveedor</strong> emite el lote y firma su salida; el <strong>almacén</strong>
+        firma la recepción; el <strong>distribuidor</strong> firma el despacho hacia el punto de
+        venta. Cada paso es un evento <code>{lote, producto, cantidad, actor, accion, timestamp}</code>
+        firmado por quien lo origina.</p>
+
+        <p>Este módulo no reimplementa nada. La firma es la del módulo 2, hecha sobre el SHA-256 del
+        módulo 1; cada bloque se sella con la hora como en el 3, y se mina y encadena con la misma
+        cadena del 4. Lo nuevo es que, con varios actores, la firma hace trabajo real: el almacén no
+        puede fabricar un evento del proveedor porque no tiene su llave privada. Con un solo
+        firmante, la firma sería decorativa.</p>
+
+        <p>Antes de aceptar un evento se revisan cuatro cosas, en este orden. Que la firma verifique
+        con la llave pública <em>registrada</em> del actor que dice originarlo, y no con una llave
+        que venga dentro del mismo evento, porque ésa la pondría el atacante. Que ese actor pueda
+        hacer esa acción. Que su sello no sea anterior al último bloque. Y que sea el paso de
+        custodia que le toca al lote: emitir, recibir, despachar.</p>
+
+        <p>Falta un detalle que decide si todo funciona: <strong>se firman bytes, no objetos</strong>.
+        <code>{"lote":"L-001","cantidad":120}</code> y <code>{"cantidad":120,"lote":"L-001"}</code>
+        son el mismo evento y dos cadenas de bytes distintas, con digests sin ninguna relación. Si
+        quien firma y quien verifica serializan en distinto orden, una firma legítima no verifica.
+        Por eso el evento se serializa de forma canónica: claves en orden alfabético y sin espacios.
+        En 2.2 se puede ver fallar.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 2 -->
+    <section class="parte" aria-labelledby="p2">
+      <h2 id="p2"><span class="parte-n" aria-hidden="true">2</span>Laboratorio</h2>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">2.1</span>Los tres actores</h3>
+        <p class="banco-intro">Cada uno genera su par al abrir la página. Las públicas forman el
+        registro contra el que se verifica todo; las privadas no se muestran.</p>
+        <div class="llaves" id="actores"><p class="nota">Generando llaves…</p></div>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">2.2</span>Crear y firmar un evento</h3>
+
+        <div class="campos-tres">
+          <div>
+            <label for="ev-actor">Actor del evento</label>
+            <select id="ev-actor">
+              <option value="proveedor">Proveedor</option>
+              <option value="almacen">Almacén</option>
+              <option value="distribuidor">Distribuidor</option>
+            </select>
+          </div>
+          <div>
+            <label for="ev-accion">Acción</label>
+            <select id="ev-accion">
+              <option value="emitir">Emitir</option>
+              <option value="recibir">Recibir</option>
+              <option value="despachar">Despachar</option>
+            </select>
+          </div>
+          <div>
+            <label for="ev-llave">Firmar con la llave privada de</label>
+            <select id="ev-llave">
+              <option value="proveedor">Proveedor</option>
+              <option value="almacen">Almacén</option>
+              <option value="distribuidor">Distribuidor</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="campos-tres">
+          <div>
+            <label for="ev-lote">Lote</label>
+            <input id="ev-lote" type="text" value="L-002" spellcheck="false" autocomplete="off">
+          </div>
+          <div>
+            <label for="ev-producto">Producto</label>
+            <input id="ev-producto" type="text" value="Chocolate amargo 70 %, 100 g" spellcheck="false" autocomplete="off">
+          </div>
+          <div>
+            <label for="ev-cantidad">Cantidad</label>
+            <input id="ev-cantidad" type="text" inputmode="numeric" value="300" spellcheck="false" autocomplete="off">
+          </div>
+        </div>
+
+        <p class="nota">Al elegir el actor se ajustan la acción y la llave para que le correspondan.
+        Cámbialas después para provocar un rechazo.</p>
+
+        <span class="rotulo">Serialización canónica: los bytes exactos que se firman</span>
+        <p class="formula" id="ev-canonico"></p>
+
+        <div class="botones">
+          <button type="button" id="ev-enviar" disabled>Firmar y enviar</button>
+          <button type="button" class="secundario" id="ev-desorden" disabled>Firmar con las claves en otro orden</button>
+        </div>
+        <p class="estado" id="ev-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Preparando el registro…</span></p>
+
+        <div id="ev-desorden-salida" hidden>
+          <span class="rotulo">Lo que firmó el firmante, con sus claves en otro orden</span>
+          <p class="formula" id="ev-desorden-bytes"></p>
+          <span class="rotulo">Lo que reconstruye el verificador, en forma canónica</span>
+          <p class="formula" id="ev-canonico-bytes"></p>
+        </div>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">2.3</span>En espera y sellado</h3>
+        <p class="banco-intro">Los eventos aceptados esperan aquí hasta que se sella un bloque. Sellar
+        toma la hora, agrupa lo que espera, mina con dificultad 3 y engancha el bloque a la cadena.</p>
+        <ul class="txs" id="pendientes"></ul>
+        <div class="botones">
+          <button type="button" id="sellar" disabled>Sellar y minar bloque</button>
+          <button type="button" class="secundario" id="detener" disabled>Detener</button>
+        </div>
+        <p class="estado" id="mina-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Preparando la cadena…</span></p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">2.4</span>La cadena de custodia</h3>
+        <p class="banco-intro">Arranca con tres bloques de ejemplo: el lote L-001 completo y el L-002
+        recibido en el almacén, esperando su despacho.</p>
+        <p class="estado" id="cadena-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Preparando…</span></p>
+        <ol class="cadena" id="cadena" aria-label="Bloques de la cadena de custodia"></ol>
+        <div class="botones">
+          <button type="button" class="secundario" id="reiniciar" disabled>Empezar de cero con llaves nuevas</button>
+        </div>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">2.5</span>Trazabilidad de un lote</h3>
+        <p class="banco-intro">El historial de custodia se lee de la cadena, eslabón por eslabón, y
+        cada uno trae el estado de su firma y de su bloque.</p>
+        <label for="traza-lote">Lote</label>
+        <select id="traza-lote"></select>
+        <p class="estado" id="traza-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Preparando…</span></p>
+        <ol class="cadena compacta" id="traza" aria-label="Historial de custodia del lote"></ol>
+      </div>
+    </section>
+
+    <!-- ============================================================ 3 -->
+    <section class="parte" aria-labelledby="p3">
+      <h2 id="p3"><span class="parte-n" aria-hidden="true">3</span>Ejercicio: los tres ataques</h2>
+      <div class="prosa">
+        <p>Éstos son los escenarios que el sistema tiene que resistir. Cada botón ejecuta el ataque de
+        verdad contra la cadena de arriba, no una simulación aparte, y la página comprueba que se
+        detectó y dice por qué.</p>
+      </div>
+
+      <p class="estado" id="ataques-resumen" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Ningún ataque ejecutado todavía.</span></p>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">3.1</span>El almacén firma un evento del proveedor</h3>
+        <p class="banco-intro">El almacén fabrica la emisión de un lote que nunca existió. El evento dice
+        «actor: proveedor», pero lo firma con la llave privada del almacén, que es la única que tiene.</p>
+        <div class="botones">
+          <button type="button" id="ataque-1" disabled>Ejecutar el ataque</button>
+        </div>
+        <p class="estado" id="ataque-1-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Sin ejecutar.</span></p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">3.2</span>Alterar la cantidad de un evento ya sellado</h3>
+        <p class="banco-intro">Alguien con acceso al almacenamiento le quita diez unidades a un evento
+        que ya está en un bloque minado. No tiene la llave de nadie: sólo edita los datos. Después
+        puede intentar ocultarlo reminando.</p>
+        <div class="botones">
+          <button type="button" id="ataque-2" disabled>Ejecutar el ataque</button>
+          <button type="button" class="secundario" id="ataque-2-reminar" disabled>Reminar para ocultarlo</button>
+          <button type="button" class="secundario" id="ataque-2-deshacer" disabled>Deshacer la alteración</button>
+        </div>
+        <p class="estado" id="ataque-2-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Sin ejecutar.</span></p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">3.3</span>Insertar un evento con fecha anterior al último bloque</h3>
+        <p class="banco-intro">El proveedor, con su propia llave, firma la emisión de un lote fechada una
+        hora antes del último bloque sellado, para que parezca que ya estaba ahí.</p>
+        <div class="botones">
+          <button type="button" id="ataque-3" disabled>Ejecutar el ataque</button>
+        </div>
+        <p class="estado" id="ataque-3-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Sin ejecutar.</span></p>
+      </div>
+    </section>
+
+    <aside class="honestidad" aria-labelledby="h-honestidad">
+      <h2 id="h-honestidad">Qué se simplificó</h2>
+      <ul>
+        <li><strong>Los tres actores son la misma pestaña.</strong> Las tres llaves se generan aquí y
+        viven en memoria. En un sistema real cada actor genera y guarda la suya en su propio equipo,
+        en un HSM o una wallet, y nadie más la ve. Nada se guarda en <code>localStorage</code>:
+        recargar reinicia la cadena y genera llaves nuevas.</li>
+        <li><strong>El registro de llaves públicas se da por bueno.</strong> Que esa pública sea de
+        verdad del proveedor lo resolvería una infraestructura de llave pública, con certificados,
+        que aquí no existe.</li>
+        <li><strong>El sello de tiempo es del reloj local.</strong> La regla detecta un evento fechado
+        antes del último bloque, pero no un reloj adelantado ni una fecha falsa dentro del intervalo
+        permitido. Eso sólo lo resuelve un sello externo, como en el módulo 3.</li>
+        <li><strong>La firma prueba quién registró el evento, no que sea verdad.</strong> Si el proveedor
+        declara 120 unidades y envía 100, la cadena guarda la mentira con toda fidelidad. Es el
+        problema del oráculo del <a href="../../blockchain/temas/07-blockchain-aplicaciones.html">tema 07</a>.</li>
+        <li><strong>Un solo nodo guarda toda la historia.</strong> Reminar para ocultar una alteración
+        falla aquí por la firma. Sin firmas bastaría con cómputo, y en una red real además habría que
+        convencer a los demás nodos. Un solo nodo con toda la historia es lo que una blockchain existe
+        para evitar.</li>
+      </ul>
+    </aside>
+
+    <nav class="pasos" aria-label="Entre módulos">
+      <a href="04-blockchain.html"><span class="dir">Anterior</span><span class="cual">04 Blockchain 0.0</span></a>
+      <a class="sig" href="../index.html"><span class="dir">Fin del laboratorio</span><span class="cual">Portada del laboratorio</span></a>
+    </nav>
+
+  </div>
+</main>
+
+<p class="sr" id="anuncio" aria-live="polite"></p>
+
+<footer class="pie">
+  <div class="envoltura">
+    <p>Laboratorio de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería. Construido
+    sobre el material del curso del Dr. José de Jesús Ángel Ángel.</p>
+    <p>Todo el cálculo ocurre en tu navegador con Web Crypto: nada de lo que escribes sale de tu equipo.</p>
+  </div>
+</footer>
+
+</body>
+</html>

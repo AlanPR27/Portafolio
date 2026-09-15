@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blockchain 0.0 — Laboratorio Blockchain 0.0</title>
+<meta name="description" content="Módulo 4 del laboratorio: una cadena de bloques en memoria con prueba de trabajo ajustable, bloques editables, la cascada de invalidación que delata la manipulación y el costo de reminar la historia.">
+<script>document.documentElement.classList.add(window.isSecureContext && window.crypto && window.crypto.subtle ? 'cripto-ok' : 'cripto-no');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&amp;family=Martian+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="../css/lab.css">
+<script type="module" src="../js/bloques.js"></script>
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<header class="barra">
+  <div class="barra-int">
+    <nav class="migas" aria-label="Ruta">
+      <a href="../../index.html">Apuntes</a>
+      <span aria-hidden="true">/</span>
+      <a href="../index.html">Laboratorio Blockchain 0.0</a>
+    </nav>
+    <nav class="modos" aria-label="Módulos del laboratorio">
+      <ol>
+        <li><a href="01-funcion-hash.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">01</span><span class="etiqueta">Hash</span></a></li>
+        <li><a href="02-firma-digital.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">02</span><span class="etiqueta">Firma</span></a></li>
+        <li><a href="03-sellado-de-tiempo.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">03</span><span class="etiqueta">Sello de tiempo</span></a></li>
+        <li><a href="04-blockchain.html" aria-current="page" data-estado="actual"><span class="marca" aria-hidden="true"></span><span class="n">04</span><span class="etiqueta">Blockchain 0.0</span></a></li>
+        <li><a href="05-transaccion.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">05</span><span class="etiqueta">Transacción</span></a></li>
+      </ol>
+    </nav>
+  </div>
+</header>
+
+<div class="aviso-contexto" role="alert">
+  <p><strong>Este laboratorio necesita JavaScript y un contexto seguro.</strong> Web Crypto sólo
+  existe en HTTPS, y los módulos no cargan si el archivo se abre con doble clic. Ábrelo desde
+  <a href="https://alanpr27.github.io/Portafolio/lab/">alanpr27.github.io/Portafolio/lab</a>.</p>
+</div>
+
+<main id="contenido" class="modulo">
+  <div class="envoltura">
+
+    <header class="cabeza">
+      <p class="numero" aria-hidden="true">04</p>
+      <div>
+        <h1><span class="sr">Módulo 4: </span>Blockchain 0.0</h1>
+        <p class="entradilla">Bloques que llevan dentro el hash del anterior y un nonce que costó
+        encontrar. Edita cualquiera y mira caer todo lo que venía después; luego paga lo que cuesta
+        volver a levantarlo.</p>
+        <p class="fuentes">Consistente con el <a href="../../blockchain/temas/06-blockchain-artesanal.html">tema 06
+        de los apuntes de Blockchain</a>, con el
+        <a href="../../blockchain/assets/pdf/blockchain-artesanal.pdf">pipeline artesanal</a>
+        (PDF, 4 pp, 66 KB) y con el laboratorio 8.2 del
+        <a href="../../blockchain/assets/pdf/laboratorio-funciones-hash.pdf">laboratorio del curso</a>
+        (PDF, 3.2 MB).</p>
+      </div>
+    </header>
+
+    <!-- ============================================================ 1 -->
+    <section class="parte" aria-labelledby="p1">
+      <h2 id="p1"><span class="parte-n" aria-hidden="true">1</span>Qué es y por qué importa</h2>
+      <div class="prosa">
+        <p>Un bloque aquí es <code>{indice, timestamp, dificultad, datos, hashPrevio, nonce, hash}</code>.
+        Su hash es el SHA-256 de todo lo demás, serializado en JSON canónico, y su hashPrevio es el
+        hash del bloque anterior. En la notación del curso,
+        <code>h_n = H(idx_n ‖ t_n ‖ tx_n ‖ h_(n−1))</code>, con el nonce agregado. El bloque génesis
+        no tiene anterior y apunta a 64 ceros.</p>
+
+        <p>Encadenar hace que cada hash dependa de toda la historia. Si cambian los datos del bloque
+        1, su hash cambia por completo, por la avalancha del módulo 1. El bloque 2 guarda en su
+        hashPrevio el hash viejo, así que su enlace se rompe. Y todo lo que cuelga del 2 queda
+        encima de una historia que ya no es válida.</p>
+
+        <p>Así nada más, reescribir sería gratis: recalcular todos los hashes toma milisegundos. La
+        <strong>prueba de trabajo</strong> lo encarece. Un bloque sólo vale si su hash empieza con
+        <em>N</em> ceros hexadecimales, y la única forma de lograrlo es probar nonces, 16<sup>N</sup>
+        en promedio: la preimagen parcial del ejercicio del módulo 1. Alterar un bloque enterrado
+        obliga a reminar ése y todos los siguientes.</p>
+
+        <p>La página distingue tres fallas. <strong>Inválido</strong>: el bloque falla por sí mismo,
+        porque su hash ya no cumple la dificultad o porque su enlace no coincide.
+        <strong>Heredado</strong>: está bien formado, pero cuelga de un bloque inválido.
+        <strong>Pendiente</strong>: todavía sin minar. La dificultad va dentro de cada bloque, así que
+        moverla sólo afecta a los que se minen después.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 2 -->
+    <section class="parte" aria-labelledby="p2">
+      <h2 id="p2"><span class="parte-n" aria-hidden="true">2</span>Laboratorio</h2>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">2.1</span>Minar</h3>
+
+        <div class="campos-dos">
+          <div>
+            <label for="nuevo-datos">Datos del bloque nuevo</label>
+            <input id="nuevo-datos" type="text" value="Dave envía 2 a Erin" spellcheck="false" autocomplete="off">
+          </div>
+          <div>
+            <label for="dificultad">Dificultad: <output id="dificultad-valor" for="dificultad">3</output> ceros</label>
+            <input id="dificultad" type="range" min="1" max="5" step="1" value="3">
+            <p class="nota">Intentos esperados por bloque: <span class="num" id="esperados">4,096</span>.</p>
+          </div>
+        </div>
+
+        <div class="botones">
+          <button type="button" id="agregar" disabled>Agregar y minar</button>
+          <button type="button" class="secundario" id="reminar-roto" disabled>Reminar desde el primer bloque roto</button>
+          <button type="button" class="secundario" id="detener" disabled>Detener</button>
+        </div>
+        <p class="estado" id="mina-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Preparando la cadena…</span></p>
+
+        <dl class="lecturas">
+          <div class="lectura"><dt>Bloque</dt><dd id="mina-bloque">—</dd></div>
+          <div class="lectura"><dt>Intentos</dt><dd id="mina-intentos">0</dd></div>
+          <div class="lectura"><dt>Tiempo</dt><dd id="mina-tiempo">0.0 s</dd></div>
+          <div class="lectura"><dt>Velocidad</dt><dd id="mina-tasa">—</dd></div>
+        </dl>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">2.2</span>La cadena</h3>
+        <p class="banco-intro">Los datos de cada bloque se pueden editar aunque ya esté minado.
+        Cambia un solo carácter del bloque 1.</p>
+
+        <p class="estado" id="cadena-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Preparando…</span></p>
+
+        <dl class="lecturas">
+          <div class="lectura"><dt>Bloques</dt><dd id="n-bloques">0</dd></div>
+          <div class="lectura"><dt>Inválidos</dt><dd id="n-invalidos">0</dd></div>
+          <div class="lectura"><dt>Heredados</dt><dd id="n-heredados">0</dd></div>
+          <div class="lectura"><dt>Intentos acumulados</dt><dd id="trabajo">0</dd></div>
+        </dl>
+
+        <ol class="cadena" id="cadena" aria-label="Bloques de la cadena, del génesis al último"></ol>
+
+        <p class="nota">Con dificultad 5 cada bloque pide en promedio más de un millón de intentos, y
+        reescribir tres bloques puede tomar minutos. La cifra de intentos acumulados es el trabajo que
+        habría que repetir para falsificar la cadena entera.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 3 -->
+    <section class="parte" aria-labelledby="p3">
+      <h2 id="p3"><span class="parte-n" aria-hidden="true">3</span>Ejercicio: predice la cascada</h2>
+      <div class="prosa">
+        <p>Una cadena aparte, de cinco bloques y dificultad 2, toda válida. La página va a cambiar un
+        número en uno de sus bloques. Antes de que lo haga, predice en qué estado queda cada bloque:
+        válido, inválido o heredado.</p>
+        <p>La trampa está en la diferencia entre los dos últimos. Piensa qué comprueba cada bloque
+        sobre sí mismo y qué hereda de los anteriores.</p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">3.1</span>El cambio</h3>
+        <p class="texto-fijo" id="pred-cambio">Preparando…</p>
+        <ol class="cadena compacta" id="pred-cadena" aria-label="Bloques del ejercicio"></ol>
+        <div class="botones">
+          <button type="button" id="pred-comprobar" disabled>Aplicar el cambio y comprobar</button>
+          <button type="button" class="secundario" id="pred-nuevo" disabled>Otro reto</button>
+        </div>
+        <p class="estado" id="pred-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Minando la cadena del ejercicio…</span></p>
+      </div>
+    </section>
+
+    <aside class="honestidad" aria-labelledby="h-honestidad">
+      <h2 id="h-honestidad">Qué se simplificó</h2>
+      <ul>
+        <li><strong>Es un solo nodo.</strong> No hay red P2P, ni consenso, ni regla de la cadena más
+        larga, ni incentivos para minar honestamente. Por eso se llama 0.0.</li>
+        <li><strong>Reescribir la historia aquí cuesta lo que tarda una pestaña.</strong> En una
+        blockchain real hay que superar el poder de cómputo de toda la red, y seguir superándolo
+        mientras ella sigue minando encima.</li>
+        <li><strong>La prueba de trabajo es de juguete.</strong> Cinco ceros hexadecimales son 20
+        bits. Bitcoin exige del orden de veinte ceros hexadecimales, compara el hash contra un
+        objetivo numérico en lugar de contar ceros, y lo reajusta cada 2016 bloques.</li>
+        <li><strong>Un bloque guarda un texto libre en JSON.</strong> Un bloque real guarda muchas
+        transacciones resumidas en una raíz de Merkle, y lo que se mina es un encabezado binario de 80
+        bytes.</li>
+        <li><strong>Nadie contrasta el timestamp.</strong> Sale del reloj de tu equipo. Bitcoin, en
+        cambio, rechaza un bloque cuya hora no sea posterior a la mediana de los once anteriores, o
+        que se adelante más de dos horas a la de la red.</li>
+      </ul>
+    </aside>
+
+    <nav class="pasos" aria-label="Entre módulos">
+      <a href="03-sellado-de-tiempo.html"><span class="dir">Anterior</span><span class="cual">03 Sellado de tiempo</span></a>
+      <a class="sig" href="05-transaccion.html"><span class="dir">Siguiente</span><span class="cual">05 Transacción</span></a>
+    </nav>
+
+  </div>
+</main>
+
+<p class="sr" id="anuncio" aria-live="polite"></p>
+
+<footer class="pie">
+  <div class="envoltura">
+    <p>Laboratorio de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería. Construido
+    sobre el material del curso del Dr. José de Jesús Ángel Ángel.</p>
+    <p>Todo el cálculo ocurre en tu navegador con Web Crypto: nada de lo que escribes sale de tu equipo.</p>
+  </div>
+</footer>
+
+</body>
+</html>

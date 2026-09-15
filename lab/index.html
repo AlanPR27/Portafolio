@@ -25,10 +25,10 @@
     <nav class="modos" aria-label="Módulos del laboratorio">
       <ol>
         <li><a href="modulos/01-funcion-hash.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">01</span><span class="etiqueta">Hash</span></a></li>
-        <li><span class="bloqueado" data-estado="pendiente"><span class="marca" aria-hidden="true"></span><span class="n">02</span><span class="etiqueta">Firma</span><span class="sr">, en construcción</span></span></li>
-        <li><span class="bloqueado" data-estado="pendiente"><span class="marca" aria-hidden="true"></span><span class="n">03</span><span class="etiqueta">Sello de tiempo</span><span class="sr">, en construcción</span></span></li>
-        <li><span class="bloqueado" data-estado="pendiente"><span class="marca" aria-hidden="true"></span><span class="n">04</span><span class="etiqueta">Blockchain 0.0</span><span class="sr">, en construcción</span></span></li>
-        <li><span class="bloqueado" data-estado="pendiente"><span class="marca" aria-hidden="true"></span><span class="n">05</span><span class="etiqueta">Transacción</span><span class="sr">, en construcción</span></span></li>
+        <li><a href="modulos/02-firma-digital.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">02</span><span class="etiqueta">Firma</span></a></li>
+        <li><a href="modulos/03-sellado-de-tiempo.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">03</span><span class="etiqueta">Sello de tiempo</span></a></li>
+        <li><a href="modulos/04-blockchain.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">04</span><span class="etiqueta">Blockchain 0.0</span></a></li>
+        <li><a href="modulos/05-transaccion.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">05</span><span class="etiqueta">Transacción</span></a></li>
       </ol>
     </nav>
   </div>
@@ -71,53 +71,54 @@
             <span>
               <span class="nombre">Función hash</span>
               <span class="que">Determinismo, longitud fija, efecto avalancha y resistencia a preimagen.</span>
+              <span class="usa">ejercicio: prueba de trabajo en miniatura</span>
             </span>
             <span class="estado-mod"><span class="marca" aria-hidden="true"></span>disponible</span>
           </a>
         </li>
-        <li data-estado="pendiente">
-          <div class="fila">
+        <li data-estado="valido">
+          <a href="modulos/02-firma-digital.html">
             <span class="num">02</span>
             <span>
               <span class="nombre">Firma digital</span>
               <span class="que">Autenticidad y no repudio con un par de llaves ECDSA.</span>
-              <span class="usa">usa el módulo 01</span>
+              <span class="usa">usa el módulo 01; ejercicio: identificar al firmante</span>
             </span>
-            <span class="estado-mod"><span class="marca" aria-hidden="true"></span>en construcción</span>
-          </div>
+            <span class="estado-mod"><span class="marca" aria-hidden="true"></span>disponible</span>
+          </a>
         </li>
-        <li data-estado="pendiente">
-          <div class="fila">
+        <li data-estado="valido">
+          <a href="modulos/03-sellado-de-tiempo.html">
             <span class="num">03</span>
             <span>
               <span class="nombre">Sellado de tiempo</span>
               <span class="que">Anclaje temporal de un documento y encadenamiento de sellos.</span>
-              <span class="usa">usa el módulo 01</span>
+              <span class="usa">usa el módulo 01; ejercicio: encontrar dónde se rompe</span>
             </span>
-            <span class="estado-mod"><span class="marca" aria-hidden="true"></span>en construcción</span>
-          </div>
+            <span class="estado-mod"><span class="marca" aria-hidden="true"></span>disponible</span>
+          </a>
         </li>
-        <li data-estado="pendiente">
-          <div class="fila">
+        <li data-estado="valido">
+          <a href="modulos/04-blockchain.html">
             <span class="num">04</span>
             <span>
               <span class="nombre">Blockchain 0.0</span>
               <span class="que">Bloques enlazados, prueba de trabajo y la cascada que delata una manipulación.</span>
-              <span class="usa">usa los módulos 01 y 03</span>
+              <span class="usa">usa los módulos 01 y 03; ejercicio: predecir la cascada</span>
             </span>
-            <span class="estado-mod"><span class="marca" aria-hidden="true"></span>en construcción</span>
-          </div>
+            <span class="estado-mod"><span class="marca" aria-hidden="true"></span>disponible</span>
+          </a>
         </li>
-        <li data-estado="pendiente">
-          <div class="fila">
+        <li data-estado="valido">
+          <a href="modulos/05-transaccion.html">
             <span class="num">05</span>
             <span>
               <span class="nombre">Transacción</span>
               <span class="que">Custodia de lotes con tres actores que firman: proveedor, almacén y distribuidor.</span>
-              <span class="usa">usa los módulos 01 a 04</span>
+              <span class="usa">usa los módulos 01 a 04; ejercicio: los tres ataques</span>
             </span>
-            <span class="estado-mod"><span class="marca" aria-hidden="true"></span>en construcción</span>
-          </div>
+            <span class="estado-mod"><span class="marca" aria-hidden="true"></span>disponible</span>
+          </a>
         </li>
       </ol>
     </section>
@@ -139,10 +140,13 @@
       </ul>
 
       <div class="prosa">
+        <p>Donde hay una cadena, el enlace entre eslabones se muestra entre ellos: el hash del anterior
+        junto al hashPrevio del siguiente. Mientras coinciden, la línea del margen corre continua;
+        donde dejan de coincidir, se disloca.</p>
         <p>Los digests se muestran completos cuando son lo que se está midiendo, y truncados a sus
         ocho primeros y ocho últimos dígitos cuando son una referencia, como
-        <span class="digest-inline">a0dc65ff…7704883e</span>. El valor completo siempre se puede
-        copiar.</p>
+        <span class="digest-inline">a0dc65ff…7704883e</span>. Al pulsar una referencia truncada se
+        copia el valor completo.</p>
       </div>
     </section>
 
@@ -155,6 +159,8 @@
         segura de llaves; en un sistema real irían en un HSM, un enclave o una wallet.</li>
         <li><strong>El sello de tiempo es autoafirmado.</strong> Sale del reloj de tu equipo, no de
         una autoridad de sellado que lo firme.</li>
+        <li><strong>La prueba de trabajo es de juguete.</strong> Cuatro o cinco ceros hexadecimales se
+        encuentran en segundos; los de una red real exigen hardware dedicado de todo el mundo.</li>
         <li><strong>Un solo nodo con toda la historia</strong> es precisamente lo que una blockchain
         existe para evitar. Cada módulo cierra diciendo qué simplificó, porque nombrar esos límites
         es parte de entender el sistema.</li>

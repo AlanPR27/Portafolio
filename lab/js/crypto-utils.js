@@ -50,6 +50,13 @@ export function base64(datos) {
   return btoa(binario);
 }
 
+/** base64url, el alfabeto de los campos de un JWK, a bytes. */
+export function desdeBase64url(texto) {
+  const normal = texto.replace(/-/g, '+').replace(/_/g, '/');
+  const binario = atob(normal + '='.repeat((4 - (normal.length % 4)) % 4));
+  return Uint8Array.from(binario, (c) => c.charCodeAt(0));
+}
+
 // -------------------------------------------------------------------- hash
 
 export async function sha256(datos) {
@@ -217,6 +224,15 @@ export async function exportarPublica(llave) {
 
 export function exportarJWK(llave) {
   return crypto.subtle.exportKey('jwk', llave);
+}
+
+/**
+ * Llave privada como el escalar d de 32 bytes, en hex. Sólo se puede porque el
+ * par se generó extraíble, y sólo se hace para mostrarla en pantalla.
+ */
+export async function exportarPrivada(llave) {
+  const { d } = await crypto.subtle.exportKey('jwk', llave);
+  return hex(desdeBase64url(d));
 }
 
 export function importarPublica(hexRaw) {

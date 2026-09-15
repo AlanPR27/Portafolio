@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Firma digital — Laboratorio Blockchain 0.0</title>
+<meta name="description" content="Módulo 2 del laboratorio: pares de llaves ECDSA P-256, firma y verificación en el navegador con Web Crypto, los tres experimentos que rompen una firma y un reto para identificar al firmante.">
+<script>document.documentElement.classList.add(window.isSecureContext && window.crypto && window.crypto.subtle ? 'cripto-ok' : 'cripto-no');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&amp;family=Martian+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="../css/lab.css">
+<script type="module" src="../js/firma.js"></script>
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<header class="barra">
+  <div class="barra-int">
+    <nav class="migas" aria-label="Ruta">
+      <a href="../../index.html">Apuntes</a>
+      <span aria-hidden="true">/</span>
+      <a href="../index.html">Laboratorio Blockchain 0.0</a>
+    </nav>
+    <nav class="modos" aria-label="Módulos del laboratorio">
+      <ol>
+        <li><a href="01-funcion-hash.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">01</span><span class="etiqueta">Hash</span></a></li>
+        <li><a href="02-firma-digital.html" aria-current="page" data-estado="actual"><span class="marca" aria-hidden="true"></span><span class="n">02</span><span class="etiqueta">Firma</span></a></li>
+        <li><a href="03-sellado-de-tiempo.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">03</span><span class="etiqueta">Sello de tiempo</span></a></li>
+        <li><a href="04-blockchain.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">04</span><span class="etiqueta">Blockchain 0.0</span></a></li>
+        <li><a href="05-transaccion.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">05</span><span class="etiqueta">Transacción</span></a></li>
+      </ol>
+    </nav>
+  </div>
+</header>
+
+<div class="aviso-contexto" role="alert">
+  <p><strong>Este laboratorio necesita JavaScript y un contexto seguro.</strong> Web Crypto sólo
+  existe en HTTPS, y los módulos no cargan si el archivo se abre con doble clic. Ábrelo desde
+  <a href="https://alanpr27.github.io/Portafolio/lab/">alanpr27.github.io/Portafolio/lab</a>.</p>
+</div>
+
+<main id="contenido" class="modulo">
+  <div class="envoltura">
+
+    <header class="cabeza">
+      <p class="numero" aria-hidden="true">02</p>
+      <div>
+        <h1><span class="sr">Módulo 2: </span>Firma digital</h1>
+        <p class="entradilla">Una marca que cualquiera puede comprobar y que sólo una llave puede
+        producir. Aquí se generan pares de llaves, se firma, y luego se cambia un carácter o se
+        cambia de llave para ver qué es exactamente lo que rompe una firma.</p>
+        <p class="fuentes">Consistente con el <a href="../../blockchain/temas/06-blockchain-artesanal.html">tema 06
+        de los apuntes de Blockchain</a>, donde la firma es la segunda de las cuatro piezas, y con el
+        <a href="../../blockchain/assets/pdf/blockchain-artesanal.pdf">pipeline artesanal del curso</a>
+        (PDF, 4 pp, 66 KB).</p>
+      </div>
+    </header>
+
+    <!-- ============================================================ 1 -->
+    <section class="parte" aria-labelledby="p1">
+      <h2 id="p1"><span class="parte-n" aria-hidden="true">1</span>Qué es y por qué importa</h2>
+      <div class="prosa">
+        <p>Una firma digital trabaja con un <strong>par de llaves</strong>: una privada
+        <em>sk</em>, que sólo tiene quien firma, y una pública <em>pk</em>, que se reparte a todo
+        el mundo. Firmar es calcular <code>σ = Sign_sk(m)</code>. Verificar es
+        <code>Verify_pk(m, σ)</code>, que responde sólo sí o no. Cualquiera con <em>pk</em> puede
+        verificar, y nadie sin <em>sk</em> puede fabricar una σ que verifique.</p>
+
+        <p>Eso aporta lo que un hash no puede. Un digest lo recalcula cualquiera: detecta que algo
+        cambió, pero no dice quién lo escribió. La firma añade <strong>autenticidad</strong>, porque
+        el mensaje salió del dueño de <em>sk</em>, y <strong>no repudio</strong>, porque como nadie
+        más pudo producir σ, el firmante no puede negar después que firmó.</p>
+
+        <p>Nadie firma el mensaje completo: se firma su hash. Web Crypto, con ECDSA sobre la curva
+        P-256, calcula el SHA-256 del mensaje —el del módulo 1— y firma esos 256 bits. Por eso la
+        firma hereda las propiedades del hash, incluida su debilidad: si alguien encontrara dos
+        textos con la misma huella, la firma de uno valdría para el otro.</p>
+
+        <p>Lo que vas a ver en pantalla: la llave privada es un número de 32 bytes; la pública es un
+        punto de la curva, 65 bytes que se escriben <code>04 ‖ x ‖ y</code>; y la firma son 64
+        bytes, <code>r ‖ s</code>. ECDSA además es aleatoria: firmar dos veces el mismo mensaje con
+        la misma llave da dos firmas distintas, y las dos verifican.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 2 -->
+    <section class="parte" aria-labelledby="p2">
+      <h2 id="p2"><span class="parte-n" aria-hidden="true">2</span>Laboratorio</h2>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">2.1</span>Dos pares de llaves</h3>
+        <p class="banco-intro">Hay dos pares porque uno de los experimentos necesita una llave que
+        no sea la correcta. Se generan al abrir la página.</p>
+
+        <div class="llaves">
+          <div class="par">
+            <div class="par-cabeza">
+              <h4>Par A</h4>
+              <button type="button" class="secundario chico" id="generar-A" disabled>Generar otro par A</button>
+            </div>
+            <div class="llave publica">
+              <div class="digest-cabeza">
+                <span class="rotulo">Llave pública, 65 bytes</span>
+                <button type="button" class="secundario chico" data-copiar="#pub-A">Copiar</button>
+              </div>
+              <p class="valor" id="pub-A">generando…</p>
+            </div>
+            <div class="llave privada">
+              <span class="rotulo">Llave privada, 32 bytes <span class="secreta">secreta</span></span>
+              <p class="valor" id="priv-A">generando…</p>
+            </div>
+          </div>
+
+          <div class="par">
+            <div class="par-cabeza">
+              <h4>Par B</h4>
+              <button type="button" class="secundario chico" id="generar-B" disabled>Generar otro par B</button>
+            </div>
+            <div class="llave publica">
+              <div class="digest-cabeza">
+                <span class="rotulo">Llave pública, 65 bytes</span>
+                <button type="button" class="secundario chico" data-copiar="#pub-B">Copiar</button>
+              </div>
+              <p class="valor" id="pub-B">generando…</p>
+            </div>
+            <div class="llave privada">
+              <span class="rotulo">Llave privada, 32 bytes <span class="secreta">secreta</span></span>
+              <p class="valor" id="priv-B">generando…</p>
+            </div>
+          </div>
+        </div>
+
+        <p class="nota">La privada se muestra sólo porque esto es un laboratorio: es lo único que
+        nunca se comparte. Si generas otro par, las firmas hechas con el anterior dejan de verificar
+        con la llave pública nueva.</p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">2.2</span>Firmar</h3>
+
+        <label for="msg">Mensaje</label>
+        <textarea id="msg" rows="2" spellcheck="false">Bob envía 50 a Alice</textarea>
+
+        <fieldset class="opciones">
+          <legend>Firmar con la llave privada de</legend>
+          <label class="opcion"><input type="radio" name="firmante" value="A" checked> Par A</label>
+          <label class="opcion"><input type="radio" name="firmante" value="B"> Par B</label>
+        </fieldset>
+
+        <span class="rotulo">SHA-256 del mensaje: lo que de verdad se firma</span>
+        <p class="digest digest-chico" id="msg-digest"></p>
+
+        <div class="botones">
+          <button type="button" id="firmar" disabled>Firmar</button>
+          <button type="button" class="secundario" id="llevar" disabled>Llevar al verificador</button>
+        </div>
+
+        <div class="digest-cabeza">
+          <span class="rotulo">Firma σ = r ‖ s, 64 bytes en hex</span>
+          <button type="button" class="secundario chico" data-copiar="#firma-hex">Copiar firma</button>
+        </div>
+        <p class="digest" id="firma-hex">Todavía sin firmar.</p>
+        <span class="rotulo">La misma firma en base64</span>
+        <p class="digest digest-chico" id="firma-b64"></p>
+        <p class="lectura-texto" id="firma-lectura"></p>
+
+        <p class="nota">Pulsa Firmar dos veces sin tocar el mensaje. Los dígitos invertidos son los
+        que cambiaron respecto a la firma anterior: casi todos, porque cada firma usa un número
+        aleatorio nuevo.</p>
+      </div>
+
+      <div class="banco" id="verificador">
+        <h3 class="banco-titulo"><span class="clave">2.3</span>Verificar</h3>
+        <p class="banco-intro">Tres entradas y una respuesta de un bit. Se puede escribir en
+        cualquiera de las tres.</p>
+
+        <label for="v-msg">Mensaje</label>
+        <textarea id="v-msg" rows="2" spellcheck="false"></textarea>
+
+        <label for="v-firma">Firma, en hex</label>
+        <textarea id="v-firma" rows="2" spellcheck="false"></textarea>
+
+        <label for="v-pub">Llave pública, en hex</label>
+        <textarea id="v-pub" rows="2" spellcheck="false"></textarea>
+        <div class="botones">
+          <button type="button" class="secundario chico" id="v-poner-A" disabled>Poner la pública de A</button>
+          <button type="button" class="secundario chico" id="v-poner-B" disabled>Poner la pública de B</button>
+        </div>
+
+        <div class="botones">
+          <button type="button" id="v-verificar">Verificar</button>
+        </div>
+        <p class="estado" id="v-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Sin verificar todavía.</span></p>
+
+        <h4>Los tres experimentos</h4>
+        <p class="nota">Cada botón llena el verificador a partir de la última firma y lo ejecuta. Si
+        todavía no has firmado nada, firma primero el mensaje de 2.2.</p>
+        <div class="botones">
+          <button type="button" class="secundario" id="exp-btn-1" disabled>1. Verificar la firma correcta</button>
+          <button type="button" class="secundario" id="exp-btn-2" disabled>2. Alterar un carácter</button>
+          <button type="button" class="secundario" id="exp-btn-3" disabled>3. Usar la llave del otro par</button>
+        </div>
+        <ul class="lista-estados">
+          <li class="estado" id="exp-1" data-estado="pendiente"><span class="marca" aria-hidden="true"></span><span class="estado-texto">1. Mensaje original, su firma y la llave pública de quien firmó. Se espera: válida.</span></li>
+          <li class="estado" id="exp-2" data-estado="pendiente"><span class="marca" aria-hidden="true"></span><span class="estado-texto">2. Un solo carácter del mensaje cambiado, con la misma firma. Se espera: inválida.</span></li>
+          <li class="estado" id="exp-3" data-estado="pendiente"><span class="marca" aria-hidden="true"></span><span class="estado-texto">3. El mensaje y la firma intactos, con la llave pública del otro par. Se espera: inválida.</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============================================================ 3 -->
+    <section class="parte" aria-labelledby="p3">
+      <h2 id="p3"><span class="parte-n" aria-hidden="true">3</span>Ejercicio: ¿quién lo firmó?</h2>
+      <div class="prosa">
+        <p>La página generó dos pares de llaves nuevos, que no son ni A ni B, y firmó un mensaje con
+        una de las dos privadas. Las privadas no se muestran. Tienes el mensaje, la firma y las dos
+        llaves públicas: averigua cuál de las dos firmó.</p>
+        <p>La herramienta es el verificador de arriba. Una firma no trae el nombre de quien la hizo,
+        pero sólo verifica con una llave.</p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">3.1</span>El reto</h3>
+
+        <span class="rotulo">Mensaje</span>
+        <p class="texto-fijo" id="reto-mensaje">preparando…</p>
+
+        <div class="digest-cabeza">
+          <span class="rotulo">Firma</span>
+          <button type="button" class="secundario chico" data-copiar="#reto-firma">Copiar</button>
+        </div>
+        <p class="digest digest-chico" id="reto-firma"></p>
+
+        <div class="campos-dos">
+          <div>
+            <div class="digest-cabeza">
+              <span class="rotulo">Llave pública 1</span>
+              <button type="button" class="secundario chico" data-copiar="#reto-llave-1">Copiar</button>
+            </div>
+            <p class="digest digest-chico" id="reto-llave-1"></p>
+          </div>
+          <div>
+            <div class="digest-cabeza">
+              <span class="rotulo">Llave pública 2</span>
+              <button type="button" class="secundario chico" data-copiar="#reto-llave-2">Copiar</button>
+            </div>
+            <p class="digest digest-chico" id="reto-llave-2"></p>
+          </div>
+        </div>
+
+        <div class="botones">
+          <button type="button" class="secundario" id="reto-llevar-1" disabled>Llevar al verificador con la llave 1</button>
+          <button type="button" class="secundario" id="reto-llevar-2" disabled>Con la llave 2</button>
+        </div>
+
+        <h4>Tu respuesta</h4>
+        <fieldset class="opciones">
+          <legend>El mensaje lo firmó la privada de</legend>
+          <label class="opcion"><input type="radio" name="reto-llave" value="0"> la llave 1</label>
+          <label class="opcion"><input type="radio" name="reto-llave" value="1"> la llave 2</label>
+        </fieldset>
+        <div class="botones">
+          <button type="button" id="reto-comprobar" disabled>Comprobar respuesta</button>
+          <button type="button" class="secundario" id="reto-nuevo" disabled>Otro reto</button>
+        </div>
+        <p class="estado" id="reto-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Preparando el reto…</span></p>
+      </div>
+    </section>
+
+    <aside class="honestidad" aria-labelledby="h-honestidad">
+      <h2 id="h-honestidad">Qué se simplificó</h2>
+      <ul>
+        <li><strong>Las llaves viven en la memoria de la pestaña</strong> y se pierden al recargar.
+        No hay gestión segura de llaves: en un sistema real la privada iría en un HSM, en un enclave
+        seguro o en una wallet, y no saldría nunca de ahí.</li>
+        <li><strong>Las privadas se exportan sólo para verlas.</strong> Aquí se generan extraíbles
+        para poder mostrarlas. Una aplicación real las crea no extraíbles, y ni su propio código
+        puede leerlas.</li>
+        <li><strong>Nada ata una llave pública a una persona.</strong> «Par A» es una etiqueta de esta
+        página. Saber que una pública pertenece a quien dice es el problema de la infraestructura de
+        llave pública, con certificados y autoridades, y aquí no existe.</li>
+        <li><strong>La aleatoriedad de cada firma la pone el navegador.</strong> ECDSA falla de forma
+        catastrófica si ese número se repite o se puede predecir: con dos firmas que lo compartan se
+        despeja la llave privada. Así se extrajo en 2010 la llave de firma de la PlayStation 3.</li>
+      </ul>
+    </aside>
+
+    <nav class="pasos" aria-label="Entre módulos">
+      <a href="01-funcion-hash.html"><span class="dir">Anterior</span><span class="cual">01 Función hash</span></a>
+      <a class="sig" href="03-sellado-de-tiempo.html"><span class="dir">Siguiente</span><span class="cual">03 Sellado de tiempo</span></a>
+    </nav>
+
+  </div>
+</main>
+
+<p class="sr" id="anuncio" aria-live="polite"></p>
+
+<footer class="pie">
+  <div class="envoltura">
+    <p>Laboratorio de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería. Construido
+    sobre el material del curso del Dr. José de Jesús Ángel Ángel.</p>
+    <p>Todo el cálculo ocurre en tu navegador con Web Crypto: nada de lo que escribes sale de tu equipo.</p>
+  </div>
+</footer>
+
+</body>
+</html>
