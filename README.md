@@ -53,13 +53,53 @@ Los identificadores hexadecimales de Blockchain se calculan en el generador y
 son reales: `sha256("El adversario cuántico")` empieza por `24c2db`. Si se
 cambia un título hay que recalcular el suyo.
 
+## Laboratorio Blockchain 0.0
+
+**En <https://alanpr27.github.io/Portafolio/lab/>.** Tercera sección, de
+naturaleza distinta a las otras dos: no es un apunte que se lee sino un
+laboratorio que se opera. Cinco módulos encadenados, cada uno con explicación,
+banco de trabajo en vivo, ejercicio que la página verifica sola y una nota de
+qué se simplificó.
+
+| Módulo | Qué se opera | Ejercicio |
+|---|---|---|
+| 01 Función hash | SHA-256 tecla a tecla, avalancha medida en 256 bits | prueba de trabajo en miniatura |
+| 02 Firma digital | dos pares ECDSA P-256, firma y verificación con diagnóstico | identificar al firmante |
+| 03 Sellado de tiempo | recibos encadenados, sello retroactivo, publicación del hash | encontrar el primer recibo inconsistente |
+| 04 Blockchain 0.0 | cadena editable con prueba de trabajo y cascada de invalidación | predecir la cascada |
+| 05 Transacción | custodia de lotes con tres actores que firman, trazabilidad | los tres ataques, uno por botón |
+
+```
+lab/
+├── index.html
+├── css/lab.css            tercera identidad visual, no comparte nada
+├── js/
+│   ├── crypto-utils.js    Web Crypto: SHA-256, ECDSA, JSON canónico, búsqueda de nonce
+│   ├── cadena.js          Bloque y Cadena, usados por los módulos 4 y 5
+│   ├── sellos.js          recibos encadenados del módulo 3
+│   ├── suministro.js      revisión, bloques, trazabilidad y ataques del módulo 5
+│   ├── ui.js              interfaz común: estados, digests, juntas, copiado
+│   └── hash.js, firma.js, timestamp.js, bloques.js, transaccion.js
+└── modulos/01..05-*.html
+```
+
+Aquí sí hay JavaScript: módulos ES sin transpilar y **Web Crypto** nativa del
+navegador, sin una sola librería de terceros. `crypto.subtle` sólo existe en
+contexto seguro, así que el laboratorio no funciona abierto con doble clic; cada
+página muestra un aviso visible por defecto que se oculta sólo cuando la
+comprobación pasa. Los archivos de lógica (`crypto-utils.js`, `cadena.js`,
+`sellos.js`, `suministro.js`) no tocan el DOM y se pueden ejercitar con Node.
+
+Nada se persiste: recargar reinicia cadenas y llaves, y las privadas no se
+escriben en ningún lado.
+
 ## Stack
 
 HTML5 semántico y CSS3, sin framework, sin bundler, sin paso de compilación.
 Las dos únicas dependencias externas son tipografías de Google Fonts y
 **KaTeX 0.16.9 por CDN**, este último sólo en Álgebra, donde las fórmulas lo
-justifican. Hay un único `<script>` en el sitio: cierra el menú del temario con
-Escape o al pulsar fuera.
+justifican. Hay un único `<script>` en los apuntes: cierra el menú del temario
+con Escape o al pulsar fuera. El laboratorio es la excepción, descrita arriba.
 
 **Todas las rutas son relativas.** El sitio vive en la subcarpeta `/Portafolio/`,
 así que una ruta absoluta como `/css/algebra.css` resolvería a la raíz del
