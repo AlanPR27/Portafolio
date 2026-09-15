@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Función hash — Laboratorio Blockchain 0.0</title>
+<meta name="description" content="Módulo 1 del laboratorio: SHA-256 en vivo, el efecto avalancha medido bit a bit y una prueba de trabajo en miniatura, calculados en el navegador con Web Crypto.">
+<script>document.documentElement.classList.add(window.isSecureContext && window.crypto && window.crypto.subtle ? 'cripto-ok' : 'cripto-no');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&amp;family=Martian+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="../css/lab.css">
+<script type="module" src="../js/hash.js"></script>
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<header class="barra">
+  <div class="barra-int">
+    <nav class="migas" aria-label="Ruta">
+      <a href="../../index.html">Apuntes</a>
+      <span aria-hidden="true">/</span>
+      <a href="../index.html">Laboratorio Blockchain 0.0</a>
+    </nav>
+    <nav class="modos" aria-label="Módulos del laboratorio">
+      <ol>
+        <li><a href="01-funcion-hash.html" aria-current="page" data-estado="actual"><span class="marca" aria-hidden="true"></span><span class="n">01</span><span class="etiqueta">Hash</span></a></li>
+        <li><span class="bloqueado" data-estado="pendiente"><span class="marca" aria-hidden="true"></span><span class="n">02</span><span class="etiqueta">Firma</span><span class="sr">, en construcción</span></span></li>
+        <li><span class="bloqueado" data-estado="pendiente"><span class="marca" aria-hidden="true"></span><span class="n">03</span><span class="etiqueta">Sello de tiempo</span><span class="sr">, en construcción</span></span></li>
+        <li><span class="bloqueado" data-estado="pendiente"><span class="marca" aria-hidden="true"></span><span class="n">04</span><span class="etiqueta">Blockchain 0.0</span><span class="sr">, en construcción</span></span></li>
+        <li><span class="bloqueado" data-estado="pendiente"><span class="marca" aria-hidden="true"></span><span class="n">05</span><span class="etiqueta">Transacción</span><span class="sr">, en construcción</span></span></li>
+      </ol>
+    </nav>
+  </div>
+</header>
+
+<div class="aviso-contexto" role="alert">
+  <p><strong>Este laboratorio necesita JavaScript y un contexto seguro.</strong> Web Crypto sólo
+  existe en HTTPS, y los módulos no cargan si el archivo se abre con doble clic. Ábrelo desde
+  <a href="https://alanpr27.github.io/Portafolio/lab/">alanpr27.github.io/Portafolio/lab</a>.</p>
+</div>
+
+<main id="contenido" class="modulo">
+  <div class="envoltura">
+
+    <header class="cabeza">
+      <p class="numero" aria-hidden="true">01</p>
+      <div>
+        <h1><span class="sr">Módulo 1: </span>Función hash</h1>
+        <p class="entradilla">Una huella de longitud fija para cualquier cosa que exista. Aquí se
+        calcula en vivo, se mide cuánto cambia con un solo carácter y se paga, intento a intento, el
+        costo de encontrar una con forma prescrita.</p>
+        <p class="fuentes">Consistente con el <a href="../../blockchain/temas/01-funciones-hash.html">tema 01
+        de los apuntes de Blockchain</a> y con el
+        <a href="../../blockchain/assets/pdf/laboratorio-funciones-hash.pdf">laboratorio del curso</a>
+        (PDF, 3.2 MB).</p>
+      </div>
+    </header>
+
+    <!-- ============================================================ 1 -->
+    <section class="parte" aria-labelledby="p1">
+      <h2 id="p1"><span class="parte-n" aria-hidden="true">1</span>Qué es y por qué importa</h2>
+      <div class="prosa">
+        <p>Una función hash criptográfica toma una entrada de cualquier tamaño —una palabra, un
+        contrato, una película— y devuelve una huella de tamaño fijo. SHA-256, la que usa Bitcoin y
+        la que calcula este laboratorio, devuelve siempre 256 bits, que se escriben como 64 dígitos
+        hexadecimales.</p>
+
+        <p>Cuatro propiedades se pueden observar directamente. Es <strong>determinista</strong>: la
+        misma entrada da la misma huella en cualquier máquina y en cualquier momento, y por eso sirve
+        como identificador. Tiene <strong>longitud fija</strong>: el tamaño de la salida no dice nada
+        del de la entrada. Tiene <strong>efecto avalancha</strong>: cambiar un solo bit de la entrada
+        voltea, en promedio, la mitad de los bits de la salida, así que no existen huellas
+        «parecidas» y cualquier alteración salta a la vista. Y es <strong>difícil de invertir</strong>:
+        dada una huella, no se conoce otra forma de encontrar una entrada que la produzca que no sea
+        probar.</p>
+
+        <p>Esa última es la que sostiene casi todo el resto del curso, y también la más difícil de
+        ver, porque su evidencia es una ausencia: nadie encuentra el camino de vuelta. El ejercicio
+        la vuelve tangible pidiendo algo mucho más modesto que invertir un digest: sólo que empiece
+        con unos cuantos ceros. Cada cero adicional multiplica el trabajo por 16, y esa curva es
+        exactamente la prueba de trabajo del módulo 4.</p>
+
+        <p>Una advertencia antes de medir: el laboratorio del curso insiste en que <strong>un 50 %
+        de avalancha no basta</strong> para llamar criptográfica a una función, porque CRC32 también
+        lo alcanza. Aquí se mide ese 50 %. Lo que separa de verdad a SHA-256 de CRC32 está en el
+        tema 01 de los apuntes.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 2 -->
+    <section class="parte" aria-labelledby="p2">
+      <h2 id="p2"><span class="parte-n" aria-hidden="true">2</span>Laboratorio</h2>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">2.1</span>El digest, tecla por tecla</h3>
+
+        <label for="entrada">Entrada</label>
+        <textarea id="entrada" rows="3" spellcheck="false">Hola, Blockchain</textarea>
+
+        <div class="digest-cabeza">
+          <span class="rotulo">SHA-256 de la entrada</span>
+          <button type="button" class="secundario chico" data-copiar="#digest">Copiar digest</button>
+        </div>
+        <p class="digest" id="digest"></p>
+
+        <dl class="lecturas">
+          <div class="lectura"><dt>Caracteres de entrada</dt><dd id="n-caracteres">0</dd></div>
+          <div class="lectura"><dt>Bytes de entrada, UTF-8</dt><dd id="n-bytes">0</dd></div>
+          <div class="lectura"><dt>Dígitos hex de salida</dt><dd>64</dd></div>
+          <div class="lectura"><dt>Bits de salida</dt><dd>256</dd></div>
+        </dl>
+
+        <p class="nota">Borra todo o pega un texto enorme: la salida sigue midiendo 64 dígitos. Y
+        escribe una «ñ»: cuenta como un carácter pero son dos bytes, y el hash se calcula sobre los
+        bytes, no sobre los caracteres.</p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">2.2</span>Efecto avalancha</h3>
+        <p class="banco-intro">B empieza igual a A. Cambia un solo carácter de B y mira cuántos de
+        los 256 bits del digest se voltean.</p>
+
+        <div class="avalancha">
+          <div>
+            <label for="aval-a">Entrada A</label>
+            <input id="aval-a" type="text" value="Bob envía 50 a Alice" spellcheck="false" autocomplete="off">
+            <p class="digest digest-chico" id="hex-a"></p>
+
+            <label for="aval-b">Entrada B</label>
+            <input id="aval-b" type="text" value="Bob envía 50 a Alice" spellcheck="false" autocomplete="off">
+            <p class="digest digest-chico" id="hex-b"></p>
+
+            <div class="botones">
+              <button type="button" id="aval-azar">Cambiar un carácter al azar</button>
+              <button type="button" class="secundario" id="aval-igualar">Igualar B con A</button>
+            </div>
+            <p class="leyenda-dif">Los dígitos invertidos son los que difieren entre los dos digests.</p>
+          </div>
+
+          <div>
+            <div class="rejilla" id="rejilla" role="img"
+                 aria-label="Mapa de los 256 bits del digest. Cada celda llena es un bit distinto entre A y B."></div>
+            <dl class="lecturas">
+              <div class="lectura lectura-grande"><dt>Bits distintos</dt><dd><span id="bits-cambiados">0</span><span class="de"> / 256</span></dd></div>
+              <div class="lectura"><dt>Porcentaje</dt><dd id="porcentaje">0.0 %</dd></div>
+              <div class="lectura"><dt>Diferencia en la entrada</dt><dd class="dd-texto" id="dif-entrada">0 bits</dd></div>
+            </dl>
+            <p class="lectura-texto" id="aval-lectura"></p>
+          </div>
+        </div>
+
+        <div class="registro-bloque">
+          <div class="registro-cabeza">
+            <h4>Registro de mediciones</h4>
+            <div class="botones">
+              <button type="button" class="secundario chico" id="aval-anotar" disabled>Anotar esta medición</button>
+              <button type="button" class="secundario chico" id="registro-limpiar" disabled>Limpiar</button>
+            </div>
+          </div>
+          <div class="registro" id="registro" aria-hidden="true"></div>
+          <p class="registro-texto" id="registro-texto">Sin mediciones todavía.</p>
+          <p class="nota">La línea punteada marca 128 bits. Con varias mediciones las barras se
+          reparten alrededor de ella. Si todas midieran exactamente lo mismo, la diferencia de salida
+          no dependería del mensaje: ése es el sello de una función lineal.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 3 -->
+    <section class="parte" aria-labelledby="p3">
+      <h2 id="p3"><span class="parte-n" aria-hidden="true">3</span>Ejercicio: prueba de trabajo en miniatura</h2>
+      <div class="prosa">
+        <p>El reto es encontrar un <strong>nonce</strong> —un número entero— tal que
+        <code>SHA-256(texto ‖ nonce)</code> empiece con <em>N</em> ceros hexadecimales. El nonce se
+        pega al final del texto, escrito en decimal: con el texto «Bloque de Alan» y el nonce 42 se
+        hashea «Bloque de Alan42».</p>
+        <p>No hay atajo. Como la salida es indistinguible de aleatoria, cada nonce es un boleto con
+        probabilidad de 1 entre 16<sup>N</sup>. Con un cero bastan unos cuantos intentos; con cinco
+        hacen falta, en promedio, más de un millón.</p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">3.1</span>Parámetros</h3>
+        <div class="campos-dos">
+          <div>
+            <label for="pow-texto">Texto</label>
+            <input id="pow-texto" type="text" value="Bloque de Alan" spellcheck="false" autocomplete="off">
+          </div>
+          <div>
+            <label for="pow-n">Ceros al inicio: <output id="pow-n-valor" for="pow-n">3</output></label>
+            <input id="pow-n" type="range" min="1" max="5" step="1" value="3">
+            <p class="nota">Intentos esperados: <span class="num" id="pow-esperados">4,096</span>. Se
+            busca un digest que empiece con <code id="pow-prefijo">000</code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">3.2</span>Pruébalo a mano</h3>
+        <label for="pow-manual">Tu nonce</label>
+        <div class="fila-control">
+          <input id="pow-manual" type="text" inputmode="numeric" value="0" spellcheck="false" autocomplete="off">
+          <button type="button" id="pow-verificar">Verificar</button>
+        </div>
+        <p class="formula" id="pow-cadena"></p>
+        <p class="digest" id="pow-digest-manual"></p>
+        <p class="estado" id="pow-veredicto" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Escribe un nonce para verificarlo.</span></p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">3.3</span>Deja que busque la máquina</h3>
+        <div class="botones">
+          <button type="button" id="pow-buscar">Buscar nonce</button>
+          <button type="button" class="secundario" id="pow-detener" disabled>Detener</button>
+        </div>
+        <p class="estado" id="pow-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Sin buscar todavía. Con 5 ceros puede tardar decenas de segundos; la página no se congela y se puede detener.</span></p>
+
+        <dl class="lecturas">
+          <div class="lectura"><dt>Intentos</dt><dd id="pow-intentos">0</dd></div>
+          <div class="lectura"><dt>Tiempo</dt><dd id="pow-tiempo">0.0 s</dd></div>
+          <div class="lectura"><dt>Velocidad</dt><dd id="pow-tasa">—</dd></div>
+        </dl>
+
+        <div class="resultado" id="pow-resultado" hidden>
+          <p class="rotulo">Nonce encontrado: <span class="num" id="pow-nonce-encontrado"></span></p>
+          <div class="digest-cabeza">
+            <span class="rotulo">Su digest</span>
+            <button type="button" class="secundario chico" data-copiar="#pow-digest">Copiar digest</button>
+          </div>
+          <p class="digest" id="pow-digest"></p>
+          <p class="nota" id="pow-extrapolacion"></p>
+        </div>
+      </div>
+    </section>
+
+    <aside class="honestidad" aria-labelledby="h-honestidad">
+      <h2 id="h-honestidad">Qué se simplificó</h2>
+      <ul>
+        <li><strong>SHA-256 es la de verdad.</strong> No hay una función de juguete en este módulo: es
+        la implementación nativa del navegador, la misma que verifica un certificado TLS. Lo que es de
+        juguete es la dificultad.</li>
+        <li><strong>La prueba de trabajo es de juguete.</strong> Cinco ceros hexadecimales son 20 bits.
+        Bitcoin exige del orden de veinte ceros hexadecimales, y reparte la búsqueda entre hardware
+        dedicado de todo el mundo.</li>
+        <li><strong>Un prefijo de ceros es una preimagen parcial, no una preimagen.</strong> Encontrar
+        uno sólo muestra cómo crece el costo con cada dígito fijado. Fijar los 64 queda fuera de
+        alcance, como dice la extrapolación del ejercicio.</li>
+        <li><strong>Medir avalancha no certifica nada.</strong> Una medición cercana al 50 % es una
+        condición necesaria y barata. CRC32 la cumple y no es criptográfica: lo que la delata es la
+        matriz de avalancha estricta, que se explica en los apuntes.</li>
+      </ul>
+    </aside>
+
+    <nav class="pasos" aria-label="Entre módulos">
+      <a href="../index.html"><span class="dir">Volver</span><span class="cual">Portada del laboratorio</span></a>
+      <span class="bloqueado"><span class="dir">Siguiente, en construcción</span><span class="cual">02 Firma digital</span></span>
+    </nav>
+
+  </div>
+</main>
+
+<p class="sr" id="anuncio" aria-live="polite"></p>
+
+<footer class="pie">
+  <div class="envoltura">
+    <p>Laboratorio de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería. Construido
+    sobre el material del curso del Dr. José de Jesús Ángel Ángel.</p>
+    <p>Todo el cálculo ocurre en tu navegador con Web Crypto: nada de lo que escribes sale de tu equipo.</p>
+  </div>
+</footer>
+
+</body>
+</html>

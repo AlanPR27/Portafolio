@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratorio Blockchain 0.0</title>
+<meta name="description" content="Laboratorio interactivo de Blockchain: función hash, firma digital, sellado de tiempo, una cadena de bloques mínima y una transacción de cadena de suministro, calculados en el navegador con Web Crypto.">
+<script>document.documentElement.classList.add(window.isSecureContext && window.crypto && window.crypto.subtle ? 'cripto-ok' : 'cripto-no');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&amp;family=Martian+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="css/lab.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<header class="barra">
+  <div class="barra-int">
+    <nav class="migas" aria-label="Ruta">
+      <a href="../index.html">Apuntes</a>
+      <span aria-hidden="true">/</span>
+      <span class="aqui">Laboratorio Blockchain 0.0</span>
+    </nav>
+    <nav class="modos" aria-label="Módulos del laboratorio">
+      <ol>
+        <li><a href="modulos/01-funcion-hash.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">01</span><span class="etiqueta">Hash</span></a></li>
+        <li><span class="bloqueado" data-estado="pendiente"><span class="marca" aria-hidden="true"></span><span class="n">02</span><span class="etiqueta">Firma</span><span class="sr">, en construcción</span></span></li>
+        <li><span class="bloqueado" data-estado="pendiente"><span class="marca" aria-hidden="true"></span><span class="n">03</span><span class="etiqueta">Sello de tiempo</span><span class="sr">, en construcción</span></span></li>
+        <li><span class="bloqueado" data-estado="pendiente"><span class="marca" aria-hidden="true"></span><span class="n">04</span><span class="etiqueta">Blockchain 0.0</span><span class="sr">, en construcción</span></span></li>
+        <li><span class="bloqueado" data-estado="pendiente"><span class="marca" aria-hidden="true"></span><span class="n">05</span><span class="etiqueta">Transacción</span><span class="sr">, en construcción</span></span></li>
+      </ol>
+    </nav>
+  </div>
+</header>
+
+<div class="aviso-contexto" role="alert">
+  <p><strong>Este laboratorio necesita JavaScript y un contexto seguro.</strong> Web Crypto sólo
+  existe en HTTPS, y los módulos no cargan si el archivo se abre con doble clic. Ábrelo desde
+  <a href="https://alanpr27.github.io/Portafolio/lab/">alanpr27.github.io/Portafolio/lab</a>.</p>
+</div>
+
+<main id="contenido">
+  <div class="envoltura">
+
+    <header class="cabeza">
+      <p class="numero" aria-hidden="true">0.0</p>
+      <div>
+        <h1>Laboratorio Blockchain 0.0</h1>
+        <p class="entradilla">Los apuntes se leen; esto se opera. Cinco módulos en los que el código
+        corre en tu navegador: se calcula, se firma, se sella, se mina y se rompe a propósito para
+        ver qué lo delata.</p>
+        <p class="fuentes">Complementa los <a href="../blockchain/index.html">apuntes de Blockchain</a>.
+        Cada módulo explica su primitiva, la pone en un banco de trabajo y termina con un ejercicio que
+        la página verifica sola.</p>
+      </div>
+    </header>
+
+    <section class="seccion" aria-labelledby="t-modulos">
+      <h2 id="t-modulos">Los cinco módulos</h2>
+      <div class="prosa">
+        <p>Van en orden porque cada uno usa las primitivas del anterior. La firma firma digests, el
+        sello encadena digests, la cadena de bloques usa las tres, y la transacción no reimplementa
+        nada: sólo orquesta lo que ya existe.</p>
+      </div>
+
+      <ol class="lista-modulos">
+        <li data-estado="valido">
+          <a href="modulos/01-funcion-hash.html">
+            <span class="num">01</span>
+            <span>
+              <span class="nombre">Función hash</span>
+              <span class="que">Determinismo, longitud fija, efecto avalancha y resistencia a preimagen.</span>
+            </span>
+            <span class="estado-mod"><span class="marca" aria-hidden="true"></span>disponible</span>
+          </a>
+        </li>
+        <li data-estado="pendiente">
+          <div class="fila">
+            <span class="num">02</span>
+            <span>
+              <span class="nombre">Firma digital</span>
+              <span class="que">Autenticidad y no repudio con un par de llaves ECDSA.</span>
+              <span class="usa">usa el módulo 01</span>
+            </span>
+            <span class="estado-mod"><span class="marca" aria-hidden="true"></span>en construcción</span>
+          </div>
+        </li>
+        <li data-estado="pendiente">
+          <div class="fila">
+            <span class="num">03</span>
+            <span>
+              <span class="nombre">Sellado de tiempo</span>
+              <span class="que">Anclaje temporal de un documento y encadenamiento de sellos.</span>
+              <span class="usa">usa el módulo 01</span>
+            </span>
+            <span class="estado-mod"><span class="marca" aria-hidden="true"></span>en construcción</span>
+          </div>
+        </li>
+        <li data-estado="pendiente">
+          <div class="fila">
+            <span class="num">04</span>
+            <span>
+              <span class="nombre">Blockchain 0.0</span>
+              <span class="que">Bloques enlazados, prueba de trabajo y la cascada que delata una manipulación.</span>
+              <span class="usa">usa los módulos 01 y 03</span>
+            </span>
+            <span class="estado-mod"><span class="marca" aria-hidden="true"></span>en construcción</span>
+          </div>
+        </li>
+        <li data-estado="pendiente">
+          <div class="fila">
+            <span class="num">05</span>
+            <span>
+              <span class="nombre">Transacción</span>
+              <span class="que">Custodia de lotes con tres actores que firman: proveedor, almacén y distribuidor.</span>
+              <span class="usa">usa los módulos 01 a 04</span>
+            </span>
+            <span class="estado-mod"><span class="marca" aria-hidden="true"></span>en construcción</span>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <section class="seccion" aria-labelledby="t-estado">
+      <h2 id="t-estado">Cómo se lee el estado</h2>
+      <div class="prosa">
+        <p>En un laboratorio la información principal no es el texto, es el estado. Cada estado se
+        distingue por su forma y por su trazo; el color sólo lo refuerza.</p>
+      </div>
+
+      <ul class="leyenda">
+        <li data-estado="valido"><span class="marca" aria-hidden="true"></span><span><strong>Válido.</strong> Cuadro lleno, trazo continuo.</span></li>
+        <li data-estado="invalido"><span class="marca" aria-hidden="true"></span><span><strong>Inválido.</strong> Cuadro tachado, fondo rayado: falla por sí mismo.</span></li>
+        <li data-estado="heredado"><span class="marca" aria-hidden="true"></span><span><strong>Heredado.</strong> Una sola diagonal y trazo doble: está bien formado, pero cuelga de algo inválido.</span></li>
+        <li data-estado="minando"><span class="marca" aria-hidden="true"></span><span><strong>Minando.</strong> Círculo a medias: calculando.</span></li>
+        <li data-estado="pendiente"><span class="marca" aria-hidden="true"></span><span><strong>Pendiente.</strong> Círculo punteado: todavía no se ha hecho.</span></li>
+        <li data-estado="detenido"><span class="marca" aria-hidden="true"></span><span><strong>Detenido.</strong> Trazo discontinuo: se interrumpió a mano.</span></li>
+      </ul>
+
+      <div class="prosa">
+        <p>Los digests se muestran completos cuando son lo que se está midiendo, y truncados a sus
+        ocho primeros y ocho últimos dígitos cuando son una referencia, como
+        <span class="digest-inline">a0dc65ff…7704883e</span>. El valor completo siempre se puede
+        copiar.</p>
+      </div>
+    </section>
+
+    <aside class="honestidad" aria-labelledby="h-honestidad">
+      <h2 id="h-honestidad">Qué no es este laboratorio</h2>
+      <ul>
+        <li><strong>No hay red.</strong> Todo corre en una sola pestaña: no hay nodos, ni consenso, ni
+        incentivos, ni tolerancia a fallos bizantinos.</li>
+        <li><strong>Las llaves viven en memoria</strong> y se pierden al recargar. No hay gestión
+        segura de llaves; en un sistema real irían en un HSM, un enclave o una wallet.</li>
+        <li><strong>El sello de tiempo es autoafirmado.</strong> Sale del reloj de tu equipo, no de
+        una autoridad de sellado que lo firme.</li>
+        <li><strong>Un solo nodo con toda la historia</strong> es precisamente lo que una blockchain
+        existe para evitar. Cada módulo cierra diciendo qué simplificó, porque nombrar esos límites
+        es parte de entender el sistema.</li>
+      </ul>
+    </aside>
+
+  </div>
+</main>
+
+<footer class="pie">
+  <div class="envoltura">
+    <p>Laboratorio de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería. Construido
+    sobre el material del curso del Dr. José de Jesús Ángel Ángel.</p>
+    <p>Todo el cálculo ocurre en tu navegador con Web Crypto: nada de lo que escribes sale de tu equipo.</p>
+  </div>
+</footer>
+
+</body>
+</html>
