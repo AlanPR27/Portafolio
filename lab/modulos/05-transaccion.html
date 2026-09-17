@@ -245,28 +245,6 @@
       </div>
     </section>
 
-    <aside class="honestidad" aria-labelledby="h-honestidad">
-      <h2 id="h-honestidad">Qué se simplificó</h2>
-      <ul>
-        <li><strong>Los tres actores son la misma pestaña.</strong> Las tres llaves se generan aquí y
-        viven en memoria. En un sistema real cada actor genera y guarda la suya en su propio equipo,
-        en un HSM o una wallet, y nadie más la ve. Nada se guarda en <code>localStorage</code>:
-        recargar reinicia la cadena y genera llaves nuevas.</li>
-        <li><strong>El registro de llaves públicas se da por bueno.</strong> Que esa pública sea de
-        verdad del proveedor lo resolvería una infraestructura de llave pública, con certificados,
-        que aquí no existe.</li>
-        <li><strong>El sello de tiempo es del reloj local.</strong> La regla detecta un evento fechado
-        antes del último bloque, pero no un reloj adelantado ni una fecha falsa dentro del intervalo
-        permitido. Eso sólo lo resuelve un sello externo, como en el módulo 3.</li>
-        <li><strong>La firma prueba quién registró el evento, no que sea verdad.</strong> Si el proveedor
-        declara 120 unidades y envía 100, la cadena guarda la mentira con toda fidelidad. Es el
-        problema del oráculo del <a href="../../blockchain/temas/07-blockchain-aplicaciones.html">tema 07</a>.</li>
-        <li><strong>Un solo nodo guarda toda la historia.</strong> Reminar para ocultar una alteración
-        falla aquí por la firma. Sin firmas bastaría con cómputo, y en una red real además habría que
-        convencer a los demás nodos. Un solo nodo con toda la historia es lo que una blockchain existe
-        para evitar.</li>
-      </ul>
-    </aside>
 
     <nav class="pasos" aria-label="Entre módulos">
       <a href="04-blockchain.html"><span class="dir">Anterior</span><span class="cual">04 Blockchain 0.0</span></a>
@@ -280,10 +258,7 @@
 
 <footer class="pie">
   <div class="envoltura">
-    <p><strong>Equipo:</strong> Nombre 1 &nbsp;|&nbsp; José Manuel Herrera Sánchez</p>
-    <p>Laboratorio de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería. Construido
-    sobre el material del curso del Dr. José de Jesús Ángel Ángel.</p>
-    <p>Todo el cálculo ocurre en tu navegador con Web Crypto: nada de lo que escribes sale de tu equipo.</p>
+    <p><strong>Equipo:</strong> Alan Placeres Rosette &nbsp;|&nbsp; José Manuel Herrera Sánchez</p>
   </div>
 </footer>
 
