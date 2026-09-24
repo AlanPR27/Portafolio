@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minería competitiva — Proyecto final</title>
+<meta name="description" content="Módulo 6 del laboratorio: proveedor, almacén y distribuidor compiten por el nonce del siguiente bloque repartiéndose el espacio de búsqueda por clases residuales módulo 3, y el ganador queda registrado en la cadena.">
+<script>document.documentElement.classList.add(window.isSecureContext && window.crypto && window.crypto.subtle ? 'cripto-ok' : 'cripto-no');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&amp;family=Martian+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="../css/lab.css">
+<script type="module" src="../js/mineria.js"></script>
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<header class="barra">
+  <div class="barra-int">
+    <nav class="migas" aria-label="Ruta">
+      <a href="../../index.html">Apuntes</a>
+      <span aria-hidden="true">/</span>
+      <a href="../index.html">Proyecto final</a>
+    </nav>
+    <nav class="modos" aria-label="Módulos del proyecto final">
+      <ol>
+        <li><a href="01-funcion-hash.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">01</span><span class="etiqueta">Hash</span></a></li>
+        <li><a href="02-firma-digital.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">02</span><span class="etiqueta">Firma</span></a></li>
+        <li><a href="03-sellado-de-tiempo.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">03</span><span class="etiqueta">Sello de tiempo</span></a></li>
+        <li><a href="04-blockchain.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">04</span><span class="etiqueta">Blockchain 0.0</span></a></li>
+        <li><a href="05-transaccion.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">05</span><span class="etiqueta">Transacción</span></a></li>
+        <li><a href="06-mineria.html" aria-current="page" data-estado="actual"><span class="marca" aria-hidden="true"></span><span class="n">06</span><span class="etiqueta">Minería</span></a></li>
+      </ol>
+    </nav>
+  </div>
+</header>
+
+<div class="aviso-contexto" role="alert">
+  <p><strong>Esta página necesita JavaScript y un contexto seguro.</strong> Web Crypto sólo
+  existe en HTTPS, y los módulos no cargan si el archivo se abre con doble clic. Ábrelo desde
+  <a href="https://alanpr27.github.io/Portafolio/lab/">alanpr27.github.io/Portafolio/lab</a>.</p>
+</div>
+
+<main id="contenido" class="modulo">
+  <div class="envoltura">
+
+    <header class="cabeza">
+      <p class="numero" aria-hidden="true">06</p>
+      <div>
+        <h1><span class="sr">Módulo 6: </span>Minería competitiva</h1>
+        <p class="entradilla">Los tres actores de la custodia buscan a la vez el nonce del siguiente
+        bloque, cada uno en su propia clase residual. Nadie repite trabajo de nadie —y por eso,
+        resulta, nadie compite de verdad.</p>
+        <p class="fuentes">Continúa el <a href="04-blockchain.html">módulo 04</a> y la cadena de
+        custodia del <a href="05-transaccion.html">módulo 05</a>. Consistente con el
+        <a href="../../blockchain/temas/06-blockchain-artesanal.html">tema 06</a> y el
+        <a href="../../blockchain/temas/07-blockchain-aplicaciones.html">tema 07</a> de los apuntes
+        de Blockchain.</p>
+      </div>
+    </header>
+
+    <!-- ============================================================ 1 -->
+    <section class="parte" aria-labelledby="p1">
+      <h2 id="p1"><span class="parte-n" aria-hidden="true">1</span>Qué es y por qué importa</h2>
+      <div class="prosa">
+        <p>En el módulo 04 un solo minero probaba nonces en orden hasta dar con uno cuyo hash
+        empezara con <em>N</em> ceros. Aquí lo hacen los tres actores a la vez, y se reparten el
+        espacio de búsqueda por clases residuales módulo 3: el proveedor prueba
+        <code>0, 3, 6, …</code>, el almacén <code>1, 4, 7, …</code> y el distribuidor
+        <code>2, 5, 8, …</code>. Las tres particiones son disjuntas y su unión es todo ℕ, así que
+        ningún nonce se prueba dos veces y ninguno queda sin probar.</p>
+
+        <p>El ganador queda anotado en el bloque, en el campo <code>minero</code>. Ese campo
+        <strong>no entra en <code>Bloque.contenido()</code></strong>, que es lo que se hashea: es
+        metadato posterior. Por eso los tres minan exactamente el mismo candidato y la validación del
+        módulo 04 sigue funcionando sin cambios.</p>
+
+        <p>Y de ahí sale lo interesante. Si el candidato es el mismo para los tres, cada actor tiene
+        un <strong>objetivo fijo</strong>: el primer nonce válido dentro de su propia clase, que el
+        bloque decidió antes de que nadie empezara a buscar. La carrera no es una lotería, es una
+        competencia de tres corredores con metas distintas y ya asignadas. A igual velocidad gana
+        siempre el que quedó con la meta más cercana, y repetir la carrera da siempre el mismo
+        resultado.</p>
+
+        <p>La velocidad sí cambia el resultado, pero de forma medible, no probabilística: si el
+        objetivo del almacén está en <code>5 893</code> y el del distribuidor en <code>19 883</code>,
+        el distribuidor necesita más de <code>19 883 ÷ 5 893 ≈ 3.4</code> veces la velocidad del
+        almacén para adelantarlo. Ni un poco menos alcanza, y con más siempre le sobra. Eso se puede
+        comprobar en el ejercicio.</p>
+
+        <p>En una red real nada de esto ocurre, porque <strong>nadie reparte el espacio</strong>. Los
+        mineros exploran nonces de forma desordenada y con solapamiento masivo, cada intento es un
+        billete de lotería independiente, y por eso la probabilidad de ganar es exactamente
+        proporcional al poder de cómputo. Repartir la búsqueda elimina el trabajo duplicado; esa
+        redundancia aparentemente ineficiente es justo lo que convierte el esfuerzo en probabilidad.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 2 -->
+    <section class="parte" aria-labelledby="p2">
+      <h2 id="p2"><span class="parte-n" aria-hidden="true">2</span>Laboratorio</h2>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">2.1</span>Eventos en espera</h3>
+        <p class="banco-intro">Lo que se mina no es un bloque vacío: son los eventos de custodia
+        firmados del módulo 05, esperando que alguien los selle. Cada evento lo firma el actor al que
+        le toca ese paso, y se verifica antes de entrar al pool.</p>
+
+        <ul class="lista-simple" id="pendientes"></ul>
+
+        <div class="botones">
+          <button type="button" id="evento" disabled>Agregar el siguiente evento de custodia</button>
+        </div>
+        <p class="estado" id="pool-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Preparando las llaves de los tres actores…</span></p>
+        <p class="nota">Minar no valida contenido. Un bloque perfectamente minado puede llevar dentro
+        una firma rota, y por eso las firmas se revisan al entrar al pool y otra vez al validar la
+        cadena.</p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">2.2</span>La carrera</h3>
+
+        <div class="campos-dos">
+          <div>
+            <label for="dificultad">Dificultad: <output id="dificultad-valor" for="dificultad">3</output> ceros</label>
+            <input id="dificultad" type="range" min="1" max="5" step="1" value="3">
+            <p class="nota">Intentos esperados en total: <span class="num" id="esperados">4,096</span>,
+            repartidos entre los tres.</p>
+          </div>
+          <div>
+            <span class="rotulo">Velocidad relativa</span>
+            <p class="nota">Es el tamaño de lote de <code>buscarNonce</code>: más intentos por turno,
+            sin ningún mecanismo aparte.</p>
+            <div class="velocidades">
+              <label for="vel-proveedor">Proveedor
+                <select id="vel-proveedor">
+                  <option value="1" selected>×1</option><option value="2">×2</option><option value="4">×4</option><option value="8">×8</option>
+                </select>
+              </label>
+              <label for="vel-almacen">Almacén
+                <select id="vel-almacen">
+                  <option value="1" selected>×1</option><option value="2">×2</option><option value="4">×4</option><option value="8">×8</option>
+                </select>
+              </label>
+              <label for="vel-distribuidor">Distribuidor
+                <select id="vel-distribuidor">
+                  <option value="1" selected>×1</option><option value="2">×2</option><option value="4">×4</option><option value="8">×8</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="botones">
+          <button type="button" id="correr" disabled>Correr la carrera</button>
+          <button type="button" class="secundario" id="repetir" disabled>Repetir la misma carrera</button>
+          <button type="button" class="secundario" id="detener" disabled>Detener</button>
+        </div>
+        <p class="estado" id="carrera-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Preparando…</span></p>
+
+        <ol class="carriles" id="carriles" aria-label="Los tres mineros y por dónde va cada uno"></ol>
+
+        <p class="nota">No hay barra de progreso, porque en prueba de trabajo no hay progreso: cada
+        intento es independiente del anterior y no acerca a nada. Lo que sí avanza es el mejor intento
+        encontrado hasta ahora, y avanza a saltos.</p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">2.3</span>La cadena</h3>
+
+        <dl class="lecturas">
+          <div class="lectura"><dt>Bloques</dt><dd id="n-bloques">0</dd></div>
+          <div class="lectura"><dt>En espera</dt><dd id="n-pendientes">0</dd></div>
+          <div class="lectura lectura-texto"><dt>Reparto</dt><dd id="reparto">—</dd></div>
+        </dl>
+
+        <ol class="cadena" id="cadena" aria-label="Bloques de la cadena, del génesis al último"></ol>
+      </div>
+    </section>
+
+    <!-- ============================================================ 3 -->
+    <section class="parte" aria-labelledby="p3">
+      <h2 id="p3"><span class="parte-n" aria-hidden="true">3</span>Ejercicio: las metas ya estaban puestas</h2>
+      <div class="prosa">
+        <p>Tres pasos, en orden. Corre primero una carrera con las tres velocidades en ×1.</p>
+        <ol class="apuntes">
+          <li><strong>Repite la carrera.</strong> Mismo ganador, mismo nonce, siempre. El bloque no
+          cambió, así que su primer nonce válido tampoco.</li>
+          <li><strong>Revela los objetivos.</strong> Cada actor tenía su propia meta desde el
+          principio. La página calcula cuánta ventaja de velocidad necesitaría cada uno para
+          adelantar al líder.</li>
+          <li><strong>Comprueba el umbral.</strong> Sube la velocidad del segundo por debajo de esa
+          cifra y repite: sigue perdiendo. Súbela por encima y repite: ahora gana. El umbral es
+          exacto, no estadístico.</li>
+        </ol>
+        <p>Después contesta: si aquí la ventaja de velocidad sólo sirve cuando supera un umbral que
+        el propio bloque fijó, ¿por qué en Bitcoin la probabilidad de minar un bloque es
+        proporcional al poder de cómputo, sin umbral de por medio?</p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">3.1</span>Los objetivos de cada actor</h3>
+        <div class="botones">
+          <button type="button" id="revelar" disabled>Revelar los tres objetivos</button>
+        </div>
+        <div id="objetivos"></div>
+        <p class="nota">Buscar los tres objetivos completos cuesta más que la carrera: nadie se
+        detiene al primer acierto. Con dificultad 5 puede tardar.</p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">3.2</span>Torneo: qué pasa entre bloques</h3>
+        <p class="banco-intro">Cada bloque está decidido de antemano, pero cada bloque nuevo reparte
+        las metas otra vez. Con suficientes rondas, las tres proporciones se acercan a un tercio.</p>
+
+        <label for="rondas">Rondas: <output id="rondas-valor" for="rondas">15</output></label>
+        <input id="rondas" type="range" min="3" max="60" step="3" value="15">
+
+        <div class="botones">
+          <button type="button" id="torneo" disabled>Correr el torneo</button>
+        </div>
+        <p class="estado" id="torneo-estado" data-estado="pendiente" role="status"><span class="marca" aria-hidden="true"></span><span class="estado-texto">Sin correr.</span></p>
+        <div class="tallies" id="torneo-resultado"></div>
+        <p class="nota">Los candidatos del torneo son bloques sueltos, no se enganchan a la cadena:
+        lo único que interesa de cada uno es la clase de su primer nonce válido.</p>
+      </div>
+    </section>
+
+    <!-- codigo:inicio -->
+    <section class="parte" aria-labelledby="p4">
+      <h2 id="p4"><span class="parte-n" aria-hidden="true">4</span>El código por dentro</h2>
+      <div class="prosa">
+        <p>Todo el módulo cabe en un parámetro nuevo y una carrera de tres promesas. No hay workers,
+        no hay librerías y <code>cadena.js</code> no se tocó.</p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.1</span>Recorrer una clase residual</h3>
+        <p class="banco-intro">La búsqueda del módulo 01 avanzaba de uno en uno. Con un parámetro
+        <code>paso</code> recorre una clase módulo 3, y con <code>paso = 1</code> se comporta como
+        antes: los módulos 01 y 04 no se enteran.</p>
+        <figure class="codigo">
+          <pre><code>const nonces = Array.from({ length: lote }, (_, i) =&gt; siguiente + i * paso);
+const digests = await Promise.all(nonces.map((n) =&gt; sha256Hex(construir(n))));
+// …
+siguiente += lote * paso;</code></pre>
+          <figcaption>crypto-utils.js, dentro de buscarNonce</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>El proveedor arranca en 0, el almacén en 1 y el distribuidor en 2, los tres con <code>paso = 3</code>.</li>
+          <li><code>cumple</code> se llama una vez por digest y en orden, así que la llamada <em>k</em>-ésima
+          es el nonce <code>residuo + k·3</code>. De ahí salen el nonce en curso y el mejor intento
+          sin tocar nada más.</li>
+        </ul>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.2</span>Tres búsquedas, un ganador</h3>
+        <p class="banco-intro">Corren de verdad en paralelo: <code>buscarNonce</code> cede el hilo cada
+        12 ms, así que las tres se intercalan en el bucle de eventos sin necesidad de workers.</p>
+        <figure class="codigo">
+          <pre><code>const primero = await Promise.race(corredores.map((c) =&gt; c.promesa));
+control.abort();
+const finales = await Promise.all(corredores.map((c) =&gt; c.promesa));
+
+// Tras el abort puede quedar un lote en vuelo que también acierte:
+// el ganador es el que resolvió primero, no el primero de la lista.
+const ganador = primero.encontrado ? primero : finales.find((e) =&gt; e.encontrado);</code></pre>
+          <figcaption>carrera.js, correrCarrera</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>El <code>AbortController</code> ya lo aceptaba <code>buscarNonce</code>; aquí sólo se comparte entre los tres.</li>
+          <li>Sin el <code>abort</code>, los dos perdedores seguirían buscando para siempre en segundo plano.</li>
+        </ul>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.3</span>El minero va fuera del hash</h3>
+        <figure class="codigo">
+          <pre><code>export function sellarCon(bloque, resultado) {
+  if (!resultado.encontrado) return bloque;
+  bloque.nonce = resultado.nonce;
+  bloque.hash = resultado.hash;
+  bloque.minero = resultado.ganador;
+  return bloque;
+}</code></pre>
+          <figcaption>carrera.js, sellarCon</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li><code>Bloque.contenido()</code> serializa <code>datos, dificultad, hashPrevio, indice,
+          nonce, timestamp</code>. <code>minero</code> no está ahí, así que no altera el hash ni la
+          validación.</li>
+          <li>Si entrara, cada actor estaría minando un candidato distinto, con su propio nonce
+          mínimo, y no habría una meta común que repartir. Es lo que hace Bitcoin con la transacción
+          coinbase, y por eso allá el reparto sí es probabilístico.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- codigo:fin -->
+    <aside class="honestidad" aria-labelledby="h-honestidad">
+      <h2 id="h-honestidad">Qué se simplificó</h2>
+      <ul>
+        <li><strong>Repartirse los nonces por clases es una coordinación que no existe en ninguna
+        red real.</strong> Nadie asigna particiones. Los mineros exploran el espacio de forma
+        desordenada y con solapamiento masivo, y esa redundancia es lo que hace que cada intento sea
+        un billete de lotería independiente.</li>
+        <li><strong>Aquí el minero va fuera del hash.</strong> En Bitcoin la coinbase con la
+        dirección del minero va dentro del bloque que se hashea: cada minero trabaja sobre un
+        candidato distinto y no existe un nonce mínimo común que repartir.</li>
+        <li><strong>No hay recompensa, ni comisiones, ni competencia económica.</strong> El incentivo
+        es lo que sostiene la seguridad de una red real, y aquí está ausente por completo.</li>
+        <li><strong>Los mineros son los mismos tres actores que originan las transacciones.</strong>
+        En una red real esos conjuntos no coinciden, y que coincidan aquí concentra en tres manos un
+        poder que el diseño busca repartir.</li>
+        <li><strong>Tres nodos no son una red.</strong> No hay propagación, ni latencia, ni bloques
+        huérfanos, ni bifurcaciones, ni regla de la cadena más larga. Los tres ven lo mismo al mismo
+        tiempo porque son la misma pestaña.</li>
+        <li><strong>La velocidad relativa es un número que eliges tú.</strong> No mide nada del
+        equipo: cambia el tamaño de lote de un bucle.</li>
+      </ul>
+    </aside>
+
+    <nav class="pasos" aria-label="Entre módulos">
+      <a href="05-transaccion.html"><span class="dir">Anterior</span><span class="cual">05 Transacción</span></a>
+    </nav>
+
+  </div>
+</main>
+
+<p class="sr" id="anuncio" aria-live="polite"></p>
+
+<footer class="pie">
+  <div class="envoltura">
+    <p>Proyecto final de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería. Construido
+    sobre el material del curso del Dr. José de Jesús Ángel Ángel.</p>
+    <p>Todo el cálculo ocurre en tu navegador con Web Crypto: nada de lo que escribes sale de tu equipo.</p>
+  </div>
+</footer>
+
+</body>
+</html>
