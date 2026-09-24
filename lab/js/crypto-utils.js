@@ -164,11 +164,12 @@ export function ceder() {
  * @param {(n: number) => string | Uint8Array} o.construir  lo que se hashea para el nonce n
  * @param {(digest: string) => boolean} o.cumple            la condición buscada
  * @param {number} [o.desde=0]
+  * @param {number} [o.paso=1]   avance entre nonces: 1 recorre todos, k recorre una clase residual
  * @param {number} [o.lote=128]
  * @param {AbortSignal} [o.senal]
  * @param {(p: {intentos: number, ms: number}) => void} [o.alProgreso]
  */
-export async function buscarNonce({ construir, cumple, desde = 0, lote = 128, senal, alProgreso }) {
+export async function buscarNonce({ construir, cumple, desde = 0, paso = 1, lote = 128, senal, alProgreso }) {
   const inicio = performance.now();
   let siguiente = desde;
   let intentos = 0;
@@ -180,7 +181,7 @@ export async function buscarNonce({ construir, cumple, desde = 0, lote = 128, se
       if (senal?.aborted) {
         return { encontrado: false, nonce: null, digest: null, intentos, ms: performance.now() - inicio };
       }
-      const nonces = Array.from({ length: lote }, (_, i) => siguiente + i);
+      const nonces = Array.from({ length: lote }, (_, i) => siguiente + i * paso);
       const digests = await Promise.all(nonces.map((n) => sha256Hex(construir(n))));
       for (let i = 0; i < lote; i++) {
         if (cumple(digests[i])) {
@@ -195,7 +196,7 @@ export async function buscarNonce({ construir, cumple, desde = 0, lote = 128, se
         }
       }
       intentos += lote;
-      siguiente += lote;
+      siguiente += lote * paso;
     } while (performance.now() < corte);
 
     const ahora = performance.now();
