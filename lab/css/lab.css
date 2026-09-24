@@ -1346,3 +1346,200 @@ fieldset.opciones legend {
   body { background: #fff; color: #000; }
   .banco { border-top-color: #000; }
 }
+/* =========================================================================
+   Módulo 6 — Minería competitiva.
+
+   Los tres actores se distinguen por el TRAZO de su filo izquierdo —continuo,
+   doble, discontinuo— y por la forma de su sello —cuadro, rombo, círculo—, no
+   por color. El estado del carril sigue usando data-estado como en el resto
+   del laboratorio, así que forma e información no se pisan.
+   ========================================================================= */
+
+.lista-simple {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  border-top: 1px solid var(--regla);
+}
+.lista-simple li {
+  padding: 0.45rem 0 0.5rem;
+  border-bottom: 1px solid var(--regla-suave);
+  font-size: 0.92rem;
+}
+.lista-simple li.nota { border-bottom: 1px solid var(--regla-suave); }
+
+.velocidades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+}
+.velocidades label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.velocidades select { width: auto; min-width: 4.4rem; }
+
+/* ------------------------------------------------------------- carriles */
+
+.carriles {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.9rem;
+  margin: 1.2rem 0 0;
+  padding: 0;
+}
+
+.carril {
+  height: 100%;
+  padding: 0.8rem 0.9rem 0.85rem 1rem;
+  background: var(--suelo);
+  border-left: 4px solid var(--tinta);
+}
+.carril[data-actor="almacen"] { border-left: 5px double var(--tinta); }
+.carril[data-actor="distribuidor"] { border-left: 4px dashed var(--tinta); }
+
+.carril[data-estado="detenido"] { opacity: 0.62; }
+.carril[data-estado="valido"] {
+  background:
+    repeating-linear-gradient(135deg, var(--senal-suave) 0 7px, transparent 7px 14px),
+    var(--suelo);
+}
+
+.carril-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.2rem 0.7rem;
+  margin: 0 0 0.55rem;
+}
+.carril-nombre {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin: 0;
+  font-weight: 700;
+  font-stretch: 85%;
+}
+.carril-nombre .marca { margin-top: 0.3em; }
+.carril-clase {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--tinta-2);
+}
+.carril-posicion {
+  margin: 0 0 0.3rem;
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+.carril .campos { margin-bottom: 0; }
+.carril .digest { min-height: 2.5rem; }
+
+/* --------------------------------------------- el sello de quién minó */
+
+.sello-minero {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.sello-marca {
+  display: inline-block;
+  flex: none;
+  width: 0.6rem;
+  height: 0.6rem;
+  border: 1.5px solid currentColor;
+  background: currentColor;
+}
+[data-minero="almacen"] .sello-marca { transform: rotate(45deg); }
+[data-minero="distribuidor"] .sello-marca { border-radius: 50%; }
+
+/* ------------------------------------------------------------ objetivos */
+
+.metas {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  counter-reset: meta;
+}
+.metas li {
+  display: grid;
+  grid-template-columns: minmax(7rem, auto) minmax(6rem, auto) 1fr;
+  gap: 0.15rem 1rem;
+  align-items: baseline;
+  margin: 0 0 0.5rem;
+  padding: 0.55rem 0.8rem 0.6rem;
+  background: var(--suelo);
+  border-left: 4px solid var(--tinta);
+}
+.metas li[data-actor="almacen"] { border-left: 5px double var(--tinta); }
+.metas li[data-actor="distribuidor"] { border-left: 4px dashed var(--tinta); }
+
+.meta-actor { font-weight: 700; font-stretch: 85%; }
+.meta-nonce {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.meta-nota { font-size: 0.85rem; color: var(--tinta-2); }
+
+@media (max-width: 34rem) {
+  .metas li { grid-template-columns: 1fr; }
+}
+
+/* --------------------------------------------------------------- torneo */
+
+.tallies { margin: 1rem 0 0; }
+
+.tally {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, auto) 1fr minmax(5rem, auto);
+  gap: 0.7rem;
+  align-items: center;
+  margin: 0 0 0.45rem;
+  font-size: 0.88rem;
+}
+.tally-actor { font-weight: 600; font-stretch: 88%; }
+
+.tally-barra {
+  position: relative;
+  height: 0.8rem;
+  background: var(--suelo);
+  border-bottom: 1px solid var(--regla);
+}
+.tally-barra::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--parte, 0) * 100%);
+  background: var(--tinta);
+}
+/* Cada actor conserva su trazo: relleno pleno, rayado y punteado. */
+.tally[data-actor="almacen"] .tally-barra::before {
+  background: repeating-linear-gradient(135deg, var(--tinta) 0 3px, transparent 3px 6px);
+}
+.tally[data-actor="distribuidor"] .tally-barra::before {
+  background: repeating-linear-gradient(to right, var(--tinta) 0 2px, transparent 2px 5px);
+}
+
+/* Un tercio: el valor al que tienden las tres proporciones. */
+.tally-barra::after {
+  content: "";
+  position: absolute;
+  top: -0.15rem;
+  bottom: -0.15rem;
+  left: 33.333%;
+  border-left: 1px dashed var(--tinta-2);
+}
+.tally-cifra {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
