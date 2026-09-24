@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Firma digital — Laboratorio Blockchain 0.0</title>
+<title>Firma digital — Proyecto final</title>
 <meta name="description" content="Módulo 2 del laboratorio: pares de llaves ECDSA P-256, firma y verificación en el navegador con Web Crypto, los tres experimentos que rompen una firma y un reto para identificar al firmante.">
 <script>document.documentElement.classList.add(window.isSecureContext && window.crypto && window.crypto.subtle ? 'cripto-ok' : 'cripto-no');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,9 +21,9 @@
     <nav class="migas" aria-label="Ruta">
       <a href="../../index.html">Apuntes</a>
       <span aria-hidden="true">/</span>
-      <a href="../index.html">Laboratorio Blockchain 0.0</a>
+      <a href="../index.html">Proyecto final</a>
     </nav>
-    <nav class="modos" aria-label="Módulos del laboratorio">
+    <nav class="modos" aria-label="Módulos del proyecto final">
       <ol>
         <li><a href="01-funcion-hash.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">01</span><span class="etiqueta">Hash</span></a></li>
         <li><a href="02-firma-digital.html" aria-current="page" data-estado="actual"><span class="marca" aria-hidden="true"></span><span class="n">02</span><span class="etiqueta">Firma</span></a></li>
@@ -36,7 +36,7 @@
 </header>
 
 <div class="aviso-contexto" role="alert">
-  <p><strong>Este laboratorio necesita JavaScript y un contexto seguro.</strong> Web Crypto sólo
+  <p><strong>Esta página necesita JavaScript y un contexto seguro.</strong> Web Crypto sólo
   existe en HTTPS, y los módulos no cargan si el archivo se abre con doble clic. Ábrelo desde
   <a href="https://alanpr27.github.io/Portafolio/lab/">alanpr27.github.io/Portafolio/lab</a>.</p>
 </div>
@@ -269,6 +269,131 @@
       </div>
     </section>
 
+    <!-- codigo:inicio -->
+    <section class="parte" aria-labelledby="p4">
+      <h2 id="p4"><span class="parte-n" aria-hidden="true">4</span>El código por dentro</h2>
+      <div class="prosa">
+        <p>La criptografía de este módulo son cuatro llamadas a Web Crypto. Todo lo demás es explicar lo que responden.</p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.1</span>Generar el par y exportarlo</h3>
+        <p class="banco-intro">Una llave no es un archivo que se pueda leer sin más: el navegador la guarda como objeto y decide qué se puede sacar de ella.</p>
+        <figure class="codigo">
+          <pre><code>const CURVA = { name: 'ECDSA', namedCurve: 'P-256' };
+const ALGORITMO_FIRMA = { name: 'ECDSA', hash: 'SHA-256' };
+// …
+export function generarPar() {
+  return crypto.subtle.generateKey(CURVA, true, ['sign', 'verify']);
+}
+// …
+export async function exportarPublica(llave) {
+  return hex(await crypto.subtle.exportKey('raw', llave));
+}
+// …
+export async function exportarPrivada(llave) {
+  const { d } = await crypto.subtle.exportKey('jwk', llave);
+  return hex(desdeBase64url(d));
+}</code></pre>
+          <figcaption>crypto-utils.js, líneas 212–213, 216–218, 221–223, 233–236</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li><code>generateKey</code> recibe la curva y los usos permitidos. Esta llave sólo puede firmar y verificar; no sirve para cifrar.</li>
+          <li>El <code>true</code> significa «extraíble», y aquí existe sólo para poder mostrar la privada en pantalla. Una aplicación real pasaría <code>false</code>, y ni su propio código podría leerla.</li>
+          <li>La pública se exporta en formato raw: 65 bytes, <code>04 ‖ x ‖ y</code>, que son las dos coordenadas de un punto de la curva.</li>
+          <li>La privada sólo sale como JWK. Su campo <code>d</code> es el escalar de 32 bytes, y se pasa de base64url a hexadecimal para mostrarlo con el mismo formato que todo lo demás.</li>
+        </ul>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.2</span>Firmar y verificar</h3>
+        <p class="banco-intro">Las dos operaciones que importan, y el detalle de qué se firma en realidad.</p>
+        <figure class="codigo">
+          <pre><code>export async function firmar(privada, mensaje) {
+  const datos = typeof mensaje === 'string' ? utf8(mensaje) : mensaje;
+  return hex(await crypto.subtle.sign(ALGORITMO_FIRMA, privada, datos));
+}
+// …
+export async function verificar(publica, mensaje, firmaHex) {
+  try {
+    const datos = typeof mensaje === 'string' ? utf8(mensaje) : mensaje;
+    return await crypto.subtle.verify(ALGORITMO_FIRMA, publica, desdeHex(firmaHex), datos);
+  } catch {
+    return false;
+  }
+}</code></pre>
+          <figcaption>crypto-utils.js, líneas 246–249, 252–259</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li><code>sign</code> recibe el mensaje en bytes, le aplica SHA-256 y firma ese digest. Nunca se firma el texto completo: se firma su huella, la del módulo anterior.</li>
+          <li>La firma sale como <code>r ‖ s</code>, 64 bytes en formato IEEE P1363, que la página muestra como 128 dígitos hexadecimales.</li>
+          <li><code>verify</code> devuelve un booleano y nada más. <code>verificar</code> además atrapa los errores de formato y los cuenta como firma inválida, para que una firma corrupta no rompa la página.</li>
+          <li>Firmar dos veces el mismo mensaje da firmas distintas, porque ECDSA usa un número aleatorio en cada una. Las dos verifican.</li>
+        </ul>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.3</span>Por qué falla una firma</h3>
+        <p class="banco-intro">La verificación responde sí o no. El diagnóstico que lees debajo no sale de la criptografía, sino de que la página recuerda lo que firmó.</p>
+        <figure class="codigo">
+          <pre><code>if (await verificar(publica, mensaje, firmaHex)) {
+  return {
+    valida: true,
+    estado: 'valido',
+    texto: 'Firma válida. Este mensaje, bit por bit, lo firmó la llave privada que corresponde a esta llave pública.',
+// …
+const causas = [];
+if (mensaje !== origen.mensaje) {
+  const [actual, firmado] = await Promise.all([sha256Hex(mensaje), sha256Hex(origen.mensaje)]);
+  const { distintos } = diferenciaBits(actual, firmado);
+  causas.push(`el mensaje no es el que se firmó, y su SHA-256 difiere del firmado en ${distintos} de 256 bits`);
+}
+if (publicaHex !== origen.publicaHex) {
+  causas.push(`la firma la produjo la privada del par ${origen.nombre}, y esta llave pública no es la suya`);
+}</code></pre>
+          <figcaption>firma.js, líneas 106–110, 123–131</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>Cada firma producida aquí se guarda en un Map junto con su mensaje y su llave. Al fallar una verificación, la página busca esa firma y compara.</li>
+          <li>Si el mensaje cambió, mide en cuántos bits difiere su SHA-256 del que se firmó. Si la llave no es la del par que firmó, lo dice.</li>
+          <li>Un verificador de verdad, ante una firma ajena, sólo sabría que no verifica. Esa diferencia está dicha en el propio mensaje de error.</li>
+        </ul>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.4</span>El reto no guarda quién firmó</h3>
+        <p class="banco-intro">El ejercicio de identificar al firmante tiene que ser honesto: la página tampoco puede saber la respuesta de antemano.</p>
+        <figure class="codigo">
+          <pre><code>const [uno, dos] = await Promise.all([generarPar(), generarPar()]);
+const mensaje = MENSAJES_RETO[azar(MENSAJES_RETO.length)];
+const firmante = azar(2) === 0 ? uno : dos;
+const [firmaHex, llave1, llave2] = await Promise.all([
+  firmar(firmante.privateKey, mensaje),
+  exportarPublica(uno.publicKey),
+  exportarPublica(dos.publicKey),
+]);
+
+// Quién firmó no se guarda: al comprobar, la página también tiene que verificar.
+reto = { mensaje, firmaHex, llaves: [llave1, llave2] };</code></pre>
+          <figcaption>firma.js, líneas 196–206</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>Genera dos pares nuevos, elige uno al azar y firma con él, pero en <code>reto</code> sólo guarda el mensaje, la firma y las dos llaves públicas.</li>
+        </ul>
+        <figure class="codigo">
+          <pre><code>const verifica = await Promise.all(
+  reto.llaves.map(async (h) =&gt; verificar(await importarPublica(h), reto.mensaje, reto.firmaHex)),
+);
+const correcta = verifica.indexOf(true);</code></pre>
+          <figcaption>firma.js, líneas 225–228</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>Al comprobar la respuesta verifica con las dos llaves y ve cuál devuelve <code>true</code>. Llega a la respuesta por el mismo camino que tú.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- codigo:fin -->
     <aside class="honestidad" aria-labelledby="h-honestidad">
       <h2 id="h-honestidad">Qué se simplificó</h2>
       <ul>
@@ -299,7 +424,7 @@
 
 <footer class="pie">
   <div class="envoltura">
-    <p>Laboratorio de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería. Construido
+    <p>Proyecto final de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería. Construido
     sobre el material del curso del Dr. José de Jesús Ángel Ángel.</p>
     <p>Todo el cálculo ocurre en tu navegador con Web Crypto: nada de lo que escribes sale de tu equipo.</p>
   </div>

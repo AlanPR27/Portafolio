@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Blockchain 0.0 — Laboratorio Blockchain 0.0</title>
+<title>Blockchain 0.0 — Proyecto final</title>
 <meta name="description" content="Módulo 4 del laboratorio: una cadena de bloques en memoria con prueba de trabajo ajustable, bloques editables, la cascada de invalidación que delata la manipulación y el costo de reminar la historia.">
 <script>document.documentElement.classList.add(window.isSecureContext && window.crypto && window.crypto.subtle ? 'cripto-ok' : 'cripto-no');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,9 +21,9 @@
     <nav class="migas" aria-label="Ruta">
       <a href="../../index.html">Apuntes</a>
       <span aria-hidden="true">/</span>
-      <a href="../index.html">Laboratorio Blockchain 0.0</a>
+      <a href="../index.html">Proyecto final</a>
     </nav>
-    <nav class="modos" aria-label="Módulos del laboratorio">
+    <nav class="modos" aria-label="Módulos del proyecto final">
       <ol>
         <li><a href="01-funcion-hash.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">01</span><span class="etiqueta">Hash</span></a></li>
         <li><a href="02-firma-digital.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">02</span><span class="etiqueta">Firma</span></a></li>
@@ -36,7 +36,7 @@
 </header>
 
 <div class="aviso-contexto" role="alert">
-  <p><strong>Este laboratorio necesita JavaScript y un contexto seguro.</strong> Web Crypto sólo
+  <p><strong>Esta página necesita JavaScript y un contexto seguro.</strong> Web Crypto sólo
   existe en HTTPS, y los módulos no cargan si el archivo se abre con doble clic. Ábrelo desde
   <a href="https://alanpr27.github.io/Portafolio/lab/">alanpr27.github.io/Portafolio/lab</a>.</p>
 </div>
@@ -168,6 +168,144 @@
       </div>
     </section>
 
+    <!-- codigo:inicio -->
+    <section class="parte" aria-labelledby="p4">
+      <h2 id="p4"><span class="parte-n" aria-hidden="true">4</span>El código por dentro</h2>
+      <div class="prosa">
+        <p>Dos clases sostienen todo esto: <code>Bloque</code>, que sabe hashearse y minarse, y <code>Cadena</code>, que sabe enlazar, editar y validar. Entre las dos caben en unas doscientas líneas.</p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.1</span>Qué se hashea en un bloque</h3>
+        <p class="banco-intro">El hash de un bloque se calcula sobre todo su contenido menos el hash mismo.</p>
+        <figure class="codigo">
+          <pre><code>contenido(nonce = this.nonce) {
+  return canonico({
+    datos: this.datos,
+    dificultad: this.dificultad,
+    hashPrevio: this.hashPrevio,
+    indice: this.indice,
+    nonce,
+    timestamp: this.timestamp,
+  });
+}
+
+calcularHash(nonce = this.nonce) {
+  return sha256Hex(this.contenido(nonce));
+}</code></pre>
+          <figcaption>cadena.js, líneas 38–51</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>La serialización es canónica: claves ordenadas y sin espacios, para que el mismo bloque produzca siempre el mismo digest.</li>
+          <li>El <code>hashPrevio</code> va dentro de lo que se hashea. Por eso cambiar un bloque cambia su hash y rompe el enlace del siguiente.</li>
+          <li>La dificultad también va dentro. Así, mover el control afecta a los bloques que se minen después y no invalida en retroactiva los ya minados, igual que el objetivo en el encabezado de un bloque de Bitcoin.</li>
+          <li><code>contenido(nonce)</code> acepta un nonce distinto del guardado: es lo que permite probar millones de nonces sin modificar el bloque.</li>
+        </ul>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.2</span>Minar</h3>
+        <p class="banco-intro">Minar es buscar por fuerza bruta, a propósito: no hay atajo para encontrar un digest con forma prescrita.</p>
+        <figure class="codigo">
+          <pre><code>async minar(opciones = {}) {
+  const prefijo = '0'.repeat(this.dificultad);
+  const resultado = await buscarNonce({
+    ...opciones,
+    construir: (n) =&gt; this.contenido(n),
+    cumple: (digest) =&gt; digest.startsWith(prefijo),
+  });
+  if (resultado.encontrado) {
+    this.nonce = resultado.nonce;
+    this.hash = resultado.digest;
+  }
+  return resultado;
+}</code></pre>
+          <figcaption>cadena.js, líneas 54–66</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>Le pasa a <code>buscarNonce</code> dos funciones: qué construir con cada nonce y qué condición debe cumplir el digest.</li>
+          <li>Sólo si encuentra uno guarda el nonce y el hash. Si la búsqueda se detuvo, el bloque queda exactamente como estaba.</li>
+          <li>La búsqueda cede el hilo cada 12 milisegundos y acepta un AbortSignal, por eso la página responde mientras mina y el botón de detener funciona.</li>
+        </ul>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.3</span>Editar un bloque y la cascada</h3>
+        <p class="banco-intro">La demo central del módulo son estas dos piezas: una que recalcula y otra que propaga.</p>
+        <figure class="codigo">
+          <pre><code>async editar(indice, datos) {
+  const bloque = this.bloques[indice];
+  if (!bloque) throw new RangeError(`No existe el bloque ${indice}.`);
+  bloque.datos = datos;
+  if (!bloque.minado) return;
+  // Si llegan varias ediciones seguidas, sólo cuenta el hash de la última.
+  const version = (this.#versiones.get(bloque) ?? 0) + 1;
+  this.#versiones.set(bloque, version);
+  const hash = await bloque.calcularHash();
+  if (this.#versiones.get(bloque) === version) bloque.hash = hash;
+}</code></pre>
+          <figcaption>cadena.js, líneas 138–148</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>Editar recalcula el hash con el mismo nonce. Ese hash nuevo casi nunca empieza con los ceros que pide la dificultad, así que el bloque queda inválido por sí mismo.</li>
+          <li>El contador de versiones resuelve una carrera: si escribes rápido, varios cálculos quedan en vuelo y sólo debe guardarse el del último texto.</li>
+        </ul>
+        <figure class="codigo">
+          <pre><code>const comprobaciones = {
+  hashCoincide: bloque.minado &amp;&amp; recalculados[i] === bloque.hash,
+  cumpleDificultad: bloque.minado &amp;&amp; bloque.hash.startsWith('0'.repeat(bloque.dificultad)),
+  enlaceCorrecto: i === 0 ? bloque.hashPrevio === CEROS_64 : bloque.hashPrevio === previo.hash,
+  ordenTemporal: i === 0 || bloque.timestamp &gt;= previo.timestamp,
+};
+// …
+} else if (!historiaSana) {
+  estado = ESTADO.HEREDADO;
+  motivo = 'Está bien formado, pero cuelga de una historia que ya no es válida.';
+} else {
+  estado = ESTADO.VALIDO;
+  motivo = 'Íntegro, minado y enlazado con el anterior.';
+}
+
+if (estado !== ESTADO.VALIDO) historiaSana = false;</code></pre>
+          <figcaption>cadena.js, líneas 182–187, 208–216</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>Cuatro comprobaciones por bloque, y el informe dice cuál falló, no sólo que algo falló.</li>
+          <li><code>historiaSana</code> es la cascada entera: en cuanto un bloque deja de ser válido, los siguientes que estén bien formados pasan a heredados.</li>
+          <li>Distinguir inválido de heredado es lo que deja ver dónde empezó el daño. Sólo uno o dos bloques fallan por sí mismos; el resto nada más cuelga de ellos.</li>
+        </ul>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.4</span>Reescribir la historia</h3>
+        <p class="banco-intro">Volver a hacer válida una cadena alterada cuesta exactamente lo que cuesta minar de nuevo desde el punto tocado.</p>
+        <figure class="codigo">
+          <pre><code>async reminarDesde(indice, { senal, alProgreso } = {}) {
+  let intentos = 0;
+  let ms = 0;
+  for (let i = indice; i &lt; this.bloques.length; i++) {
+    const acumulado = intentos;
+    const resultado = await this.minar(i, {
+      senal,
+      alProgreso: alProgreso &amp;&amp; ((p) =&gt; alProgreso({ indice: i, intentos: acumulado + p.intentos, ms: ms + p.ms })),
+    });
+    intentos += resultado.intentos;
+    ms += resultado.ms;
+    if (!resultado.encontrado) return { completado: false, hasta: i, intentos, ms };
+  }
+  return { completado: true, hasta: this.bloques.length - 1, intentos, ms };
+}</code></pre>
+          <figcaption>cadena.js, líneas 151–165</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>Remina en orden. Cada bloque se vuelve a enganchar al hash nuevo de su anterior antes de buscar su propio nonce.</li>
+          <li>Acumula intentos y milisegundos: eso es el costo de reescribir esa parte de la historia, y es lo que la página muestra al terminar.</li>
+          <li>Si se detiene a medias informa hasta dónde llegó, y el resto de la cadena queda sin arreglar.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- codigo:fin -->
     <aside class="honestidad" aria-labelledby="h-honestidad">
       <h2 id="h-honestidad">Qué se simplificó</h2>
       <ul>
@@ -200,7 +338,7 @@
 
 <footer class="pie">
   <div class="envoltura">
-    <p>Laboratorio de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería. Construido
+    <p>Proyecto final de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería. Construido
     sobre el material del curso del Dr. José de Jesús Ángel Ángel.</p>
     <p>Todo el cálculo ocurre en tu navegador con Web Crypto: nada de lo que escribes sale de tu equipo.</p>
   </div>

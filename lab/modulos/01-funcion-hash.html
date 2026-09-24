@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Función hash — Laboratorio Blockchain 0.0</title>
+<title>Función hash — Proyecto final</title>
 <meta name="description" content="Módulo 1 del laboratorio: SHA-256 en vivo, el efecto avalancha medido bit a bit y una prueba de trabajo en miniatura, calculados en el navegador con Web Crypto.">
 <script>document.documentElement.classList.add(window.isSecureContext && window.crypto && window.crypto.subtle ? 'cripto-ok' : 'cripto-no');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,9 +21,9 @@
     <nav class="migas" aria-label="Ruta">
       <a href="../../index.html">Apuntes</a>
       <span aria-hidden="true">/</span>
-      <a href="../index.html">Laboratorio Blockchain 0.0</a>
+      <a href="../index.html">Proyecto final</a>
     </nav>
-    <nav class="modos" aria-label="Módulos del laboratorio">
+    <nav class="modos" aria-label="Módulos del proyecto final">
       <ol>
         <li><a href="01-funcion-hash.html" aria-current="page" data-estado="actual"><span class="marca" aria-hidden="true"></span><span class="n">01</span><span class="etiqueta">Hash</span></a></li>
         <li><a href="02-firma-digital.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">02</span><span class="etiqueta">Firma</span></a></li>
@@ -36,7 +36,7 @@
 </header>
 
 <div class="aviso-contexto" role="alert">
-  <p><strong>Este laboratorio necesita JavaScript y un contexto seguro.</strong> Web Crypto sólo
+  <p><strong>Esta página necesita JavaScript y un contexto seguro.</strong> Web Crypto sólo
   existe en HTTPS, y los módulos no cargan si el archivo se abre con doble clic. Ábrelo desde
   <a href="https://alanpr27.github.io/Portafolio/lab/">alanpr27.github.io/Portafolio/lab</a>.</p>
 </div>
@@ -235,6 +235,113 @@
       </div>
     </section>
 
+    <!-- codigo:inicio -->
+    <section class="parte" aria-labelledby="p4">
+      <h2 id="p4"><span class="parte-n" aria-hidden="true">4</span>El código por dentro</h2>
+      <div class="prosa">
+        <p>Lo que calcula este módulo son tres llamadas a Web Crypto y algo de aritmética de bits. Éste es el código que las hace, recortado de los archivos que carga la página.</p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.1</span>El digest, tecla por tecla</h3>
+        <p class="banco-intro">Hashear es una sola llamada. Lo demás es convertir bytes a texto y no pisar un resultado con otro.</p>
+        <figure class="codigo">
+          <pre><code>export async function sha256(datos) {
+  const bytes = typeof datos === 'string' ? utf8(datos) : datos;
+  return new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
+}
+
+export async function sha256Hex(datos) {
+  return hex(await sha256(datos));
+}</code></pre>
+          <figcaption>crypto-utils.js, líneas 62–69</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li><code>crypto.subtle.digest</code> es asíncrono y devuelve un ArrayBuffer. <code>sha256</code> lo envuelve en un Uint8Array y <code>sha256Hex</code> lo pasa a los 64 dígitos que se ven en pantalla.</li>
+          <li>Si la entrada es texto se convierte antes a bytes con TextEncoder, que codifica en UTF-8. Por eso una «ñ» es un carácter pero dos bytes: el hash se calcula sobre los bytes.</li>
+        </ul>
+        <figure class="codigo">
+          <pre><code>async function actualizar() {
+  const mio = ++turno;
+  const texto = entrada.value;
+  const digest = await sha256Hex(texto);
+  if (mio !== turno) return; // ya llegó una tecla más reciente
+  pintarDigest($('#digest'), digest);
+  $('#n-caracteres').textContent = formato.format([...texto].length);
+  $('#n-bytes').textContent = formato.format(utf8(texto).length);
+}
+
+entrada.addEventListener('input', actualizar);
+actualizar();</code></pre>
+          <figcaption>hash.js, líneas 39–50</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>Cada tecla dispara un cálculo asíncrono. <code>turno</code> numera las llamadas y descarta la que llegue tarde: sin eso, un resultado lento podría pintarse encima de uno más reciente.</li>
+          <li>La misma función se llama al cargar la página, para que el campo nunca aparezca sin su digest.</li>
+        </ul>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.2</span>Contar los bits que cambian</h3>
+        <p class="banco-intro">La rejilla de la avalancha no es un adorno: es el resultado de comparar los dos digests bit a bit.</p>
+        <figure class="codigo">
+          <pre><code>export function diferenciaBits(hexA, hexB) {
+  const a = desdeHex(hexA);
+  const b = desdeHex(hexB);
+  if (a.length !== b.length) throw new RangeError('Los digests tienen longitudes distintas.');
+  const mapa = new Uint8Array(a.length * 8);
+  let distintos = 0;
+  for (let i = 0; i &lt; a.length; i++) {
+    const x = a[i] ^ b[i];
+    for (let j = 0; j &lt; 8; j++) {
+      const bit = (x &gt;&gt; (7 - j)) &amp; 1;
+      mapa[8 * i + j] = bit;
+      distintos += bit;
+    }
+  }
+  return { distintos, total: mapa.length, mapa };
+}</code></pre>
+          <figcaption>crypto-utils.js, líneas 80–95</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>Convierte los dos digests a bytes, los combina con XOR y cuenta los unos. Eso es la distancia de Hamming: el número de bits en los que difieren.</li>
+          <li>Devuelve también <code>mapa</code>, un arreglo de 256 ceros y unos que la página dibuja como la rejilla de 16 × 16. Cada celda llena es un bit que cambió.</li>
+          <li>Recorre cada byte del bit más significativo al menos, <code>(x &gt;&gt; (7 - j)) &amp; 1</code>, para que la rejilla se lea en el mismo orden que el hexadecimal.</li>
+        </ul>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.3</span>Buscar el nonce sin congelar la pestaña</h3>
+        <p class="banco-intro">El ejercicio puede pedir más de un millón de hashes. Hacerlos en un bucle normal dejaría la página muerta hasta terminar.</p>
+        <figure class="codigo">
+          <pre><code>export async function buscarNonce({ construir, cumple, desde = 0, lote = 128, senal, alProgreso }) {
+// …
+  for (;;) {
+    const corte = performance.now() + 12;
+    do {
+      if (senal?.aborted) {
+        return { encontrado: false, nonce: null, digest: null, intentos, ms: performance.now() - inicio };
+      }
+      const nonces = Array.from({ length: lote }, (_, i) =&gt; siguiente + i);
+      const digests = await Promise.all(nonces.map((n) =&gt; sha256Hex(construir(n))));
+      for (let i = 0; i &lt; lote; i++) {
+        if (cumple(digests[i])) {
+// …
+      intentos += lote;
+      siguiente += lote;
+    } while (performance.now() &lt; corte);</code></pre>
+          <figcaption>crypto-utils.js, líneas 171, 177–186, 197–199</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>Prueba los nonces en lotes de 128 y los hashea con <code>Promise.all</code>, en vez de esperar uno por uno.</li>
+          <li>Cada 12 milisegundos corta el bucle y cede el hilo con <code>await ceder()</code>, que es un <code>setTimeout</code> de cero. El navegador aprovecha ese hueco para pintar y atender clics.</li>
+          <li>Revisa <code>senal?.aborted</code> en cada vuelta: eso es lo que hace efectivo el botón de detener.</li>
+          <li>Recibe desde fuera <code>construir</code> y <code>cumple</code>, así que la misma búsqueda sirve para este ejercicio y para minar bloques.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- codigo:fin -->
     <aside class="honestidad" aria-labelledby="h-honestidad">
       <h2 id="h-honestidad">Qué se simplificó</h2>
       <ul>
@@ -254,7 +361,7 @@
     </aside>
 
     <nav class="pasos" aria-label="Entre módulos">
-      <a href="../index.html"><span class="dir">Volver</span><span class="cual">Portada del laboratorio</span></a>
+      <a href="../index.html"><span class="dir">Volver</span><span class="cual">Portada del proyecto final</span></a>
       <a class="sig" href="02-firma-digital.html"><span class="dir">Siguiente</span><span class="cual">02 Firma digital</span></a>
     </nav>
 
@@ -265,7 +372,7 @@
 
 <footer class="pie">
   <div class="envoltura">
-    <p>Laboratorio de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería. Construido
+    <p>Proyecto final de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería. Construido
     sobre el material del curso del Dr. José de Jesús Ángel Ángel.</p>
     <p>Todo el cálculo ocurre en tu navegador con Web Crypto: nada de lo que escribes sale de tu equipo.</p>
   </div>

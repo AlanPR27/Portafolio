@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sellado de tiempo — Laboratorio Blockchain 0.0</title>
+<title>Sellado de tiempo — Proyecto final</title>
 <meta name="description" content="Módulo 3 del laboratorio: sellar el hash de un documento con fecha, encadenar los recibos al estilo Haber–Stornetta, colar un sello retroactivo y encontrar dónde deja de ser consistente la cadena.">
 <script>document.documentElement.classList.add(window.isSecureContext && window.crypto && window.crypto.subtle ? 'cripto-ok' : 'cripto-no');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,9 +21,9 @@
     <nav class="migas" aria-label="Ruta">
       <a href="../../index.html">Apuntes</a>
       <span aria-hidden="true">/</span>
-      <a href="../index.html">Laboratorio Blockchain 0.0</a>
+      <a href="../index.html">Proyecto final</a>
     </nav>
-    <nav class="modos" aria-label="Módulos del laboratorio">
+    <nav class="modos" aria-label="Módulos del proyecto final">
       <ol>
         <li><a href="01-funcion-hash.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">01</span><span class="etiqueta">Hash</span></a></li>
         <li><a href="02-firma-digital.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">02</span><span class="etiqueta">Firma</span></a></li>
@@ -36,7 +36,7 @@
 </header>
 
 <div class="aviso-contexto" role="alert">
-  <p><strong>Este laboratorio necesita JavaScript y un contexto seguro.</strong> Web Crypto sólo
+  <p><strong>Esta página necesita JavaScript y un contexto seguro.</strong> Web Crypto sólo
   existe en HTTPS, y los módulos no cargan si el archivo se abre con doble clic. Ábrelo desde
   <a href="https://alanpr27.github.io/Portafolio/lab/">alanpr27.github.io/Portafolio/lab</a>.</p>
 </div>
@@ -187,6 +187,116 @@
       </div>
     </section>
 
+    <!-- codigo:inicio -->
+    <section class="parte" aria-labelledby="p4">
+      <h2 id="p4"><span class="parte-n" aria-hidden="true">4</span>El código por dentro</h2>
+      <div class="prosa">
+        <p>Un recibo es un objeto de cuatro campos y una llamada a SHA-256. Todo lo demás —el encadenamiento, el sello colado, la verificación— sale de cómo se arma ese objeto.</p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.1</span>Qué es un recibo y qué se hashea</h3>
+        <p class="banco-intro">El hashRecibo no puede incluirse a sí mismo, así que se calcula sobre los otros cuatro campos.</p>
+        <figure class="codigo">
+          <pre><code>export function contenidoRecibo({ indice, hashDocumento, timestamp, hashPrevio }) {
+  return canonico({ hashDocumento, hashPrevio, indice, timestamp });
+}
+
+export async function crearRecibo({ indice, hashDocumento, timestamp, hashPrevio }) {
+  const base = { indice, hashDocumento, timestamp, hashPrevio };
+  return { ...base, hashRecibo: await sha256Hex(contenidoRecibo(base)) };
+}</code></pre>
+          <figcaption>sellos.js, líneas 15–22</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li><code>contenidoRecibo</code> arma la cadena exacta que se hashea: JSON canónico, con las claves ordenadas y sin espacios, para que el mismo recibo dé siempre el mismo hash.</li>
+          <li>Como <code>hashPrevio</code> está dentro de lo que se hashea, cada recibo depende de todos los anteriores. Eso es el encadenamiento de Haber–Stornetta.</li>
+        </ul>
+        <figure class="codigo">
+          <pre><code>export async function sellar(recibos, hashDocumento, timestamp = Date.now()) {
+  const previo = recibos.at(-1);
+  const recibo = await crearRecibo({
+    indice: recibos.length,
+    hashDocumento,
+    timestamp,
+    hashPrevio: previo ? previo.hashRecibo : CEROS_64,
+  });
+  recibos.push(recibo);
+  return recibo;
+}</code></pre>
+          <figcaption>sellos.js, líneas 25–35</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>Sellar es copiar el hashRecibo del último en el hashPrevio del nuevo. El primero de la lista apunta a 64 ceros, igual que un bloque génesis.</li>
+          <li>El timestamp es un parámetro con valor por omisión <code>Date.now()</code>. Por eso el ejercicio puede fabricar recibos fechados días atrás sin tocar el reloj del equipo.</li>
+        </ul>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.2</span>Colar un sello con fecha atrasada</h3>
+        <p class="banco-intro">El sello intruso no tiene nada mal en sí mismo. Ahí está la gracia.</p>
+        <figure class="codigo">
+          <pre><code>export async function insertarRetroactivo(recibos, hashDocumento) {
+  if (recibos.length &lt; 2) throw new Error('Hacen falta al menos dos recibos.');
+  const posicion = recibos.length - 1;
+  const antes = recibos[posicion - 1];
+  const despues = recibos[posicion];
+  const recibo = await crearRecibo({
+    indice: posicion,
+    hashDocumento,
+    timestamp: Math.floor((antes.timestamp + despues.timestamp) / 2),
+    hashPrevio: antes.hashRecibo,
+  });
+  recibos.splice(posicion, 0, recibo);
+  return recibo;</code></pre>
+          <figcaption>sellos.js, líneas 42–54</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>Se inserta en la penúltima posición, con una fecha calculada entre las de sus dos vecinos: el orden temporal sigue siendo correcto.</li>
+          <li>Se engancha bien a su anterior, pero el recibo que ya existía después sigue apuntando al hashRecibo de antes, y ahí se rompe la cadena.</li>
+          <li>Nadie tiene que detectar la intención: basta con que dos hashes dejen de coincidir.</li>
+        </ul>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.3</span>Verificar la lista completa</h3>
+        <p class="banco-intro">Cinco comprobaciones por recibo, y un resultado que distingue el que falla del que sólo cuelga de un fallo.</p>
+        <figure class="codigo">
+          <pre><code>recibos.forEach((recibo, i) =&gt; {
+  const previo = recibos[i - 1];
+  const comprobaciones = {
+    hashCoincide: recalculados[i] === recibo.hashRecibo,
+    enlaceCorrecto: recibo.hashPrevio === (previo ? previo.hashRecibo : CEROS_64),
+    ordenTemporal: !previo || recibo.timestamp &gt;= previo.timestamp,
+    indiceCorrecto: recibo.indice === i,
+    coincidePublicado: !publicado || publicado.indice !== i || publicado.hashRecibo === recibo.hashRecibo,
+  };</code></pre>
+          <figcaption>sellos.js, líneas 78–86</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>Su propio hash recalculado, el enlace con el anterior, que la fecha no retroceda, que el índice corresponda a su posición, y que coincida con el hash publicado si lo hay.</li>
+          <li>Se revisan en orden de gravedad y se reporta el primero que falla, para que el motivo señale la causa y no un efecto.</li>
+        </ul>
+        <figure class="codigo">
+          <pre><code>} else if (!sana) {
+  estado = ESTADO.HEREDADO;
+  motivo = 'Está bien formado, pero cuelga de un recibo que ya no es consistente.';
+} else {
+  estado = ESTADO.VALIDO;
+  motivo = 'Íntegro y enganchado al anterior.';
+}
+
+if (estado !== ESTADO.VALIDO) sana = false;</code></pre>
+          <figcaption>sellos.js, líneas 102–110</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li><code>sana</code> arrastra el resultado hacia adelante: un recibo correcto que viene después de uno roto queda como heredado, no como válido.</li>
+          <li>La comprobación contra lo publicado es la única que no se arregla recalculando la lista. Un hash que ya salió de la página deja de estar bajo tu control, y ése es justo el punto del módulo.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- codigo:fin -->
     <aside class="honestidad" aria-labelledby="h-honestidad">
       <h2 id="h-honestidad">Qué se simplificó</h2>
       <ul>
@@ -218,7 +328,7 @@
 
 <footer class="pie">
   <div class="envoltura">
-    <p>Laboratorio de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería. Construido
+    <p>Proyecto final de Alan Placeres. Universidad Anáhuac México, Facultad de Ingeniería. Construido
     sobre el material del curso del Dr. José de Jesús Ángel Ángel.</p>
     <p>Todo el cálculo ocurre en tu navegador con Web Crypto: nada de lo que escribes sale de tu equipo.</p>
   </div>

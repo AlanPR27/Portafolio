@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Transacción — Laboratorio Blockchain 0.0</title>
+<title>Transacción — Proyecto final</title>
 <meta name="description" content="Módulo 5 del laboratorio: custodia de lotes en una cadena de suministro con tres actores que firman, serialización canónica, bloques sellados y minados, trazabilidad por lote y tres ataques ejecutables.">
 <script>document.documentElement.classList.add(window.isSecureContext && window.crypto && window.crypto.subtle ? 'cripto-ok' : 'cripto-no');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,9 +21,9 @@
     <nav class="migas" aria-label="Ruta">
       <a href="../../index.html">Apuntes</a>
       <span aria-hidden="true">/</span>
-      <a href="../index.html">Laboratorio Blockchain 0.0</a>
+      <a href="../index.html">Proyecto final</a>
     </nav>
-    <nav class="modos" aria-label="Módulos del laboratorio">
+    <nav class="modos" aria-label="Módulos del proyecto final">
       <ol>
         <li><a href="01-funcion-hash.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">01</span><span class="etiqueta">Hash</span></a></li>
         <li><a href="02-firma-digital.html" data-estado="listo"><span class="marca" aria-hidden="true"></span><span class="n">02</span><span class="etiqueta">Firma</span></a></li>
@@ -36,7 +36,7 @@
 </header>
 
 <div class="aviso-contexto" role="alert">
-  <p><strong>Este laboratorio necesita JavaScript y un contexto seguro.</strong> Web Crypto sólo
+  <p><strong>Esta página necesita JavaScript y un contexto seguro.</strong> Web Crypto sólo
   existe en HTTPS, y los módulos no cargan si el archivo se abre con doble clic. Ábrelo desde
   <a href="https://alanpr27.github.io/Portafolio/lab/">alanpr27.github.io/Portafolio/lab</a>.</p>
 </div>
@@ -246,9 +246,189 @@
     </section>
 
 
+    <!-- codigo:inicio -->
+    <section class="parte" aria-labelledby="p4">
+      <h2 id="p4"><span class="parte-n" aria-hidden="true">4</span>El código por dentro</h2>
+      <div class="prosa">
+        <p>Todo el caso de uso vive en <code>suministro.js</code>, que no reimplementa nada: firma con <code>crypto-utils.js</code> y encadena con <code>cadena.js</code>. Como no toca la página, su lógica se puede ejercitar con scripts de Node.</p>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.1</span>El evento y su firma</h3>
+        <p class="banco-intro">Un evento es un objeto de seis campos. Lo que se firma no es ese objeto, sino su serialización.</p>
+        <figure class="codigo">
+          <pre><code>export function crearEvento({ lote, producto, cantidad, actor, accion, timestamp }) {
+  return { lote, producto, cantidad: Number(cantidad), actor, accion, timestamp };
+}
+
+/** Lo que se firma: el evento serializado con las claves siempre en el mismo orden. */
+export const serializar = (evento) =&gt; canonico(evento);
+
+export async function firmarEvento(evento, privada) {
+  return { evento, firma: await firmar(privada, serializar(evento)) };
+}</code></pre>
+          <figcaption>suministro.js, líneas 41–50</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>La cantidad se convierte a número: si quedara como texto, «120» y 120 serían dos eventos distintos al hashearlos.</li>
+          <li><code>firmarEvento</code> devuelve la transacción <code>{evento, firma}</code>, que es lo que después viaja dentro de un bloque.</li>
+          <li>La firma es una cadena hexadecimal de 128 caracteres: los 64 bytes <code>r ‖ s</code>.</li>
+        </ul>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.2</span>Serialización canónica, el detalle que lo decide todo</h3>
+        <p class="banco-intro">Se firman bytes, no objetos. Dos formas de escribir el mismo evento son dos mensajes distintos.</p>
+        <figure class="codigo">
+          <pre><code>export function canonico(valor) {
+  if (valor === undefined || typeof valor === 'function' || typeof valor === 'symbol') {
+    throw new TypeError('Valor no serializable.');
+  }
+  if (typeof valor === 'number' &amp;&amp; !Number.isFinite(valor)) {
+    throw new TypeError('Número no finito.');
+  }
+  if (valor === null || typeof valor !== 'object') return JSON.stringify(valor);
+  if (Array.isArray(valor)) return `[${valor.map(canonico).join(',')}]`;
+  const claves = Object.keys(valor).filter((k) =&gt; valor[k] !== undefined).sort();
+  return `{${claves.map((k) =&gt; `${JSON.stringify(k)}:${canonico(valor[k])}`).join(',')}}`;
+}</code></pre>
+          <figcaption>crypto-utils.js, líneas 138–149</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>Recorre el valor recursivamente y en cada objeto ordena las claves con <code>sort()</code>, sin espacios, así que el mismo evento produce siempre los mismos bytes.</li>
+          <li>Si quien firma y quien verifica serializaran en distinto orden, una firma legítima no verificaría. Eso es lo que demuestra el botón «Firmar con las claves en otro orden».</li>
+          <li>Rechaza lo que no se puede serializar de forma estable —<code>undefined</code>, funciones, NaN— en vez de producir bytes distintos en silencio.</li>
+          <li>La misma función sirve para hashear bloques, así que eventos y bloques comparten una sola regla de serialización.</li>
+        </ul>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.3</span>Las cuatro revisiones antes de aceptar un evento</h3>
+        <p class="banco-intro">El orden importa: primero la firma, porque si no es auténtica lo demás da igual. Cada rechazo devuelve qué regla falló y por qué.</p>
+        <figure class="codigo">
+          <pre><code>async revisar({ evento, firma }) {
+  const actor = ACTORES[evento.actor];
+  const llaves = this.registro[evento.actor];
+// …
+  if (!(await verificar(llaves.publica, serializar(evento), firma))) {
+// …
+  if (actor.accion !== evento.accion) {
+// …
+  const ultimo = this.cadena.ultimo;
+  if (ultimo &amp;&amp; evento.timestamp &lt; ultimo.timestamp) {
+// …
+  const hechos = this.pasos(evento.lote);
+  const toca = ORDEN[hechos.length];
+  if (evento.accion !== toca) {</code></pre>
+          <figcaption>suministro.js, líneas 105–107, 112, 120, 132–133, 141–143</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li><strong>Firma.</strong> Se verifica con la pública que el registro tiene para <code>evento.actor</code>. El atacante puede escribir cualquier actor en el evento, pero no puede producir la firma de esa llave.</li>
+          <li><strong>Rol.</strong> Cada actor tiene una sola acción posible. Aquí la firma puede ser auténtica y el evento rechazarse igual.</li>
+          <li><strong>Tiempo.</strong> El sello del evento no puede ser anterior al del último bloque, porque ese bloque ya fijó ese punto de la historia.</li>
+          <li><strong>Secuencia.</strong> <code>pasos(lote)</code> cuenta lo ya aceptado y <code>ORDEN</code> dice qué toca: un lote no se recibe dos veces ni se despacha antes de recibirse.</li>
+        </ul>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.4</span>Sellar un bloque y validarlo</h3>
+        <p class="banco-intro">Sellar agrupa lo que espera; validar revisa la estructura de la cadena y, encima, cada firma.</p>
+        <figure class="codigo">
+          <pre><code>async sellarBloque(opciones = {}) {
+  if (this.pendientes.length === 0) throw new Error('No hay transacciones en espera.');
+  const bloque = this.cadena.agregar(this.pendientes.map(({ evento, firma }) =&gt; ({ evento, firma })));
+  this.pendientes = [];
+  const resultado = await this.cadena.minar(bloque.indice, opciones);
+  return { bloque, ...resultado };
+}</code></pre>
+          <figcaption>suministro.js, líneas 167–173</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>Las transacciones en espera pasan a ser los datos del bloque, que se sella con la hora y se mina con la cadena del módulo anterior.</li>
+        </ul>
+        <figure class="codigo">
+          <pre><code>const transacciones = await Promise.all(txs.map(async (tx, posicion) =&gt; {
+  const llaves = this.registro[tx.evento.actor];
+  const firmaValida = Boolean(llaves) &amp;&amp; (await verificar(llaves.publica, serializar(tx.evento), tx.firma));
+  const enTiempo = (!previo || tx.evento.timestamp &gt;= previo.timestamp) &amp;&amp; tx.evento.timestamp &lt;= bloque.timestamp;
+  return { ...tx, bloque: inf.indice, posicion, firmaValida, enTiempo };
+}));
+// …
+if (estado !== ESTADO.VALIDO) sana = false;</code></pre>
+          <figcaption>suministro.js, líneas 192–197, 219</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>Sobre las comprobaciones estructurales del bloque, aquí se revisa cada transacción: que su firma siga verificando y que su sello caiga entre el del bloque anterior y el del suyo.</li>
+          <li>Si una firma falla, el bloque entero pasa a inválido aunque su prueba de trabajo esté perfecta. Eso es exactamente lo que impide ocultar la alteración reminando.</li>
+          <li>La variable <code>sana</code> viaja hacia adelante y produce la cascada: lo que cuelga de un bloque inválido queda como heredado.</li>
+        </ul>
+      </div>
+
+      <div class="banco">
+        <h3 class="banco-titulo"><span class="clave">4.5</span>Los tres ataques</h3>
+        <p class="banco-intro">Los tres se ejecutan contra esta misma cadena, por el mismo camino que cualquier evento.</p>
+        <figure class="codigo">
+          <pre><code>const evento = crearEvento({
+  lote: this.siguienteLote(),
+  producto: 'Lote fantasma',
+  cantidad: 500,
+  actor: 'proveedor',
+  accion: 'emitir',
+  timestamp: this.reloj(),
+});
+const tx = await firmarEvento(evento, this.registro.almacen.privada);
+return { tx, revision: await this.enviar(tx) };</code></pre>
+          <figcaption>suministro.js, líneas 252–261</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>El evento dice <code>actor: 'proveedor'</code> y se firma con la privada del almacén. Está bien formado; lo que no existe es la firma del proveedor, así que lo detiene la primera revisión.</li>
+        </ul>
+        <figure class="codigo">
+          <pre><code>async ataqueCantidad() {
+  const bloque = this.cadena.bloques.find((b) =&gt; Array.isArray(b.datos) &amp;&amp; b.datos.length &gt; 0);
+  if (!bloque) throw new Error('Todavía no hay ningún bloque con transacciones.');
+  const original = bloque.datos;
+  const alterados = structuredClone(original);
+  const tx = alterados[0];
+  const antes = tx.evento.cantidad;
+  tx.evento.cantidad = antes &gt; 10 ? antes - 10 : antes + 10;
+  await this.cadena.editar(bloque.indice, alterados);
+// …
+    deshacer: () =&gt; this.cadena.editar(bloque.indice, original),</code></pre>
+          <figcaption>suministro.js, líneas 268–276, 282</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>Este ataque no usa ninguna llave: clona los datos del bloque, cambia la cantidad y llama a <code>cadena.editar</code>, que equivale a tocar la base de datos por detrás.</li>
+          <li>Editar recalcula el hash con el mismo nonce, así que el bloque deja de cumplir la dificultad, el siguiente pierde el enlace y el resto queda heredado.</li>
+          <li>Guarda el arreglo original y devuelve una función <code>deshacer</code>, para poder dejar la demo como estaba.</li>
+        </ul>
+        <figure class="codigo">
+          <pre><code>async ataqueRetroactivo() {
+  const ultimo = this.cadena.ultimo;
+  const evento = crearEvento({
+    lote: this.siguienteLote(),
+    producto: 'Lote con fecha retroactiva',
+    cantidad: 40,
+    actor: 'proveedor',
+    accion: 'emitir',
+    timestamp: (ultimo ? ultimo.timestamp : this.reloj()) - HORA,
+  });
+  const tx = await firmarEvento(evento, this.registro.proveedor.privada);
+  return { tx, revision: await this.enviar(tx) };</code></pre>
+          <figcaption>suministro.js, líneas 290–301</figcaption>
+        </figure>
+        <ul class="apuntes">
+          <li>Aquí sí se usa la llave correcta, la del proveedor, así que la firma es auténtica y pasa la primera revisión.</li>
+          <li>Lo que no cuadra es el timestamp, una hora anterior al del último bloque: lo detiene la revisión temporal.</li>
+          <li>Es el ataque que mejor muestra por qué no basta con verificar firmas: hace falta además el orden en el tiempo que la cadena ya fijó.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- codigo:fin -->
     <nav class="pasos" aria-label="Entre módulos">
       <a href="04-blockchain.html"><span class="dir">Anterior</span><span class="cual">04 Blockchain 0.0</span></a>
-      <a class="sig" href="../index.html"><span class="dir">Fin del laboratorio</span><span class="cual">Portada del laboratorio</span></a>
+      <a class="sig" href="../index.html"><span class="dir">Fin del recorrido</span><span class="cual">Portada del proyecto final</span></a>
     </nav>
 
   </div>

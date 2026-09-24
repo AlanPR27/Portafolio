@@ -53,11 +53,11 @@ Los identificadores hexadecimales de Blockchain se calculan en el generador y
 son reales: `sha256("El adversario cuántico")` empieza por `24c2db`. Si se
 cambia un título hay que recalcular el suyo.
 
-## Laboratorio Blockchain 0.0
+## Proyecto final: el laboratorio de Blockchain
 
 **En <https://alanpr27.github.io/Portafolio/lab/>.** Tercera sección, de
 naturaleza distinta a las otras dos: no es un apunte que se lee sino un
-laboratorio que se opera. Cinco módulos encadenados, cada uno con explicación,
+laboratorio que se opera, y es el proyecto final de la materia. Cinco módulos encadenados, cada uno con explicación,
 banco de trabajo en vivo, ejercicio que la página verifica sola y una nota de
 qué se simplificó.
 
@@ -68,6 +68,9 @@ qué se simplificó.
 | 03 Sellado de tiempo | recibos encadenados, sello retroactivo, publicación del hash | encontrar el primer recibo inconsistente |
 | 04 Blockchain 0.0 | cadena editable con prueba de trabajo y cascada de invalidación | predecir la cascada |
 | 05 Transacción | custodia de lotes con tres actores que firman, trazabilidad | los tres ataques, uno por botón |
+
+Cada módulo cierra con una sección «El código por dentro»: fragmentos recortados
+de los archivos reales, con la explicación de qué hace cada uno y cómo trabaja.
 
 ```
 lab/
